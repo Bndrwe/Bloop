@@ -89,12 +89,6 @@ function broadcast(status: AppStatus): void {
 }
 engine.on('status', broadcast)
 
-function broadcastSettings(settings: Settings): void {
-  for (const w of windows.allWindows()) {
-    if (!w.webContents.isDestroyed()) w.webContents.send(IPC.settingsChanged, settings)
-  }
-}
-
 const trayActions: TrayActions = {
   start: () => engine.start(),
   pause: () => engine.pause(),
@@ -152,7 +146,6 @@ function registerIpc(): void {
     const next = store.saveSettings(p)
     if (before.launchAtLogin !== next.launchAtLogin) applyLoginItem(next)
     log('settings saved')
-    broadcastSettings(next)
     broadcast(engine.getStatus())
     return next
   })
@@ -161,7 +154,6 @@ function registerIpc(): void {
     store.resetData()
     applyLoginItem(store.getSettings())
     log('all data reset')
-    broadcastSettings(store.getSettings())
     broadcast(engine.getStatus())
   })
 
