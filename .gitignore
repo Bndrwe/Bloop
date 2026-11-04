@@ -30,3 +30,7 @@ ml/out/
 ml/cache/
 *.gguf
 *.safetensors
+
+# Python
+__pycache__/
+*.pyc
