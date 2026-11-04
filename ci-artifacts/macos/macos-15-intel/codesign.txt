@@ -7,16 +7,16 @@ VersionPlatform=1
 VersionMin=786432
 VersionSDK=1703936
 Hash type=sha256 size=32
-CandidateCDHash sha256=646309d35e53022bfa274df17ce94e1dbca289b4
-CandidateCDHashFull sha256=646309d35e53022bfa274df17ce94e1dbca289b49dd26dc9adc9b5377a91b72c
+CandidateCDHash sha256=03bb2971d2b8a572076297b0d0862e2112144953
+CandidateCDHashFull sha256=03bb2971d2b8a572076297b0d0862e2112144953d3bbcfe59c94ee485f5bbe68
 Hash choices=sha256
-CMSDigest=646309d35e53022bfa274df17ce94e1dbca289b49dd26dc9adc9b5377a91b72c
+CMSDigest=03bb2971d2b8a572076297b0d0862e2112144953d3bbcfe59c94ee485f5bbe68
 CMSDigestType=2
 Executable Segment base=0
 Executable Segment limit=8192
 Executable Segment flags=0x1
 Page size=4096
-CDHash=646309d35e53022bfa274df17ce94e1dbca289b4
+CDHash=03bb2971d2b8a572076297b0d0862e2112144953
 Signature=adhoc
 Info.plist entries=33
 TeamIdentifier=not set
@@ -25,7 +25,7 @@ Sealed Resources version=2 rules=13 files=824
 Internal requirements count=0 size=12
 == designated requirement
 Executable=/Users/runner/work/StudyPet/StudyPet/dist/mac/Bloop.app/Contents/MacOS/Bloop
-# designated => cdhash H"646309d35e53022bfa274df17ce94e1dbca289b4"
+# designated => cdhash H"03bb2971d2b8a572076297b0d0862e2112144953"
 == codesign --verify --deep --strict
 --prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac/Bloop.app/Contents/Frameworks/Bloop Helper (Plugin).app
 --validated:/Users/runner/work/StudyPet/StudyPet/dist/mac/Bloop.app/Contents/Frameworks/Bloop Helper (Plugin).app
