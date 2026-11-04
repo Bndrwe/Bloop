@@ -44,3 +44,4 @@
 [bloop] sample app="UserNotificationCenter" category=neutral score=100
 [bloop] trace raw: app="UserNotificationCenter" titleLen=0 url=- nativeUrl=no
 [bloop] sample app="UserNotificationCenter" category=neutral score=100
+[bloop] permissions(refresh): screen=granted automation=granted onboarding=false
