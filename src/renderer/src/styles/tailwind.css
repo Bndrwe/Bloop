@@ -1,0 +1,62 @@
+/* Tailwind v4: theme tokens + utilities only. No preflight, so the hand-written
+   CSS (base.css, views/*.css) is never reset. */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+
+/* Only scan the shadcn component tree. Scanning the whole renderer would pick up
+   class names from the hand-written CSS (.border, .ring, .shadow, .container, .hidden...)
+   and emit same-named Tailwind utilities that alter existing views. To use utilities in
+   a view, add its path here (and check for class-name collisions with views/*.css). */
+@source "../components";
+
+/* shadcn-style semantic tokens mapped onto the black-and-white palette from base.css. */
+:root {
+  --background: #000000;
+  --foreground: #ffffff;
+  --card: #0e0e0e;
+  --card-foreground: #ffffff;
+  --popover: #0e0e0e;
+  --popover-foreground: #ffffff;
+  --primary: #ffffff;
+  --primary-foreground: #000000;
+  --secondary: #0e0e0e;
+  --secondary-foreground: #ffffff;
+  --muted: #0e0e0e;
+  --muted-foreground: #b3b3b3;
+  --accent: #262626;
+  --accent-foreground: #ffffff;
+  --destructive: #ffffff;
+  --border: #262626;
+  --input: #474747;
+  --ring: #7d7d7d;
+  --radius: 12px;
+}
+
+/* The app is dark-only; shadcn's `dark:` variant is always active. */
+@custom-variant dark (&:where(*));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
