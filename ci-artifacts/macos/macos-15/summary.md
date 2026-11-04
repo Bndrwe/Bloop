@@ -1,9 +1,9 @@
-# Bloop macOS e2e (macOS 15.8.2, arm64, runner GitHub Actions 1000001845)
+# Bloop macOS e2e (macOS 15.8.2, arm64, runner GitHub Actions 1000001848)
 
 App: `/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app` (bundle id edu.bloop.app)
 
 ## A: launch without permissions
-  launched A via open (LaunchServices), pid(s): 22631 
+  launched A via open (LaunchServices), pid(s): 21884 
   `[bloop] permissions: screen=denied automation=unknown onboarding=true`
   last refresh: `[bloop] permissions(refresh): screen=denied automation=unknown onboarding=true`
 - PASS: A: app started and logged its permission state
@@ -52,21 +52,21 @@ App: `/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app` (bundle id 
   observation: Screen Recording still not granted in the running process (macOS caches it per process; needs relaunch)
 
 ## B: relaunch with permissions granted, drive real apps
-  launched B via open (LaunchServices), pid(s): 25204 
+  launched B via open (LaunchServices), pid(s): 24072 
   `[bloop] permissions: screen=granted automation=granted onboarding=false`
 - PASS: B: Screen Recording reported granted after relaunch
 - PASS: B: session auto-started
 - PASS: B: welcome screen not reopened when everything is granted (browser running)
 
 ### 1-textedit
-  frontmost after activating TextEdit: TextEdit
+  frontmost after activating TextEdit: Safari
       [bloop] sample app="UserNotificationCenter" category=neutral score=100
       [bloop] sample app="UserNotificationCenter" category=neutral score=100
       [bloop] sample app="UserNotificationCenter" category=neutral score=100
       [bloop] sample app="UserNotificationCenter" category=neutral score=100
       [bloop] sample app="UserNotificationCenter" category=neutral score=100
       [bloop] sample app="UserNotificationCenter" category=neutral score=100
-- PASS: TextEdit sampled as neutral
+- **FAIL**: TextEdit sampled as neutral
 
 ### 2-terminal
   frontmost after activating Terminal: Terminal
@@ -81,30 +81,30 @@ App: `/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app` (bundle id 
 - PASS: score is 100 after only focus time
 
 ### 3-youtube
-  frontmost after activating Safari: 
-      [bloop] sample app="Safari" domain=youtube.com category=distract score=59
-      [bloop] sample app="Safari" domain=youtube.com category=distract score=58
-      [bloop] sample app="Safari" domain=youtube.com category=distract score=56
-      [bloop] sample app="Safari" domain=youtube.com category=distract score=55
-      [bloop] sample app="Safari" domain=youtube.com category=distract score=54
-      [bloop] sample app="Safari" domain=youtube.com category=distract score=53
+  frontmost after activating Safari: Safari
+      [bloop] sample app="Safari" domain=youtube.com category=distract score=49
+      [bloop] sample app="Safari" domain=youtube.com category=distract score=48
+      [bloop] nudge (distracted 19s)
+      [bloop] pet says: "let's get back to it together!"
+      [bloop] nudge notification
+      [bloop] sample app="Safari" domain=youtube.com category=distract score=47
 - PASS: Safari on YouTube sampled as distract (URL via AppleScript)
 - PASS: pet turned worried after the nudge threshold
 - PASS: nudge fired
-  score after YouTube: 53
+  score after YouTube: 47
 - PASS: score dropped below 100 on YouTube
 
 ### 4-wikipedia
   frontmost after activating Safari: Safari
-      [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=61
+      [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=59
+      [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=60
       [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=61
       [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=62
+      [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=62
       [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=63
-      [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=63
-      [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=64
 - PASS: Safari on Wikipedia sampled as focus
 - PASS: pet happy again after coming back
-  score after Wikipedia: 64
+  score after Wikipedia: 63
 - PASS: score recovered on Wikipedia
 
 ### permissions as seen by the running app (B)
@@ -112,4 +112,4 @@ App: `/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app` (bundle id 
 - PASS: B: Automation reported granted
 - PASS: B: window titles readable (Screen Recording effective)
 
-## Result: 0 failed assertion(s)
+## Result: 1 failed assertion(s)
