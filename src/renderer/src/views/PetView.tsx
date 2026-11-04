@@ -1,11 +1,43 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
+import { animate } from 'animejs'
 import { Pet } from '../pet/Pet'
+import { prefersReducedMotion } from '../lib/motion'
 import { useStatus } from '../hooks/useStatus'
 import { mmss, phaseLabel, scoreLevel, scoreText } from '../lib/format'
 import './pet-view.css'
 
 const PET_SIZE = 110
+
+/** Dark-glass speech bubble; pops in on mount (remounted per messageId). */
+function Bubble({ text, onEnter, onLeave }: { text: string; onEnter: () => void; onLeave: () => void }): JSX.Element {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const reduce = prefersReducedMotion()
+    const anim = animate(
+      el,
+      reduce
+        ? { opacity: { from: 0, to: 1 }, duration: 160, ease: 'linear' }
+        : {
+            opacity: { from: 0, to: 1, duration: 200 },
+            scale: { from: 0.55, to: 1 },
+            translateY: { from: 8, to: 0 },
+            duration: 460,
+            ease: 'outBack(1.4)'
+          }
+    )
+    return () => {
+      anim.revert()
+    }
+  }, [])
+  return (
+    <div className="pv-bubble" ref={ref} role="status" onMouseEnter={onEnter} onMouseLeave={onLeave}>
+      <span>{text}</span>
+    </div>
+  )
+}
 
 export function PetView(): JSX.Element {
   const { status, remaining } = useStatus()
@@ -80,11 +112,7 @@ export function PetView(): JSX.Element {
 
   return (
     <div className="pv">
-      {message && (
-        <div className="pv-bubble" key={status?.pet.messageId} onMouseEnter={onEnter} onMouseLeave={onLeave}>
-          <span>{message}</span>
-        </div>
-      )}
+      {message && <Bubble key={status?.pet.messageId} text={message} onEnter={onEnter} onLeave={onLeave} />}
 
       <div
         className={`pv-pet level-${level}`}
@@ -94,18 +122,15 @@ export function PetView(): JSX.Element {
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
       >
-        <Pet mood={mood} size={PET_SIZE} />
-        {status && status.phase !== 'idle' && <span className="pv-dot" title="Focus score" />}
+        <Pet mood={mood} size={PET_SIZE} outlined />
+        {status && (status.phase !== 'idle' || status.score != null) && (
+          <span className="pv-dot" aria-label={`Focus score ${scoreText(status.score)}`} />
+        )}
         {hover && (
           <div className="pv-badge">
             <span className="pv-badge-score">{scoreText(status?.score)}</span>
-            {showTimer ? (
-              <span>
-                {phaseLabel(phase)} {mmss(remaining)}
-              </span>
-            ) : (
-              <span>{phaseLabel(phase)}</span>
-            )}
+            <span className="pv-badge-phase">{phaseLabel(phase)}</span>
+            {showTimer && <span className="pv-badge-time">{mmss(remaining)}</span>}
           </div>
         )}
       </div>

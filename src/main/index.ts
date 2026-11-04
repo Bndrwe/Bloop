@@ -208,6 +208,9 @@ app.on('window-all-closed', () => {
   /* stay alive in the tray */
 })
 
+// Ctrl-C / kill in dev: quit cleanly so the running session gets saved.
+for (const sig of ['SIGINT', 'SIGTERM'] as const) process.on(sig, () => app.quit())
+
 app.on('before-quit', () => {
   if (engine.isRunning()) engine.stop() // save the in-progress session
   reminders.stop()
