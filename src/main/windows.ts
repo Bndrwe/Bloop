@@ -161,6 +161,10 @@ function positionPanel(win: BrowserWindow): void {
   win.setPosition(Math.round(x), Math.round(y))
 }
 
+export function ensurePanelWindow(): void {
+  if (!panelWin || panelWin.isDestroyed()) panelWin = createPanelWindow()
+}
+
 function createPanelWindow(): BrowserWindow {
   const win = new BrowserWindow({
     width: PANEL_W,

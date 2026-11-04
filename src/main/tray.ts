@@ -74,7 +74,7 @@ export function updateTray(actions: TrayActions, s: AppStatus): void {
     { label: 'Show panel', click: () => actions.togglePanel() },
     { label: 'Settings…', click: () => actions.openSettings() },
     { type: 'separator' },
-    { label: 'Quit Study Pet', role: 'quit', click: () => app.quit() }
+    { label: 'Quit Study Pet', click: () => app.quit() }
   )
   tray.setContextMenu(Menu.buildFromTemplate(items))
 }
