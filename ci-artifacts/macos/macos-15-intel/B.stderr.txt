@@ -1,0 +1,10 @@
+[25363:1104/193335.461866:ERROR:electron/shell/common/platform_util_mac.mm:264] Unable to set login item: The operation couldn’t be completed. Operation not permitted
+2026-11-04 19:33:35.621 Bloop Helper[25378:44486] XPC error for connection com.apple.backupd.sandbox.xpc: Connection invalid
+[25380:1104/193335.687895:ERROR:gpu/ipc/client/command_buffer_proxy_impl.cc:127] ContextResult::kTransientFailure: Failed to send GpuControl.CreateCommandBuffer.
+[25377:1104/193336.057612:ERROR:gpu/command_buffer/service/gles2_cmd_decoder_passthrough.cc:1100] [GroupMarkerNotSet(crbug.com/242999)!:A0C0210014010000]Automatic fallback to software WebGL has been deprecated. Please use the --enable-unsafe-swiftshader (about:flags#enable-unsafe-swiftshader) flag to opt in to lower security guarantees for trusted content.
+[25377:1104/193336.172359:ERROR:gpu/command_buffer/service/gl_utils.cc:391] [.WebGL-0x12c00b06200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+[25377:1104/193336.299815:ERROR:gpu/command_buffer/service/gl_utils.cc:391] [.WebGL-0x12c00b06200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+[25377:1104/193336.497353:ERROR:gpu/command_buffer/service/gl_utils.cc:391] [.WebGL-0x12c00b06200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+[25377:1104/193336.536501:ERROR:gpu/command_buffer/service/gles2_cmd_decoder_passthrough.cc:1100] [GroupMarkerNotSet(crbug.com/242999)!:A050220014010000]Automatic fallback to software WebGL has been deprecated. Please use the --enable-unsafe-swiftshader (about:flags#enable-unsafe-swiftshader) flag to opt in to lower security guarantees for trusted content.
+[25377:1104/193336.554710:ERROR:gpu/command_buffer/service/gl_utils.cc:391] [.WebGL-0x12c017cf100]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)
+[25363:1104/193508.698988:ERROR:base/process/process_mac.cc:98] task_policy_set TASK_SUPPRESSION_POLICY: (os/kern) invalid argument (4)

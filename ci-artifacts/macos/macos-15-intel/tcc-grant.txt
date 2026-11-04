@@ -1,0 +1,28 @@
+csrutil: System Integrity Protection status: disabled.
+bundle id: edu.bloop.app  binary: /Users/runner/work/StudyPet/StudyPet/dist/mac/Bloop.app/Contents/MacOS/Bloop
+designated requirement (app): cdhash H"3a3903f6ce3e2c3553bf39ee7b95aa39c2576c52"
+designated requirement (Safari): identifier "com.apple.Safari" and anchor apple
+--- schema (/Library/Application Support/com.apple.TCC/TCC.db)
+CREATE TABLE access (    service        TEXT        NOT NULL,     client         TEXT        NOT NULL,     client_type    INTEGER     NOT NULL,     auth_value     INTEGER     NOT NULL,     auth_reason    INTEGER     NOT NULL,     auth_version   INTEGER     NOT NULL,     csreq          BLOB,     policy_id      INTEGER,     indirect_object_identifier_type    INTEGER,     indirect_object_identifier         TEXT NOT NULL DEFAULT 'UNUSED',     indirect_object_code_identity      BLOB,     flags          INTEGER,     last_modified  INTEGER     NOT NULL DEFAULT (CAST(strftime('%s','now') AS INTEGER)),     pid            INTEGER,     pid_version    INTEGER,     boot_uuid      TEXT NOT NULL DEFAULT 'UNUSED',     last_reminded  INTEGER     NOT NULL DEFAULT (CAST(strftime('%s','now') AS INTEGER)),     PRIMARY KEY (service, client, client_type, indirect_object_identifier),    FOREIGN KEY (policy_id) REFERENCES policies(id) ON DELETE CASCADE ON UPDATE CASCADE);
+--- schema (/Users/runner/Library/Application Support/com.apple.TCC/TCC.db)
+CREATE TABLE access (    service        TEXT        NOT NULL,     client         TEXT        NOT NULL,     client_type    INTEGER     NOT NULL,     auth_value     INTEGER     NOT NULL,     auth_reason    INTEGER     NOT NULL,     auth_version   INTEGER     NOT NULL,     csreq          BLOB,     policy_id      INTEGER,     indirect_object_identifier_type    INTEGER,     indirect_object_identifier         TEXT NOT NULL DEFAULT 'UNUSED',     indirect_object_code_identity      BLOB,     flags          INTEGER,     last_modified  INTEGER     NOT NULL DEFAULT (CAST(strftime('%s','now') AS INTEGER)),     pid            INTEGER,     pid_version    INTEGER,     boot_uuid      TEXT NOT NULL DEFAULT 'UNUSED',     last_reminded  INTEGER     NOT NULL DEFAULT (CAST(strftime('%s','now') AS INTEGER)),     PRIMARY KEY (service, client, client_type, indirect_object_identifier),    FOREIGN KEY (policy_id) REFERENCES policies(id) ON DELETE CASCADE ON UPDATE CASCADE);
+inserted kTCCServiceScreenCapture edu.bloop.app (0) -> UNUSED into Application Support/TCC.db [system]
+inserted kTCCServiceScreenCapture /Users/runner/work/StudyPet/StudyPet/dist/mac/Bloop.app/Contents/MacOS/Bloop (1) -> UNUSED into Application Support/TCC.db [system]
+inserted kTCCServiceScreenCapture edu.bloop.app (0) -> UNUSED into Application Support/TCC.db [user]
+inserted kTCCServiceScreenCapture /Users/runner/work/StudyPet/StudyPet/dist/mac/Bloop.app/Contents/MacOS/Bloop (1) -> UNUSED into Application Support/TCC.db [user]
+inserted kTCCServiceAppleEvents edu.bloop.app (0) -> com.apple.Safari into Application Support/TCC.db [user]
+inserted kTCCServiceAppleEvents /Users/runner/work/StudyPet/StudyPet/dist/mac/Bloop.app/Contents/MacOS/Bloop (1) -> com.apple.Safari into Application Support/TCC.db [user]
+inserted kTCCServiceAppleEvents edu.bloop.app (0) -> com.apple.Safari into Application Support/TCC.db [system]
+inserted kTCCServiceAppleEvents /Users/runner/work/StudyPet/StudyPet/dist/mac/Bloop.app/Contents/MacOS/Bloop (1) -> com.apple.Safari into Application Support/TCC.db [system]
+--- rows for Bloop in /Library/Application Support/com.apple.TCC/TCC.db
+service|client|client_type|auth_value|auth_reason|indirect_object_identifier|csreq_len|ind_req_len
+kTCCServiceScreenCapture|edu.bloop.app|0|2|4|UNUSED|40|
+kTCCServiceScreenCapture|/Users/runner/work/StudyPet/StudyPet/dist/mac/Bloop.app/Contents/MacOS/Bloop|1|2|4|UNUSED|40|
+kTCCServiceAppleEvents|edu.bloop.app|0|2|4|com.apple.Safari|40|44
+kTCCServiceAppleEvents|/Users/runner/work/StudyPet/StudyPet/dist/mac/Bloop.app/Contents/MacOS/Bloop|1|2|4|com.apple.Safari|40|44
+--- rows for Bloop in /Users/runner/Library/Application Support/com.apple.TCC/TCC.db
+service|client|client_type|auth_value|auth_reason|indirect_object_identifier|csreq_len|ind_req_len
+kTCCServiceScreenCapture|edu.bloop.app|0|2|4|UNUSED|40|
+kTCCServiceScreenCapture|/Users/runner/work/StudyPet/StudyPet/dist/mac/Bloop.app/Contents/MacOS/Bloop|1|2|4|UNUSED|40|
+kTCCServiceAppleEvents|edu.bloop.app|0|2|4|com.apple.Safari|40|44
+kTCCServiceAppleEvents|/Users/runner/work/StudyPet/StudyPet/dist/mac/Bloop.app/Contents/MacOS/Bloop|1|2|4|com.apple.Safari|40|44
