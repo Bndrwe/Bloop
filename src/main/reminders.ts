@@ -35,7 +35,7 @@ export class ReminderScheduler {
       this.checkStudyReminders()
       this.checkDeadlines()
     } catch (e) {
-      console.log(`[studypet] reminder check failed: ${(e as Error).message}`)
+      console.log(`[bloop] reminder check failed: ${(e as Error).message}`)
     }
   }
 
@@ -49,10 +49,10 @@ export class ReminderScheduler {
       if (wasReminderFired(key)) continue
       markReminderFired(key)
       if (this.deps.engine.isRunning()) {
-        console.log(`[studypet] reminder "${r.label}" skipped (session running)`)
+        console.log(`[bloop] reminder "${r.label}" skipped (session running)`)
         continue
       }
-      console.log(`[studypet] reminder fired: "${r.label}"`)
+      console.log(`[bloop] reminder fired: "${r.label}"`)
       this.deps.engine.say('Time to study!', 'wave')
       this.deps.notify('Time to study! 📚', r.label || "Your study pet is ready when you are.", {
         actionText: 'Start session',
@@ -76,7 +76,7 @@ export class ReminderScheduler {
         if (wasReminderFired(key)) continue
         markReminderFired(key, now)
         const when = new Date(d.start).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
-        console.log(`[studypet] deadline reminder: ${d.summary} in ~${n}d`)
+        console.log(`[bloop] deadline reminder: ${d.summary} in ~${n}d`)
         this.deps.notify(`${d.summary} in ${n === 1 ? '1 day' : '3 days'}`, `${when} — want to start a study session?`, {
           actionText: 'Start session',
           onAction: () => this.deps.engine.start()

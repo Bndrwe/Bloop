@@ -46,7 +46,7 @@ export function createTray(actions: TrayActions, status: AppStatus): Tray | null
     if (process.platform === 'darwin') img.setTemplateImage(true)
     tray = new Tray(img)
   } catch (e) {
-    console.log(`[studypet] tray unavailable: ${(e as Error).message}`)
+    console.log(`[bloop] tray unavailable: ${(e as Error).message}`)
     return null
   }
   if (process.platform !== 'darwin') tray.on('click', () => actions.togglePanel())
@@ -59,8 +59,8 @@ export function updateTray(actions: TrayActions, s: AppStatus): void {
   const scoreText = s.score === null ? '—' : `${s.score}`
   const tip =
     s.phase === 'idle'
-      ? 'Study Pet — no session running'
-      : `Study Pet — ${s.phase === 'paused' ? 'paused' : s.phase} · focus score ${scoreText}`
+      ? 'Bloop — no session running'
+      : `Bloop — ${s.phase === 'paused' ? 'paused' : s.phase} · focus score ${scoreText}`
   tray.setToolTip(tip)
   // the countdown next to the menu-bar icon (mac only)
   if (process.platform === 'darwin') {
@@ -72,7 +72,7 @@ export function updateTray(actions: TrayActions, s: AppStatus): void {
   lastKey = key
   const running = s.phase === 'focus' || s.phase === 'break' || s.phase === 'paused'
   const items: MenuItemConstructorOptions[] = [
-    { label: running ? `Focus score: ${scoreText}` : 'Study Pet', enabled: false },
+    { label: running ? `Focus score: ${scoreText}` : 'Bloop', enabled: false },
     { type: 'separator' }
   ]
   if (!running) items.push({ label: 'Start session', click: () => actions.start() })
@@ -86,7 +86,7 @@ export function updateTray(actions: TrayActions, s: AppStatus): void {
     { label: 'Show panel', click: () => actions.togglePanel() },
     { label: 'Settings…', click: () => actions.openSettings() },
     { type: 'separator' },
-    { label: 'Quit Study Pet', click: () => app.quit() }
+    { label: 'Quit Bloop', click: () => app.quit() }
   )
   tray.setContextMenu(Menu.buildFromTemplate(items))
 }

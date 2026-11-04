@@ -1,10 +1,10 @@
 {
-  "name": "study-pet",
+  "name": "bloop",
   "version": "0.1.0",
   "description": "A cute desktop study companion that tracks your focus and nudges you back on task.",
   "main": "./out/main/index.js",
   "type": "module",
-  "author": "Study Pet team",
+  "author": "Bloop team",
   "license": "MIT",
   "private": true,
   "scripts": {
@@ -20,8 +20,8 @@
     "build:vite": "electron-vite build"
   },
   "build": {
-    "appId": "edu.studypet.app",
-    "productName": "Study Pet",
+    "appId": "edu.bloop.app",
+    "productName": "Bloop",
     "npmRebuild": false,
     "directories": {
       "buildResources": "build",
@@ -42,7 +42,7 @@
       "identity": null,
       "extendInfo": {
         "LSUIElement": true,
-        "NSAppleEventsUsageDescription": "Study Pet reads the URL of your front browser tab to tell study sites from distracting ones. Nothing leaves your Mac."
+        "NSAppleEventsUsageDescription": "Bloop reads the URL of your front browser tab to tell study sites from distracting ones. Nothing leaves your Mac."
       }
     },
     "extraResources": [

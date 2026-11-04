@@ -81,7 +81,7 @@ export function Onboarding(): JSX.Element {
       <div className="onb-hero enter">
         <Pet mood="wave" size={92} />
         <h1>
-          Hi, I’m your <span className="tag">Study Pet</span>
+          Hi, I’m <span className="tag">Bloop</span>, your study pet
         </h1>
         <p className="muted">
           I sit in the corner, keep score of your focus, and give you a gentle nudge when you drift off.

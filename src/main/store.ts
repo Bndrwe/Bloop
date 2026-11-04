@@ -34,7 +34,7 @@ const MAX_SESSIONS = 1000
 
 let store: Store<Schema> | null = null
 function s(): Store<Schema> {
-  if (!store) store = new Store<Schema>({ name: 'study-pet', defaults: DEFAULTS, clearInvalidConfig: true })
+  if (!store) store = new Store<Schema>({ name: 'bloop', defaults: DEFAULTS, clearInvalidConfig: true })
   return store
 }
 

@@ -14,15 +14,15 @@ import { createTray, updateTray, type TrayActions } from './tray'
 import * as windows from './windows'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const FAST = process.env['STUDYPET_FAST'] === '1'
+const FAST = process.env['BLOOP_FAST'] === '1'
 const isMac = process.platform === 'darwin'
 
-const log = (m: string): void => console.log(`[studypet] ${m}`)
+const log = (m: string): void => console.log(`[bloop] ${m}`)
 
 // ------------------------------------------------------------------ single instance
 
 // Windows: needed for toast notifications (must match build.appId) and taskbar grouping.
-if (process.platform === 'win32') app.setAppUserModelId('edu.studypet.app')
+if (process.platform === 'win32') app.setAppUserModelId('edu.bloop.app')
 
 if (!app.requestSingleInstanceLock()) {
   app.quit()
@@ -222,7 +222,7 @@ app.on('before-quit', () => {
 })
 
 app.whenReady().then(() => {
-  log(`starting (platform=${process.platform}, fast=${FAST}, fake=${process.env['STUDYPET_FAKE_ACTIVE'] ?? 'no'})`)
+  log(`starting (platform=${process.platform}, fast=${FAST}, fake=${process.env['BLOOP_FAKE_ACTIVE'] ?? 'no'})`)
   if (isMac) app.dock?.hide()
   registerIpc()
   windows.createPetWindow()
@@ -240,7 +240,7 @@ app.whenReady().then(() => {
   if (icalUrl) void refreshDeadlines(icalUrl)
 
   // dev/demo: auto-start a session for headless verification
-  if (process.env['STUDYPET_AUTOSTART'] === '1') setTimeout(() => engine.start(), 1500)
+  if (process.env['BLOOP_AUTOSTART'] === '1') setTimeout(() => engine.start(), 1500)
 
   app.on('activate', () => windows.togglePanel())
 })

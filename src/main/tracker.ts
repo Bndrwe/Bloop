@@ -28,7 +28,7 @@ async function readFake(path: string): Promise<RawActive | null> {
     if (!j || typeof j.app !== 'string') return null
     return { app: j.app, title: typeof j.title === 'string' ? j.title : '', url: typeof j.url === 'string' ? j.url : undefined }
   } catch (e) {
-    console.log(`[studypet] fake active window read failed: ${(e as Error).message}`)
+    console.log(`[bloop] fake active window read failed: ${(e as Error).message}`)
     return null
   }
 }
@@ -47,10 +47,10 @@ export async function getBrowserUrl(app: string): Promise<string | undefined> {
 
 /**
  * Sample the frontmost window. Returns null if it can't be determined (e.g. no window server
- * on Linux). If STUDYPET_FAKE_ACTIVE points at a JSON file `{app, url?, title?}`, that is used instead.
+ * on Linux). If BLOOP_FAKE_ACTIVE points at a JSON file `{app, url?, title?}`, that is used instead.
  */
 export async function sampleActiveWindow(): Promise<RawActive | null> {
-  const fake = process.env['STUDYPET_FAKE_ACTIVE']
+  const fake = process.env['BLOOP_FAKE_ACTIVE']
   if (fake) return readFake(fake)
   try {
     const { activeWindow } = await import('get-windows')
@@ -67,7 +67,7 @@ export async function sampleActiveWindow(): Promise<RawActive | null> {
   } catch (e) {
     if (!loggedTrackerError) {
       loggedTrackerError = true
-      console.log(`[studypet] active window unavailable: ${(e as Error).message}`)
+      console.log(`[bloop] active window unavailable: ${(e as Error).message}`)
     }
     return null
   }

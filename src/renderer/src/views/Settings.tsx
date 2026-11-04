@@ -313,7 +313,7 @@ export function SettingsView(): JSX.Element {
   }
 
   const reset = async (): Promise<void> => {
-    if (!confirm('Reset all Study Pet data? This deletes your session history and restores default settings.')) return
+    if (!confirm('Reset all Bloop data? This deletes your session history and restores default settings.')) return
     try {
       if (timer.current) window.clearTimeout(timer.current)
       pending.current = {}
@@ -433,7 +433,7 @@ export function SettingsView(): JSX.Element {
             onChange={(n) => update({ breakMinutes: n })}
           />
           <label className="row-toggle">
-            <span>Open Study Pet when you log in</span>
+            <span>Open Bloop when you log in</span>
             <span className="toggle">
               <input
                 type="checkbox"

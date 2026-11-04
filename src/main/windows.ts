@@ -85,7 +85,7 @@ export function createPetWindow(): BrowserWindow {
     focusable: !isWin,
     ...(isWin ? { thickFrame: false, roundedCorners: false } : {}),
     show: false,
-    title: 'Study Pet',
+    title: 'Bloop',
     webPreferences: webPreferences()
   })
   setTopLevel(win, 'pet')
@@ -188,7 +188,7 @@ function createPanelWindow(): BrowserWindow {
     alwaysOnTop: true,
     skipTaskbar: true,
     show: false,
-    title: 'Study Pet',
+    title: 'Bloop',
     backgroundColor: '#000000',
     roundedCorners: true,
     webPreferences: webPreferences()
@@ -266,7 +266,7 @@ function bringToFront(win: BrowserWindow): void {
 export function openSettings(): void {
   closePanel()
   if (settingsWin && !settingsWin.isDestroyed()) return bringToFront(settingsWin)
-  settingsWin = framedWindow('settings', 760, 640, 'Study Pet — Settings')
+  settingsWin = framedWindow('settings', 760, 640, 'Bloop — Settings')
   settingsWin.on('closed', () => {
     settingsWin = null
   })
@@ -275,7 +275,7 @@ export function openSettings(): void {
 
 export function openOnboarding(): void {
   if (onboardingWin && !onboardingWin.isDestroyed()) return bringToFront(onboardingWin)
-  onboardingWin = framedWindow('onboarding', 520, 560, 'Welcome to Study Pet')
+  onboardingWin = framedWindow('onboarding', 520, 560, 'Welcome to Bloop')
   onboardingWin.on('closed', () => {
     onboardingWin = null
   })

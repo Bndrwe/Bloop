@@ -10,7 +10,7 @@ let automation: PermissionState = isMac ? 'unknown' : 'not-applicable'
 
 export function setAutomationState(s: PermissionState): void {
   if (!isMac) return
-  if (s !== automation) console.log(`[studypet] automation permission -> ${s}`)
+  if (s !== automation) console.log(`[bloop] automation permission -> ${s}`)
   automation = s
 }
 

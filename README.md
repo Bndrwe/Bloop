@@ -1,4 +1,6 @@
-# Study Pet 🌱
+# Bloop 🌱
+
+_Your little study pet._
 
 A small, cute desktop pet that lives in the top-right corner of your screen, watches whether you're focused, keeps a live **focus score**, and gently nudges you when you drift off task.
 
@@ -51,7 +53,7 @@ Other scripts:
 | `npm run dev` | Run the app with hot reload |
 | `npm test` | Unit tests (classifier + focus score) |
 | `npm run typecheck` | Strict TypeScript check for main and renderer |
-| `npm run build` | Typecheck, bundle, and produce an unsigned `Study Pet.app` in `dist/mac*/` (macOS) |
+| `npm run build` | Typecheck, bundle, and produce an unsigned `Bloop.app` in `dist/mac*/` (macOS) |
 | `npm run build:mac` | Same, but also packages a `.dmg` (macOS) |
 | `npm run build:win` | Build an NSIS installer and a portable `.exe` into `dist/` (Windows) |
 
@@ -65,7 +67,7 @@ Because the build is unsigned, macOS Gatekeeper will complain the first time. Ri
 
 Windows needs no special permissions. Active window detection works out of the box.
 
-Browser tab URLs can't be read with AppleScript on Windows, so Study Pet infers the site from the browser window title instead. For example, `YouTube — Google Chrome` is treated as youtube.com. This is a little less precise than on macOS, but the same site lists apply.
+Browser tab URLs can't be read with AppleScript on Windows, so Bloop infers the site from the browser window title instead. For example, `YouTube — Google Chrome` is treated as youtube.com. This is a little less precise than on macOS, but the same site lists apply.
 
 On Windows the pet sits at the top-right of the work area, above the taskbar, and the tray icon appears near the clock.
 
@@ -87,12 +89,12 @@ In Brightspace open **Calendar → Subscribe** and copy the iCal URL. Paste it i
 
 ## Permissions (macOS only)
 
-On first run on macOS, Study Pet checks its permissions and shows a short guide with buttons that open the right System Settings pane. Windows doesn't need any of these.
+On first run on macOS, Bloop checks its permissions and shows a short guide with buttons that open the right System Settings pane. Windows doesn't need any of these.
 
 | Permission | Why | Without it |
 |---|---|---|
 | **Screen Recording** (Privacy & Security → Screen Recording) | macOS hides window titles from apps that don't have it | App names still work; window titles are blank |
-| **Automation** (Privacy & Security → Automation → Study Pet → your browser) | Lets Study Pet ask Chrome / Arc / Safari for the current tab URL via AppleScript | Browsers count as *neutral*, so YouTube and Google Docs can't be told apart |
+| **Automation** (Privacy & Security → Automation → Bloop → your browser) | Lets Bloop ask Chrome / Arc / Safari for the current tab URL via AppleScript | Browsers count as *neutral*, so YouTube and Google Docs can't be told apart |
 | **Notifications** | Distraction notifications and study reminders | The pet still talks in its speech bubble |
 
 After you grant Screen Recording, macOS may ask you to quit and reopen the app.
@@ -123,7 +125,7 @@ The defaults (all editable in Settings):
 
 ## Design
 
-Study Pet is strictly black and white. The canvas is pure black (`#000`), the ink is pure white (`#fff`), and a few neutral greys handle secondary text and hairlines. There are no gradients, glows, frosted glass or textures, with one exception: the chrome hero described below. Cards are flat black with a 1px grey hairline. Primary buttons are solid white with black text; secondary buttons are black with a white hairline. The only ornament is a fine grey zigzag rule. All colours are CSS custom properties on `:root` in `src/renderer/src/styles/base.css` (`--ink`, `--paper`, `--g1` … `--g5`).
+Bloop is strictly black and white. The canvas is pure black (`#000`), the ink is pure white (`#fff`), and a few neutral greys handle secondary text and hairlines. There are no gradients, glows, frosted glass or textures, with one exception: the chrome hero described below. Cards are flat black with a 1px grey hairline. Primary buttons are solid white with black text; secondary buttons are black with a white hairline. The only ornament is a fine grey zigzag rule. All colours are CSS custom properties on `:root` in `src/renderer/src/styles/base.css` (`--ink`, `--paper`, `--g1` … `--g5`).
 
 Without colour, state is shown by **fill, outline, dashes, weight and words**:
 
@@ -171,8 +173,8 @@ The pet is drawn by one component that takes a `mood` prop. Skins live in `src/r
 ## Demo / testing tips
 
 - **Unit tests**: `npm test` runs the unit tests for the classifier and the focus score.
-- **Faster timings**: set `STUDYPET_FAST=1` to shorten Pomodoro and nudge timings. This is handy for demos.
-- **Fake active window**: set `STUDYPET_FAKE_ACTIVE=/path/to/file.json` and the tracker reads `{"app": "...", "url": "..."}` from that file instead of asking the OS. Edit the file while the app runs to simulate switching between apps and sites. This is useful for demos and automated testing.
+- **Faster timings**: set `BLOOP_FAST=1` to shorten Pomodoro and nudge timings. This is handy for demos.
+- **Fake active window**: set `BLOOP_FAKE_ACTIVE=/path/to/file.json` and the tracker reads `{"app": "...", "url": "..."}` from that file instead of asking the OS. Edit the file while the app runs to simulate switching between apps and sites. This is useful for demos and automated testing.
 
 ## Roadmap
 

@@ -48,7 +48,7 @@ export function Pet({ mood, size, skin = DEFAULT_SKIN, outlined = false, classNa
       className={`pet pet--${mood}${outlined ? ' pet--outlined' : ''}${className ? ` ${className}` : ''}`}
       style={style}
       role="img"
-      aria-label={`Study Pet, ${MOOD_LABEL[mood]}`}
+      aria-label={`Bloop, ${MOOD_LABEL[mood]}`}
     >
       <svg className="pet-halo-defs" width="0" height="0" aria-hidden="true" focusable="false">
         <filter id={haloId} x="-20%" y="-20%" width="140%" height="140%" colorInterpolationFilters="sRGB">

@@ -18,7 +18,7 @@ export function loadEnv(dirs: string[]): void {
     const p = join(d, '.env')
     if (existsSync(p)) {
       dotenv.config({ path: p, quiet: true } as dotenv.DotenvConfigOptions)
-      console.log(`[studypet] loaded env from ${p}`)
+      console.log(`[bloop] loaded env from ${p}`)
     }
   }
 }
@@ -97,7 +97,7 @@ export function parsePlan(text: string, now = Date.now()): StudyPlan {
 
 export async function generatePlan(deadlines: Deadline[], stats: Stats, settings: Settings): Promise<Result<StudyPlan>> {
   if (!hasApiKey()) {
-    return { ok: false, error: 'No ANTHROPIC_API_KEY set in .env — add one to the project folder (or app folder) and restart Study Pet.' }
+    return { ok: false, error: 'No ANTHROPIC_API_KEY set in .env — add one to the project folder (or app folder) and restart Bloop.' }
   }
   try {
     const client = new Anthropic({ apiKey: process.env['ANTHROPIC_API_KEY'] })
@@ -113,7 +113,7 @@ export async function generatePlan(deadlines: Deadline[], stats: Stats, settings
     if (res.stop_reason === 'refusal') return { ok: false, error: 'The model declined to make a plan. Try again later.' }
     const text = res.content.map((b) => (b.type === 'text' ? b.text : '')).join('')
     const plan = parsePlan(text)
-    console.log(`[studypet] plan generated: ${plan.blocks.length} blocks`)
+    console.log(`[bloop] plan generated: ${plan.blocks.length} blocks`)
     return { ok: true, value: plan }
   } catch (e) {
     if (e instanceof Anthropic.AuthenticationError) return { ok: false, error: 'Your ANTHROPIC_API_KEY was rejected. Check the key in .env.' }

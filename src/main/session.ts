@@ -128,7 +128,7 @@ export class SessionEngine extends EventEmitter {
       clearTimeout: (h) => clearTimeout(h as ReturnType<typeof setTimeout>),
       fast: false,
       random: Math.random,
-      log: (m) => console.log(`[studypet] ${m}`),
+      log: (m) => console.log(`[bloop] ${m}`),
       ...deps
     } as SessionEngine['d']
   }
@@ -422,7 +422,7 @@ export class SessionEngine extends EventEmitter {
         if (streak >= tm.notifyAfterSec && !this.notifiedThisStreak) {
           this.notifiedThisStreak = true
           this.d.log('nudge notification')
-          this.d.notify('Study Pet misses you 🐾', `You've been off task for ${formatDur(streak)}. Let's get back to it together!`)
+          this.d.notify('Bloop misses you 🐾', `You've been off task for ${formatDur(streak)}. Let's get back to it together!`)
         }
       } else if (streak >= tm.sadAfterSec) {
         this.setMood('sad')

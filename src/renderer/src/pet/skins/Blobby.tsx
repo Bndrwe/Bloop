@@ -2,7 +2,7 @@ import type { PetMood } from '@shared/types'
 import type { PetSkinProps } from './types'
 
 /**
- * "Blobby" — the default Study Pet: a round creature with a sprout, drawn as black-and-white line art.
+ * "Blobby" — the default Bloop: a round creature with a sprout, drawn as black-and-white line art.
  * White paper body + black ink outline, so it reads on both light and dark wallpapers.
  * Pure inline SVG, flat fills only; animation hooks are the `pb-*` class names styled in pet.css.
  */

@@ -51,7 +51,7 @@ export async function refreshDeadlines(icalUrl: string): Promise<Result<Deadline
     if (!/BEGIN:VCALENDAR/i.test(body)) return { ok: false, error: "That URL didn't return an iCal calendar." }
     const items = parseDeadlines(ical.sync.parseICS(body) as Record<string, unknown>)
     setDeadlinesCache({ fetchedAt: Date.now(), url, items })
-    console.log(`[studypet] deadlines refreshed: ${items.length} upcoming`)
+    console.log(`[bloop] deadlines refreshed: ${items.length} upcoming`)
     return { ok: true, value: items }
   } catch (e) {
     return { ok: false, error: `Couldn't load calendar: ${(e as Error).message}` }

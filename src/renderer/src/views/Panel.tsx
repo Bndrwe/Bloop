@@ -532,7 +532,7 @@ export function Panel(): JSX.Element {
         <header className="hero-bar">
           <div className="hero-brand">
             <Pet mood={status.pet.mood} size={30} />
-            <h1 className="serif">Study Pet</h1>
+            <h1 className="serif">Bloop</h1>
           </div>
           <div className="hero-actions">
             <button className="icon-btn icon-btn--pill" aria-label="Settings" onClick={() => void window.studyPet.openSettings()}>

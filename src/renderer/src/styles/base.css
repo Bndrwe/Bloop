@@ -1,4 +1,4 @@
-/* Study Pet — monochrome ink: black canvas, white ink, grey hairlines. Flat fills only, no hue.
+/* Bloop — monochrome ink: black canvas, white ink, grey hairlines. Flat fills only, no hue.
    State is carried by fill vs outline vs dashes, weight and labels — never by colour. */
 :root {
   --sans: 'Geist Sans', 'Geist', system-ui, sans-serif;
