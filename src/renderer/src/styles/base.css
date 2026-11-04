@@ -259,11 +259,11 @@ textarea {
   color: var(--text);
 }
 
-/* Flat card: near-black, held by a hairline. --card-alpha (0.92 → 0.72) follows the
+/* Flat card: near-black, held by a hairline. --card-alpha (0.97 → 0.90) follows the
    smoke intensity, set from Settings → Background; --g4 is lifted with it to keep AA contrast. */
 .card {
   position: relative;
-  background: rgb(0 0 0 / var(--card-alpha, 0.88));
+  background: rgb(0 0 0 / var(--card-alpha, 0.95));
   border: 1px solid var(--hairline);
   border-radius: var(--r-lg);
 }
