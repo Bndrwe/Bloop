@@ -5,7 +5,7 @@ import { IPC } from '@shared/ipc'
 import type { AppStatus, Settings } from '@shared/types'
 import { getDeadlines, refreshDeadlines } from './deadlines'
 import { generatePlan, hasApiKey, loadEnv, planToReminders } from './plan'
-import { getPermissions, openPermissionSettings, refreshPermissions, requestAutomation } from './permissions'
+import { getPermissions, openPermissionSettings, probeAutomation, refreshPermissions, requestAutomation } from './permissions'
 import { ReminderScheduler } from './reminders'
 import { SessionEngine, type NotifyOptions } from './session'
 import * as store from './store'
@@ -243,9 +243,13 @@ app.whenReady().then(() => {
   reminders.start()
   applyLoginItem(store.getSettings())
 
-  const perms = getPermissions()
-  log(`permissions: screen=${perms.screenRecording} automation=${perms.automation} onboarding=${perms.showOnboarding}`)
-  if (perms.showOnboarding) windows.openOnboarding()
+  // Probe Automation first: until something asks a browser, it reads "unknown", which used to
+  // reopen the welcome screen (and show "Not checked yet") on every launch even after granting.
+  void probeAutomation().then(() => {
+    const perms = getPermissions()
+    log(`permissions: screen=${perms.screenRecording} automation=${perms.automation} onboarding=${perms.showOnboarding}`)
+    if (perms.showOnboarding) windows.openOnboarding()
+  })
 
   // keep the deadline cache fresh (stretch)
   const icalUrl = store.getSettings().icalUrl

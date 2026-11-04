@@ -19,7 +19,7 @@ echo "bundle id: $BID  binary: $BIN"
 # Code requirement blobs, so tccd can match the grant to this exact (ad-hoc, cdhash) signature.
 req_hex() { # $1 = path to code; prints hex blob or NULL
   local req tmp
-  req=$(codesign -d -r- "$1" 2>&1 | sed -n 's/^designated => //p')
+  req=$(codesign -d -r- "$1" 2>&1 | sed -n 's/^\(# \)\{0,1\}designated => //p')
   if [[ -z "$req" ]]; then echo "NULL"; return; fi
   tmp=$(mktemp)
   if echo "$req" | csreq -r- -b "$tmp" 2>/dev/null; then
@@ -31,8 +31,8 @@ req_hex() { # $1 = path to code; prints hex blob or NULL
 }
 APP_REQ=$(req_hex "$APP")
 SAFARI_REQ=$(req_hex /Applications/Safari.app)
-echo "designated requirement (app): $(codesign -d -r- "$APP" 2>&1 | sed -n 's/^designated => //p')"
-echo "designated requirement (Safari): $(codesign -d -r- /Applications/Safari.app 2>&1 | sed -n 's/^designated => //p')"
+echo "designated requirement (app): $(codesign -d -r- "$APP" 2>&1 | sed -n 's/^\(# \)\{0,1\}designated => //p')"
+echo "designated requirement (Safari): $(codesign -d -r- /Applications/Safari.app 2>&1 | sed -n 's/^\(# \)\{0,1\}designated => //p')"
 
 COLS="service, client, client_type, auth_value, auth_reason, auth_version, csreq, policy_id, indirect_object_identifier_type, indirect_object_identifier, indirect_object_code_identity, flags, last_modified"
 ins() { # db service client client_type csreq indirect_id indirect_req

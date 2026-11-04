@@ -110,7 +110,9 @@ say "  last refresh: \`$(last_refresh "$LOG")\`"
 check "A: app started and logged its permission state" grep -q '\[bloop\] permissions:' "$LOG"
 check "A: Screen Recording is NOT reported granted before the grant" bash -c "! grep -q 'permissions: screen=granted' '$LOG'"
 check "A: session auto-started" grep -q '\[bloop\] session start' "$LOG"
-check "A: real active-window samples are being taken" grep -q '\[bloop\] sample app=' "$LOG"
+check "A: real active-window samples are being taken (not \"Unknown\")" grep -qE '\[bloop\] sample app="[^U"][^"]*"|\[bloop\] sample app="U[^n]' "$LOG"
+if grep -q 'active window unavailable' "$LOG"; then say "  tracker error: \`$(grep -m1 'active window unavailable' "$LOG")\`"; fi
+say "  raw samples: \`$(grep -m1 'trace raw:' "$LOG")\`"
 say "  sample lines (last 3):"
 grep '\[bloop\] sample app=' "$LOG" | tail -3 | sed 's/^/      /' | tee -a "$SUMMARY" >/dev/null
 
@@ -143,6 +145,7 @@ sleep 8
 say "  \`$(perm_line "$LOG")\`"
 check "B: Screen Recording reported granted after relaunch" grep -q 'permissions: screen=granted' "$LOG"
 check "B: session auto-started" grep -q '\[bloop\] session start' "$LOG"
+check "B: welcome screen not reopened when everything is granted (browser running)" grep -q 'permissions: screen=granted automation=granted onboarding=false' "$LOG"
 
 stage() { # name app-to-activate seconds [open args...]
   local name="$1" appname="$2" secs="$3"

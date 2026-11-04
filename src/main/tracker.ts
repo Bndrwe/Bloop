@@ -1,4 +1,7 @@
+import { execFile } from 'node:child_process'
 import { readFile } from 'node:fs/promises'
+import { createRequire } from 'node:module'
+import { dirname, join } from 'node:path'
 import { getScreenRecordingState, runOsascript, setAutomationState } from './permissions'
 
 export interface RawActive {
@@ -45,6 +48,38 @@ export async function getBrowserUrl(app: string): Promise<string | undefined> {
   return undefined
 }
 
+interface NativeWindow {
+  title?: string
+  url?: string
+  owner?: { name?: string }
+}
+
+/**
+ * Path of get-windows' macOS helper binary. In the packaged app it lives in
+ * app.asar.unpacked (see build.asarUnpack): get-windows itself would spawn it via the app.asar
+ * path, and because it calls the promisified execFile (Node's original, not Electron's asar-aware
+ * wrapper) that fails with "spawn ENOTDIR", so every sample came back "Unknown".
+ */
+function macWindowsBinary(): string {
+  const dir = dirname(createRequire(import.meta.url).resolve('get-windows'))
+  return join(dir, 'main').replace(/\.asar([\\/])/, '.asar.unpacked$1')
+}
+
+function macActiveWindow(screenRecording: boolean): Promise<NativeWindow | null> {
+  const args = ['--no-accessibility-permission']
+  if (!screenRecording) args.push('--no-screen-recording-permission')
+  return new Promise((resolve, reject) => {
+    execFile(macWindowsBinary(), args, { timeout: 4000 }, (err, stdout) => {
+      if (err) return reject(err)
+      try {
+        resolve(JSON.parse(String(stdout)) as NativeWindow | null)
+      } catch {
+        reject(new Error('could not parse active window data'))
+      }
+    })
+  })
+}
+
 /**
  * Sample the frontmost window. Returns null if it can't be determined (e.g. no window server
  * on Linux). If BLOOP_FAKE_ACTIVE points at a JSON file `{app, url?, title?}`, that is used instead.
@@ -53,11 +88,13 @@ export async function sampleActiveWindow(): Promise<RawActive | null> {
   const fake = process.env['BLOOP_FAKE_ACTIVE']
   if (fake) return readFake(fake)
   try {
-    const { activeWindow } = await import('get-windows')
-    const w = await activeWindow({
-      accessibilityPermission: false,
-      screenRecordingPermission: getScreenRecordingState() === 'granted'
-    })
+    const screenRecording = getScreenRecordingState() === 'granted'
+    let w: NativeWindow | null
+    if (isMac) w = await macActiveWindow(screenRecording)
+    else {
+      const { activeWindow } = await import('get-windows')
+      w = (await activeWindow({ accessibilityPermission: false, screenRecordingPermission: screenRecording })) ?? null
+    }
     if (!w) return null
     const app = w.owner?.name ?? ''
     const res: RawActive = { app, title: w.title ?? '' }
