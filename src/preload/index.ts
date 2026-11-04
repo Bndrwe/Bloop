@@ -42,6 +42,7 @@ const api: StudyPetApi = {
   openPermissionSettings: (kind) => inv(IPC.openPermissionSettings, kind),
   requestAutomation: () => inv(IPC.requestAutomation),
   dismissOnboarding: () => inv(IPC.dismissOnboarding),
+  relaunchApp: () => inv(IPC.relaunchApp),
 
   getDeadlines: () => inv(IPC.getDeadlines),
   refreshDeadlines: () => inv(IPC.refreshDeadlines),

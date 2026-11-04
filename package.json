@@ -17,7 +17,8 @@
     "build": "npm run typecheck && electron-vite build && electron-builder --mac --dir",
     "build:mac": "npm run typecheck && electron-vite build && electron-builder --mac",
     "build:win": "npm run typecheck && electron-vite build && electron-builder --win",
-    "build:vite": "electron-vite build"
+    "build:vite": "electron-vite build",
+    "perms": "bash scripts/mac-permissions.sh"
   },
   "build": {
     "appId": "edu.bloop.app",
@@ -39,7 +40,7 @@
       "target": [
         "dmg"
       ],
-      "identity": null,
+      "identity": "-",
       "extendInfo": {
         "LSUIElement": true,
         "NSAppleEventsUsageDescription": "Bloop reads the URL of your front browser tab to tell study sites from distracting ones. Nothing leaves your Mac."

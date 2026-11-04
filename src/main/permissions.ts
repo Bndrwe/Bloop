@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process'
-import { shell, systemPreferences } from 'electron'
+import { desktopCapturer, shell, systemPreferences } from 'electron'
 import type { PermissionState, PermissionStatus } from '@shared/types'
 import { isOnboardingDismissed } from './store'
 
@@ -39,8 +39,45 @@ export function getPermissions(): PermissionStatus {
   return status
 }
 
+/**
+ * Ask macOS for screen capture once so Bloop shows up in System Settings → Screen Recording
+ * (otherwise the user has to add it with "+"). On first call this also shows the system prompt.
+ */
+export async function registerScreenCapture(): Promise<void> {
+  if (!isMac || getScreenRecordingState() === 'granted') return
+  try {
+    await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 1, height: 1 } })
+  } catch (e) {
+    console.log(`[bloop] screen capture registration failed: ${(e as Error).message}`)
+  }
+}
+
+/**
+ * Re-learn the Automation state by actually asking a running browser for its URL.
+ * Without this, "Re-check" would keep returning the state remembered from the last sample.
+ */
+export async function probeAutomation(): Promise<void> {
+  if (!isMac || automation === 'granted') return
+  for (const [app, cmd] of BROWSER_SCRIPTS) {
+    const script = `if application "${app}" is running then\ntell application "${app}" to ${cmd}\nend if`
+    const r = await runOsascript(script, 4000)
+    if (r.ok) {
+      if (r.out) return setAutomationState('granted')
+      continue // not running
+    }
+    if (r.denied) return setAutomationState('denied')
+  }
+}
+
+/** Fresh permission status: re-probes Automation. Screen Recording only refreshes after a relaunch (macOS caches it per process). */
+export async function refreshPermissions(): Promise<PermissionStatus> {
+  await probeAutomation()
+  return getPermissions()
+}
+
 export async function openPermissionSettings(kind: 'screenRecording' | 'automation'): Promise<void> {
   if (!isMac) return
+  if (kind === 'screenRecording') await registerScreenCapture()
   const anchor = kind === 'automation' ? 'Privacy_Automation' : 'Privacy_ScreenCapture'
   await shell.openExternal(`x-apple.systempreferences:com.apple.preference.security?${anchor}`)
 }

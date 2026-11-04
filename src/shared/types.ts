@@ -198,6 +198,8 @@ export interface StudyPetApi {
   openPermissionSettings(kind: 'screenRecording' | 'automation'): Promise<void>
   requestAutomation(): Promise<PermissionStatus>
   dismissOnboarding(): Promise<void>
+  /** Quit and reopen Bloop (macOS only re-reads Screen Recording permission on launch). */
+  relaunchApp(): Promise<void>
 
   // stretch: deadlines + AI plan
   getDeadlines(): Promise<Result<Deadline[]>>

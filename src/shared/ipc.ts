@@ -29,6 +29,7 @@ export const IPC = {
   openPermissionSettings: 'perm:open',
   requestAutomation: 'perm:request-automation',
   dismissOnboarding: 'perm:dismiss',
+  relaunchApp: 'app:relaunch',
 
   getDeadlines: 'deadlines:get',
   refreshDeadlines: 'deadlines:refresh',
