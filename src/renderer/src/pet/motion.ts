@@ -51,7 +51,7 @@ export function startMoodMotion(root: Element, mood: PetMood): () => void {
     case 'idle':
     case 'wave':
       run('.pb-bob', { translateY: { from: 0, to: -3.5 }, duration: 1500, ease: sine, loop: true, alternate: true })
-      run('.pb-shadow', { scaleX: { from: 1, to: 0.9 }, opacity: { from: 0.13, to: 0.08 }, duration: 1500, ease: sine, loop: true, alternate: true })
+      run('.pb-shadow', { scaleX: { from: 1, to: 0.9 }, opacity: { from: 0.45, to: 0.28 }, duration: 1500, ease: sine, loop: true, alternate: true })
       run('.pb-sprout', { rotate: { from: -4, to: 5 }, duration: 2000, ease: sine, loop: true, alternate: true })
       if (mood === 'wave') {
         run('.pb-arm-wave', { rotate: { from: -12, to: 30 }, duration: 420, ease: sine, loop: true, alternate: true })

@@ -68,3 +68,107 @@ export function useReveal(ref: RefObject<HTMLElement>, active: boolean): void {
     }
   }, [ref, active])
 }
+
+/** Pop a freshly mounted element in (toasts, inline confirmations). Remount it (new key) to replay. */
+export function usePopIn(ref: RefObject<HTMLElement>): void {
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const reduce = prefersReducedMotion()
+    const anim = animate(
+      el,
+      reduce
+        ? { opacity: { from: 0, to: 1 }, duration: 160, ease: 'linear' }
+        : { opacity: { from: 0, to: 1 }, translateY: { from: 10, to: 0 }, scale: { from: 0.94, to: 1 }, duration: 420, ease: 'outBack(1.6)' }
+    )
+    return () => {
+      anim.revert()
+    }
+  }, [ref])
+}
+
+/**
+ * One-time staggered pop for small repeated items (chips, bars) inside `ref`, once `ready`.
+ * `grow` makes items rise from their baseline (scaleY) instead of popping (scale).
+ */
+export function useStaggerIn(ref: RefObject<Element>, selector: string, ready = true, grow = false): void {
+  const done = useRef(false)
+  useEffect(() => {
+    const root = ref.current
+    if (!root || !ready || done.current) return
+    const targets = Array.from(root.querySelectorAll<HTMLElement | SVGElement>(selector))
+    if (targets.length === 0) return
+    done.current = true
+    if (prefersReducedMotion()) return
+    const anim = animate(
+      targets,
+      grow
+        ? { scaleY: { from: 0, to: 1 }, duration: 900, delay: stagger(70, { start: 260 }), ease: 'outExpo' }
+        : {
+            opacity: { from: 0, to: 1 },
+            scale: { from: 0.6, to: 1 },
+            duration: 520,
+            delay: stagger(35, { start: 220 }),
+            ease: 'outBack(1.8)'
+          }
+    )
+    return () => {
+      anim.revert()
+    }
+  }, [ref, selector, ready, grow])
+}
+
+/** Soft breathing loop for loading placeholders (replaces a CSS keyframe shimmer). */
+export function useBreathe(ref: RefObject<Element>, selector: string, active: boolean): void {
+  useEffect(() => {
+    const root = ref.current
+    if (!root || !active) return
+    const targets = Array.from(root.querySelectorAll(selector))
+    if (targets.length === 0 || prefersReducedMotion()) return
+    const anim = animate(targets, {
+      opacity: { from: 1, to: 0.35 },
+      duration: 900,
+      delay: stagger(160),
+      ease: 'inOutSine',
+      loop: true,
+      alternate: true
+    })
+    return () => {
+      anim.revert()
+    }
+  }, [ref, selector, active])
+}
+
+/**
+ * Number that counts toward `value` with one anime.js tween whenever it changes.
+ * `format` turns the in-flight number into text (e.g. minutes); null shows an em dash.
+ */
+export function useCountUp(
+  ref: RefObject<HTMLElement>,
+  value: number | null | undefined,
+  format: (n: number) => string = (n) => String(Math.round(n))
+): void {
+  const shown = useRef({ v: 0 })
+  const fmt = useRef(format)
+  fmt.current = format
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    if (value == null) {
+      el.textContent = '—'
+      return
+    }
+    const paint = (): void => {
+      el.textContent = fmt.current(shown.current.v)
+    }
+    if (prefersReducedMotion() || Math.abs(value - shown.current.v) < 0.5) {
+      shown.current.v = value
+      paint()
+      return
+    }
+    const anim = animate(shown.current, { v: value, duration: 1000, ease: 'outExpo', onUpdate: paint, onComplete: paint })
+    return () => {
+      anim.pause()
+    }
+  }, [ref, value])
+}

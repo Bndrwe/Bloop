@@ -154,8 +154,12 @@
 .controls > .btn {
   flex: 1;
 }
+.controls--start {
+  flex-wrap: wrap;
+}
 .controls--start > .btn {
-  flex: none;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .now {
@@ -268,6 +272,8 @@
 }
 /* Bars: solid ink ≥70, outline 40–69, hatched <40, grey stub = no focus. */
 .week-bar {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
   fill: var(--paper);
   stroke: var(--paper);
   stroke-width: 1.5;
@@ -400,20 +406,9 @@
   height: 9px;
   border-radius: 999px;
   background: var(--g2);
-  animation: shimmer 1.4s ease-in-out infinite alternate;
 }
 .shimmer--short {
   width: 60%;
-}
-@keyframes shimmer {
-  to {
-    opacity: 0.4;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .shimmer {
-    animation: none;
-  }
 }
 
 .btn--wide {

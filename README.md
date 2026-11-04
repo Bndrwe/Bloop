@@ -15,6 +15,10 @@ Built as the MVP for a university AI class project. Everything runs locally: you
 | ![Settings](docs/screenshots/settings.png) | ![First-run permissions](docs/screenshots/onboarding.png) |
 | *Settings* | *First-run permissions* |
 
+![The pet cycling through every mood, on a white and a black background](docs/screenshots/pet-motion.gif)
+
+*Every mood, animated with anime.js, on a white and a black desktop. Panel opening: [panel-motion.gif](docs/screenshots/panel-motion.gif) (WebM versions next to them in `docs/screenshots/`).*
+
 ---
 
 ## What it does
@@ -119,10 +123,25 @@ The defaults (all editable in Settings):
 
 ## Design
 
-Study Pet has a dark UI inspired by playful campus-app aesthetics: a deep navy background, a hot-pink (`#F748B1`) accent, a subtle film grain, frosted-glass panels, and sticker-style labels.
+Study Pet is strictly black and white. The canvas is pure black (`#000`), the ink is pure white (`#fff`), and a few neutral greys handle secondary text and hairlines. There are no gradients, glows, frosted glass or textures anywhere. Cards are flat black with a 1px grey hairline. Primary buttons are solid white with black text; secondary buttons are black with a white hairline. The only ornament is a fine grey zigzag rule. All colours are CSS custom properties on `:root` in `src/renderer/src/styles/base.css` (`--ink`, `--paper`, `--g1` … `--g5`).
+
+Without colour, state is shown by **fill, outline, dashes, weight and words**:
+
+| Meaning | How it shows |
+|---|---|
+| Focus app / site | solid white chip, black text |
+| Distracting app / site | dashed white outline chip |
+| Neutral | grey text, grey outline |
+| Score 70+ / 40–69 / under 40 | heavy solid arc / thin arc / thin grey arc in the panel ring, plus the words *on track* / *wobbly* / *drifting* |
+| Score next to the pet | a black coin with a white solid dot / half dot / empty ring inside (reads on any wallpaper) |
+| Last-7-days bars | solid white (70+), white outline (40–69), hatched (under 40), grey stub (no focus), with a key under the chart; today is bold and underlined |
+| Session phase | solid tag (Focus, Done), outlined (Break), dashed (Paused), grey (Idle) |
+| Permissions | solid badge with a check (allowed), dashed badge with an alert (needs attention) |
+
+The pet is black-and-white line art: a white body with a crisp black ink outline, black eyes with white highlights, and hatch-mark blush. Around the drawing is a flat white "sticker cut" edge (an SVG morphology filter, not a blur). On light wallpapers you see the black line; on dark wallpapers you see the white edge. Speech bubbles are white balloons with black ink, like a comic.
 
 - **Typography**: Geist, Geist Mono and Instrument Serif. The fonts are bundled locally through `@fontsource`, so the app makes no network font requests.
-- **Animation**: motion uses [anime.js](https://animejs.com).
+- **Animation**: all motion runs on [anime.js](https://animejs.com) v4: the pet's mood choreography, the speech-bubble pop-in, the score ring and stat count-ups, chart bars growing in, staggered entrances for panels and settings chips, toasts, and the loading pulse. CSS transitions are only used for hover and focus feedback. With *reduce motion* turned on, everything settles into still poses or short fades.
 
 ## Project structure
 

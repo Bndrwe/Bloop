@@ -4,7 +4,7 @@ import type { AppStatus, Deadline, Stats, StudyPlan } from '@shared/types'
 import { useStatus } from '../hooks/useStatus'
 import { Pet } from '../pet/Pet'
 import { Icon } from '../lib/Icon'
-import { prefersReducedMotion, useEntrance, useReveal } from '../lib/motion'
+import { prefersReducedMotion, useBreathe, useCountUp, useEntrance, useReveal, useStaggerIn } from '../lib/motion'
 import {
   DAY_LETTERS,
   DAY_SHORT,
@@ -136,7 +136,17 @@ function Controls({ status }: { status: AppStatus }): JSX.Element {
   }
 }
 
+/** A stat that counts up from zero when the panel opens, and tweens on every change after. */
+function Stat({ value, format }: { value: number | null | undefined; format?: (n: number) => string }): JSX.Element {
+  const ref = useRef<HTMLSpanElement>(null)
+  useCountUp(ref, value, format)
+  // Starts at zero; useCountUp tweens it (or jumps straight there under reduced motion).
+  return <span ref={ref}>{value == null ? '—' : format ? format(0) : '0'}</span>
+}
+
 function WeekChart({ stats }: { stats: Stats }): JSX.Element {
+  const svgRef = useRef<SVGSVGElement>(null)
+  useStaggerIn(svgRef, '.week-bar', true, true)
   const days = stats.last7
   const max = Math.max(25 * 60, ...days.map((d) => d.focusSec))
   const W = 252
@@ -149,9 +159,11 @@ function WeekChart({ stats }: { stats: Stats }): JSX.Element {
     <div className="week-wrap">
       <div className="week-head">
         <span className="muted">Last 7 days</span>
-        <span className="num faint">{minutes(total)}</span>
+        <span className="num faint">
+          <Stat value={total} format={(n) => minutes(n)} />
+        </span>
       </div>
-      <svg className="week" viewBox={`0 0 ${W} ${H + 18}`} width="100%" role="img" aria-label="Focus minutes per day, last 7 days">
+      <svg ref={svgRef} className="week" viewBox={`0 0 ${W} ${H + 18}`} width="100%" role="img" aria-label="Focus minutes per day, last 7 days">
         <defs>
           {/* Low-score days are hatched, not tinted: the pattern carries the band. */}
           <pattern id={hatch} width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
@@ -285,6 +297,7 @@ function AiPlan(): JSX.Element | null {
   const [error, setError] = useState<string | null>(null)
   const [note, setNote] = useState<string | null>(null)
   const ref = useRef<HTMLElement>(null)
+  useBreathe(ref, '.shimmer', loading)
 
   useEffect(() => {
     const api = window.studyPet
@@ -542,17 +555,21 @@ export function Panel(): JSX.Element {
               <div>
                 <dt>avg score</dt>
                 <dd className={`num level-${scoreLevel(stats?.todayAvgScore)}`} title={scoreBand(stats?.todayAvgScore)}>
-                  {scoreText(stats?.todayAvgScore)}
+                  <Stat value={stats?.todayAvgScore} />
                   <span className="mark" aria-label={scoreBand(stats?.todayAvgScore)} />
                 </dd>
               </div>
               <div>
                 <dt>focused</dt>
-                <dd className="num">{stats ? minutes(stats.todayFocusSec) : '—'}</dd>
+                <dd className="num">
+                  <Stat value={stats?.todayFocusSec} format={(n) => minutes(n)} />
+                </dd>
               </div>
               <div>
                 <dt>sessions</dt>
-                <dd className="num">{stats ? stats.todaySessions : '—'}</dd>
+                <dd className="num">
+                  <Stat value={stats?.todaySessions} />
+                </dd>
               </div>
             </dl>
             {stats && stats.last7.length > 0 && <WeekChart stats={stats} />}

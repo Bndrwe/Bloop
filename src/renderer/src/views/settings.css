@@ -334,22 +334,10 @@
   border: 1px solid var(--paper);
   color: var(--ink);
   font-weight: 500;
-  animation: toast-in 0.3s var(--ease-out);
   z-index: 50;
 }
 .toast--error {
   background: var(--ink);
   border-style: dashed;
   color: var(--paper);
-}
-@keyframes toast-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .toast {
-    animation: none;
-  }
 }

@@ -3,7 +3,7 @@ import type { KeyboardEvent } from 'react'
 import type { Reminder, Settings } from '@shared/types'
 import { Pet } from '../pet/Pet'
 import { Icon } from '../lib/Icon'
-import { useEntrance } from '../lib/motion'
+import { useEntrance, usePopIn, useStaggerIn } from '../lib/motion'
 import { DAY_LETTERS, DAY_SHORT, errMsg } from '../lib/format'
 import './settings.css'
 
@@ -45,13 +45,16 @@ function ChipList({
     }
   }
 
+  const boxRef = useRef<HTMLDivElement>(null)
+  useStaggerIn(boxRef, '.chip')
+
   return (
     <div className="chiplist">
       <div className="chiplist-head">
         <h4>{title}</h4>
         <span className="muted">{hint}</span>
       </div>
-      <div className="chiplist-box">
+      <div className="chiplist-box" ref={boxRef}>
         {items.map((item) => (
           <span key={item} className={`chip chip--${kind}`}>
             {item}
@@ -179,6 +182,18 @@ function ReminderRow({
       <button className="icon-btn icon-del" aria-label="Delete reminder" onClick={onDelete}>
         <Icon name="trash" size={15} />
       </button>
+    </div>
+  )
+}
+
+/** Saved / error toast; anime.js pops it in on each mount (keyed per toast). */
+function Toast({ text, ok }: { text: string; ok: boolean }): JSX.Element {
+  const ref = useRef<HTMLDivElement>(null)
+  usePopIn(ref)
+  return (
+    <div className={`toast${ok ? '' : ' toast--error'}`} ref={ref} role="status">
+      <Icon name={ok ? 'check' : 'alert'} size={14} />
+      {text}
     </div>
   )
 }
@@ -490,12 +505,7 @@ export function SettingsView(): JSX.Element {
         </button>
       </section>
 
-      {toast && (
-        <div className={`toast${toast.ok ? '' : ' toast--error'}`} key={toast.id} role="status">
-          <Icon name={toast.ok ? 'check' : 'alert'} size={14} />
-          {toast.text}
-        </div>
-      )}
+      {toast && <Toast key={toast.id} text={toast.text} ok={toast.ok} />}
     </div>
   )
 }
