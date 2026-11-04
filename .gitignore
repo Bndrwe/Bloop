@@ -23,3 +23,10 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 .idea/
+
+# Bloop model training kit
+ml/.venv/
+ml/out/
+ml/cache/
+*.gguf
+*.safetensors

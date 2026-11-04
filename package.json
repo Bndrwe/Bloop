@@ -18,7 +18,9 @@
     "build:mac": "npm run typecheck && electron-vite build && electron-builder --mac",
     "build:win": "npm run typecheck && electron-vite build && electron-builder --win",
     "build:vite": "electron-vite build",
-    "perms": "bash scripts/mac-permissions.sh"
+    "perms": "bash scripts/mac-permissions.sh",
+    "model:train": "bash ml/run_mac.sh",
+    "model:publish": "bash ml/publish.sh"
   },
   "build": {
     "appId": "edu.bloop.app",

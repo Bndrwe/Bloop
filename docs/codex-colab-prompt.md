@@ -22,7 +22,10 @@ Fine-tune **Qwen/Qwen3.5-0.8B** (https://huggingface.co/Qwen/Qwen3.5-0.8B) with 
 
 1. Open https://colab.research.google.com and go to **File → Upload notebook**. Upload `ml/colab/train_bloop.ipynb`. Without the notebook, choose **New notebook** instead.
 2. Choose **Runtime → Change runtime type → Hardware accelerator: T4 GPU → Save**. Run `!nvidia-smi` and confirm it shows a Tesla T4. If no GPU is available (quota), stop and tell me.
-3. Open the **Files** sidebar (folder icon) and upload `train.jsonl` and `eval.jsonl` to `/content/`.
+3. The repo is **private**, so the notebook's `git clone` cell will fail without credentials. Don't paste a GitHub token. Instead:
+   - On the local machine, zip the kit **without** heavy folders: `cd <repo> && zip -r bloop-ml.zip ml -x 'ml/.venv/*' 'ml/out/*' 'ml/cache/*'`
+   - In Colab's **Files** sidebar (folder icon), upload `bloop-ml.zip`, then run a cell: `!mkdir -p /content/StudyPet && unzip -o -q /content/bloop-ml.zip -d /content/StudyPet && ls /content/StudyPet/ml`
+   - Skip or let the clone cell no-op: it only clones if `/content/StudyPet` doesn't exist. The data is inside the zip at `ml/data/train.jsonl` and `ml/data/eval.jsonl`. If the notebook asks you to upload them separately, upload those two files to `/content/`.
 4. Run the notebook cells top to bottom: **Runtime → Run all**, or one at a time. Wait for each cell to finish and read its output before going on.
    - The install cell may print dependency warnings. Those are fine unless a later import fails.
    - If `flash-linear-attention` or `causal-conv1d` fails to install, skip it. Training just runs slower.
