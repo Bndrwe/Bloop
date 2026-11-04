@@ -4,6 +4,10 @@ A small, cute desktop pet that lives in the top-right corner of your screen, wat
 
 Built as the MVP for a university AI class project. Everything runs locally: your activity data never leaves your machine. The one optional exception is the AI study plan, which sends your upcoming deadlines and focus stats to Claude, and only when you click the button.
 
+![Focus loop: focused on Code (100) → drifted to YouTube (59, pet worried) → back on track (65)](docs/screenshots/demo-flow.png)
+
+*The core loop, captured from the running app: focus → drift → nudge → back on track.*
+
 | | |
 |:---:|:---:|
 | ![Pet moods](docs/screenshots/pet-moods.png) | ![Panel](docs/screenshots/panel.png) |
