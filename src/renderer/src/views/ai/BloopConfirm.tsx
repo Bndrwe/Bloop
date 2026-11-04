@@ -4,8 +4,8 @@ import { formatBytes } from '../../hooks/useAi'
 
 /** Text of the download offer; shared by Settings → AI and the panel's plan card. */
 export function bloopOfferText(bloop: LocalStatus['bloop']): string {
-  const size = bloop.sizeBytes ? ` (~${formatBytes(bloop.sizeBytes)})` : ''
-  return `Download the Bloop model${size}? It runs on this device, nothing leaves your computer.`
+  const mb = bloop.sizeBytes ? `It's ${formatBytes(bloop.sizeBytes)} and ` : 'It '
+  return `${mb}runs on this device, so nothing leaves your computer.`
 }
 
 /**

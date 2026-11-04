@@ -390,7 +390,6 @@ function AiPlan(): JSX.Element | null {
     return (
       <section className="card section section--quiet" ref={ref}>
         {title}
-        {plan && <p className="plan-summary">{plan.summary}</p>}
         <p className="note">Pick a model on this device or a cloud provider to plan your week.</p>
         <div className="controls controls--start">
           <button className="btn btn--small btn--primary" onClick={() => void window.studyPet.openSettings()}>
