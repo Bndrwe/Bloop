@@ -63,6 +63,9 @@ export async function sampleActiveWindow(): Promise<RawActive | null> {
     const res: RawActive = { app, title: w.title ?? '' }
     const native = 'url' in w && typeof w.url === 'string' ? w.url : undefined
     res.url = native ?? (await getBrowserUrl(app))
+    if (process.env['BLOOP_TRACE'] === '1') {
+      console.log(`[bloop] trace raw: app="${app}" titleLen=${res.title.length} url=${res.url ?? '-'} nativeUrl=${native ? 'yes' : 'no'}`)
+    }
     return res
   } catch (e) {
     if (!loggedTrackerError) {

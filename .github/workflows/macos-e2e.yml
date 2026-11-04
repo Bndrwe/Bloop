@@ -1,0 +1,113 @@
+name: macOS e2e
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/practical-davinci-ckp3nc]
+    paths-ignore:
+      - 'docs/**'
+      - 'ci-artifacts/**'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: macos-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: e2e (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      OUT: ci-out
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build Bloop.app (ad-hoc signed)
+        run: |
+          npx electron-vite build
+          npx electron-builder --mac --dir --publish never 2>&1 | tee build-log.txt
+          APP=$(ls -d dist/mac*/Bloop.app | head -1)
+          echo "APP=$APP" >> "$GITHUB_ENV"
+          echo "Built $APP"
+
+      - name: Verify code signature
+        run: |
+          mkdir -p "$OUT"
+          {
+            echo "== codesign -dv --verbose=4"
+            codesign -dv --verbose=4 "$APP" 2>&1
+            echo "== designated requirement"
+            codesign -d -r- "$APP" 2>&1
+            echo "== codesign --verify --deep --strict"
+            codesign --verify --deep --strict --verbose=2 "$APP" 2>&1; echo "exit=$?"
+            echo "== spctl (Gatekeeper, expected to reject an ad-hoc build)"
+            spctl --assess --type execute -vv "$APP" 2>&1 || true
+            echo "== Info.plist"
+            plutil -p "$APP/Contents/Info.plist" | grep -E 'CFBundleIdentifier|LSUIElement|NSAppleEvents|CFBundleExecutable'
+          } | tee "$OUT/codesign.txt"
+          codesign --verify --deep --strict "$APP"
+          codesign -dv "$APP" 2>&1 | grep -q 'Signature=adhoc'
+
+      - name: E2E (permissions, TCC grant, real app switching)
+        run: bash scripts/ci/mac-e2e.sh "$APP" "$OUT"
+
+      - name: Summary
+        if: always()
+        run: |
+          [ -f "$OUT/summary.md" ] && cat "$OUT/summary.md" >> "$GITHUB_STEP_SUMMARY" || true
+          [ -f build-log.txt ] && cp build-log.txt "$OUT/build-log.txt" || true
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bloop-macos-e2e-${{ matrix.os }}
+          path: ci-out
+          if-no-files-found: warn
+
+      - name: Commit screenshots and logs to the branch
+        if: always() && github.ref == 'refs/heads/claude/practical-davinci-ckp3nc'
+        env:
+          DEST: ci-artifacts/macos/${{ matrix.os }}
+        run: |
+          [ -d "$OUT" ] || exit 0
+          git config user.name github-actions
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          for i in 1 2 3 4 5; do
+            git fetch origin "$GITHUB_REF_NAME" && git reset --hard "origin/$GITHUB_REF_NAME" -q
+            rm -rf "$DEST" && mkdir -p "$DEST"
+            cp "$OUT"/*.txt "$OUT"/*.md "$DEST"/ 2>/dev/null || true
+            # JPEG copies keep the branch small; full PNGs are in the workflow artifact.
+            for f in "$OUT"/*.png; do
+              [ -f "$f" ] && sips -s format jpeg -s formatOptions 70 "$f" --out "$DEST/$(basename "${f%.png}").jpg" >/dev/null
+            done
+            echo "run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID (commit $GITHUB_SHA)" > "$DEST/RUN.txt"
+            git add -f "$DEST"
+            git diff --cached --quiet && exit 0
+            git commit -q -m "ci: macOS e2e results for ${{ matrix.os }} [skip ci]" -m "Run $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID on $GITHUB_SHA"
+            git push origin "HEAD:$GITHUB_REF_NAME" && exit 0
+            sleep $((i * 5))
+          done
+          echo "could not push results" && exit 1

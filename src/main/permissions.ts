@@ -53,14 +53,23 @@ export async function registerScreenCapture(): Promise<void> {
 }
 
 /**
- * Re-learn the Automation state by actually asking a running browser for its URL.
+ * AppleScript that asks a browser something only an authorised client may ask. `count windows`
+ * works even when the browser has no window or tab open (asking for the front tab's URL then
+ * fails with -1728, which used to leave Automation stuck on "unknown"). `is running` does not
+ * launch the app or prompt; the `tell` does. Returns "" when the browser isn't running.
+ */
+function automationProbeScript(app: string): string {
+  return `if application "${app}" is running then\ntell application "${app}" to count windows\nend if`
+}
+
+/**
+ * Re-learn the Automation state by actually talking to a running browser.
  * Without this, "Re-check" would keep returning the state remembered from the last sample.
  */
-export async function probeAutomation(): Promise<void> {
+export async function probeAutomation(timeoutMs = 4000): Promise<void> {
   if (!isMac || automation === 'granted') return
-  for (const [app, cmd] of BROWSER_SCRIPTS) {
-    const script = `if application "${app}" is running then\ntell application "${app}" to ${cmd}\nend if`
-    const r = await runOsascript(script, 4000)
+  for (const app of BROWSERS) {
+    const r = await runOsascript(automationProbeScript(app), timeoutMs)
     if (r.ok) {
       if (r.out) return setAutomationState('granted')
       continue // not running
@@ -97,13 +106,8 @@ export function runOsascript(script: string, timeoutMs = 2000): Promise<{ ok: tr
   })
 }
 
-const BROWSER_SCRIPTS: [string, string][] = [
-  ['Google Chrome', 'get URL of active tab of front window'],
-  ['Arc', 'get URL of active tab of front window'],
-  ['Brave Browser', 'get URL of active tab of front window'],
-  ['Microsoft Edge', 'get URL of active tab of front window'],
-  ['Safari', 'get URL of front document']
-]
+/** Browsers whose Automation permission Bloop checks (the ones tracker.ts reads tab URLs from). */
+const BROWSERS = ['Google Chrome', 'Arc', 'Brave Browser', 'Microsoft Edge', 'Safari']
 
 /**
  * Trigger the macOS Automation prompt by talking to a running browser. `is running` does not launch
@@ -111,20 +115,6 @@ const BROWSER_SCRIPTS: [string, string][] = [
  */
 export async function requestAutomation(): Promise<PermissionStatus> {
   if (!isMac) return getPermissions()
-  for (const [app, cmd] of BROWSER_SCRIPTS) {
-    const script = `if application "${app}" is running then\ntell application "${app}" to ${cmd}\nend if`
-    const r = await runOsascript(script, 30000) // user may take a while to answer the prompt
-    if (r.ok) {
-      if (r.out) {
-        setAutomationState('granted')
-        break
-      }
-      continue // not running
-    }
-    if (r.denied) {
-      setAutomationState('denied')
-      break
-    }
-  }
+  await probeAutomation(30000) // user may take a while to answer the prompt
   return getPermissions()
 }
