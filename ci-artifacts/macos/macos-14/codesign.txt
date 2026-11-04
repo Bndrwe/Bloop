@@ -38,8 +38,8 @@ Executable=/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Content
 --validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper (GPU).app
 --prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/ReactiveObjC.framework/Versions/Current/.
 --validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Squirrel.framework/Versions/Current/.
---validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/ReactiveObjC.framework/Versions/Current/.
 --prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper.app
+--validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/ReactiveObjC.framework/Versions/Current/.
 --validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper.app
 --prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper (Renderer).app
 --prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Mantle.framework/Versions/Current/.

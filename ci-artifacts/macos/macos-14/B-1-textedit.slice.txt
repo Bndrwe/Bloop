@@ -1,20 +1,9 @@
+[bloop] trace raw: app="Safari" titleLen=24 url=https://en.wikipedia.org/wiki/Study_skills nativeUrl=no
+[bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=100
+[bloop] permissions(refresh): screen=granted automation=granted onboarding=false
 [bloop] trace raw: app="TextEdit" titleLen=8 url=- nativeUrl=no
 [bloop] sample app="TextEdit" category=neutral score=100
 [bloop] mood happy -> idle
-[bloop] permissions(refresh): screen=granted automation=granted onboarding=false
-[bloop] trace raw: app="TextEdit" titleLen=8 url=- nativeUrl=no
-[bloop] sample app="TextEdit" category=neutral score=100
-[bloop] trace raw: app="TextEdit" titleLen=8 url=- nativeUrl=no
-[bloop] sample app="TextEdit" category=neutral score=100
-[bloop] trace raw: app="TextEdit" titleLen=8 url=- nativeUrl=no
-[bloop] sample app="TextEdit" category=neutral score=100
-[bloop] trace raw: app="TextEdit" titleLen=8 url=- nativeUrl=no
-[bloop] sample app="TextEdit" category=neutral score=100
-[bloop] trace raw: app="TextEdit" titleLen=8 url=- nativeUrl=no
-[bloop] sample app="TextEdit" category=neutral score=100
-[bloop] permissions(refresh): screen=granted automation=granted onboarding=false
-[bloop] trace raw: app="TextEdit" titleLen=8 url=- nativeUrl=no
-[bloop] sample app="TextEdit" category=neutral score=100
 [bloop] trace raw: app="TextEdit" titleLen=8 url=- nativeUrl=no
 [bloop] sample app="TextEdit" category=neutral score=100
 [bloop] trace raw: app="TextEdit" titleLen=8 url=- nativeUrl=no
@@ -35,5 +24,18 @@
 [bloop] trace raw: app="TextEdit" titleLen=8 url=- nativeUrl=no
 [bloop] sample app="TextEdit" category=neutral score=100
 [bloop] permissions(refresh): screen=granted automation=granted onboarding=false
+[bloop] trace raw: app="TextEdit" titleLen=8 url=- nativeUrl=no
+[bloop] sample app="TextEdit" category=neutral score=100
+[bloop] trace raw: app="TextEdit" titleLen=8 url=- nativeUrl=no
+[bloop] sample app="TextEdit" category=neutral score=100
+[bloop] trace raw: app="TextEdit" titleLen=8 url=- nativeUrl=no
+[bloop] sample app="TextEdit" category=neutral score=100
+[bloop] trace raw: app="TextEdit" titleLen=8 url=- nativeUrl=no
+[bloop] sample app="TextEdit" category=neutral score=100
+[bloop] trace raw: app="TextEdit" titleLen=8 url=- nativeUrl=no
+[bloop] sample app="TextEdit" category=neutral score=100
+[bloop] permissions(refresh): screen=granted automation=granted onboarding=false
+[bloop] trace raw: app="TextEdit" titleLen=8 url=- nativeUrl=no
+[bloop] sample app="TextEdit" category=neutral score=100
 [bloop] trace raw: app="TextEdit" titleLen=8 url=- nativeUrl=no
 [bloop] sample app="TextEdit" category=neutral score=100

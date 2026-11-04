@@ -1,9 +1,9 @@
-# Bloop macOS e2e (macOS 14.8.9, arm64, runner GitHub Actions 1000001859)
+# Bloop macOS e2e (macOS 14.8.9, arm64, runner GitHub Actions 1000001878)
 
 App: `/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app` (bundle id edu.bloop.app)
 
 ## A: launch without permissions
-  launched A via open (LaunchServices), pid(s): 21840 
+  launched A via open (LaunchServices), pid(s): 21065 
   `[bloop] permissions: screen=denied automation=unknown onboarding=true`
   last refresh: `[bloop] permissions(refresh): screen=denied automation=unknown onboarding=true`
 - PASS: A: app started and logged its permission state
@@ -52,7 +52,7 @@ App: `/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app` (bundle id 
   observation: Screen Recording still not granted in the running process (macOS caches it per process; needs relaunch)
 
 ## B: relaunch with permissions granted, drive real apps
-  launched B via open (LaunchServices), pid(s): 24196 
+  launched B via open (LaunchServices), pid(s): 23164 
   `[bloop] permissions: screen=granted automation=granted onboarding=false`
 - PASS: B: Screen Recording reported granted after relaunch
 - PASS: B: session auto-started
@@ -97,10 +97,10 @@ App: `/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app` (bundle id 
 ### 4-wikipedia
   frontmost after activating Safari: Safari
       [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=63
+      [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=63
       [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=64
       [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=65
       [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=65
-      [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=66
       [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=66
 - PASS: Safari on Wikipedia sampled as focus
 - PASS: pet happy again after coming back
