@@ -5,6 +5,8 @@ import { SettingsView } from './views/Settings'
 import { Onboarding } from './views/Onboarding'
 import { ShaderSmoke } from '@/components/ui/shader-smoke'
 import { useWindowAwake } from './hooks/useWindowAwake'
+import { useSettings } from './hooks/useSettings'
+import { backgroundTokens, DEFAULT_BACKGROUND_INTENSITY, DEFAULT_BACKGROUND_SPEED } from '@shared/background'
 
 export type Route = 'pet' | 'panel' | 'settings' | 'onboarding'
 
@@ -17,18 +19,35 @@ export function parseRoute(raw: string): Route {
 }
 
 /**
- * The faint smoke behind the panel, settings and onboarding windows (never the transparent pet).
+ * The smoke behind the panel, settings and onboarding windows (never the transparent pet).
  * One instance per window, mounted above the views so it survives their loading states.
+ * Brightness, speed and the pointer follow Settings → Background live; the cards' opacity
+ * follows brightness so the smoke shows through a little more as it gets bolder.
  * The panel hides on blur, so it stops there; settings and onboarding stay on screen beside
  * other apps, so they only stop when hidden and drop to a slow 10fps while unfocused.
  */
-function Backdrop({ route }: { route: Exclude<Route, 'pet'> }): JSX.Element {
+function Backdrop({ route }: { route: Exclude<Route, 'pet'> }): JSX.Element | null {
   const { visible, focused } = useWindowAwake()
+  const settings = useSettings()
   const panel = route === 'panel'
+  const enabled = settings?.backgroundEnabled ?? true
+  const intensity = settings?.backgroundIntensity ?? DEFAULT_BACKGROUND_INTENSITY
+  const speed = settings?.backgroundSpeed ?? DEFAULT_BACKGROUND_SPEED
+
+  useEffect(() => {
+    const root = document.documentElement.style
+    const t = backgroundTokens(intensity, enabled)
+    root.setProperty('--card-alpha', String(t.cardAlpha))
+    root.setProperty('--g4', t.tertiary)
+  }, [intensity, enabled])
+
+  if (!enabled) return null
   return (
     <ShaderSmoke
       className="app-smoke"
-      intensity={panel ? 0.42 : 0.5}
+      intensity={intensity}
+      speed={speed}
+      interactive={settings?.backgroundInteractive ?? true}
       paused={panel ? !(visible && focused) : !visible}
       fps={focused ? 30 : 10}
     />

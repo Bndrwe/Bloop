@@ -1,4 +1,5 @@
 import type { Settings } from '@shared/types'
+import { clampPercent, DEFAULT_BACKGROUND_INTENSITY, DEFAULT_BACKGROUND_SPEED } from '@shared/background'
 
 export const DEFAULT_SETTINGS: Settings = {
   focusApps: [
@@ -56,7 +57,11 @@ export const DEFAULT_SETTINGS: Settings = {
   sampleIntervalSec: 5,
   reminders: [],
   launchAtLogin: false,
-  icalUrl: ''
+  icalUrl: '',
+  backgroundEnabled: true,
+  backgroundIntensity: DEFAULT_BACKGROUND_INTENSITY,
+  backgroundSpeed: DEFAULT_BACKGROUND_SPEED,
+  backgroundInteractive: true
 }
 
 /** Merge a (possibly partial / stale) stored settings object with defaults. */
@@ -77,5 +82,10 @@ export function mergeSettings(stored: Partial<Settings> | undefined | null): Set
     const v = Number(s[k])
     s[k] = Number.isFinite(v) && v > 0 ? v : DEFAULT_SETTINGS[k]
   }
+  for (const k of ['backgroundEnabled', 'backgroundInteractive'] as const) {
+    if (typeof s[k] !== 'boolean') s[k] = DEFAULT_SETTINGS[k]
+  }
+  s.backgroundIntensity = clampPercent(s.backgroundIntensity, DEFAULT_SETTINGS.backgroundIntensity)
+  s.backgroundSpeed = clampPercent(s.backgroundSpeed, DEFAULT_SETTINGS.backgroundSpeed)
   return s
 }

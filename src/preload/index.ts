@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import { IPC } from '../shared/ipc'
-import type { AppStatus, StudyPetApi } from '../shared/types'
+import type { AppStatus, Settings, StudyPetApi } from '../shared/types'
 
 const inv = (ch: string, ...args: unknown[]) => ipcRenderer.invoke(ch, ...args)
 
@@ -28,6 +28,11 @@ const api: StudyPetApi = {
 
   getSettings: () => inv(IPC.getSettings),
   saveSettings: (patch) => inv(IPC.saveSettings, patch),
+  onSettingsChanged: (cb) => {
+    const l = (_e: IpcRendererEvent, s: Settings): void => cb(s)
+    ipcRenderer.on(IPC.settingsChanged, l)
+    return () => ipcRenderer.removeListener(IPC.settingsChanged, l)
+  },
   resetData: () => inv(IPC.resetData),
 
   openSettings: () => inv(IPC.openSettings),

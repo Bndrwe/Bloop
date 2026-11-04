@@ -15,6 +15,7 @@ export const IPC = {
 
   getSettings: 'settings:get',
   saveSettings: 'settings:save',
+  settingsChanged: 'settings:changed',
   resetData: 'data:reset',
 
   openSettings: 'win:open-settings',

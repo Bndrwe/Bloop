@@ -1,5 +1,5 @@
 .panel {
-  padding: var(--s3) var(--s3) var(--s4);
+  padding: var(--s4) var(--s4) var(--s5);
   display: flex;
   flex-direction: column;
   gap: var(--s3);
@@ -15,18 +15,21 @@
    one huge visual, oversized display type over it, a compact pill underneath).
    The chrome is the one sanctioned exception to "no gradients": it's a lit 3D material.
    Everything that sits on it is opaque black or white, so it always reads.
-   The hero is solid black: the background smoke stops at its hairline, so it never muddies the chrome. */
+   The hero is solid black and inset from the window edge: the background smoke shows around it
+   and stops at its hairline, so it never muddies the chrome. */
 .hero {
   --ring-size: 272px;
   position: relative;
   isolation: isolate;
   background: var(--ink);
-  margin: calc(-1 * var(--s3)) calc(-1 * var(--s3)) 0;
+  margin: 0;
   padding: var(--s3) var(--s3) var(--s4);
+  overflow: hidden;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-lg);
   display: flex;
   flex-direction: column;
   align-items: center;
-  border-bottom: 1px solid var(--hairline);
 }
 /* Chrome has faint warm/cool strip lights baked in; grayscale keeps it strictly achromatic. */
 .hero-chrome {

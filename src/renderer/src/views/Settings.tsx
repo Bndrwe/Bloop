@@ -3,6 +3,7 @@ import type { KeyboardEvent } from 'react'
 import type { Reminder, Settings } from '@shared/types'
 import { Pet } from '../pet/Pet'
 import { Icon } from '../lib/Icon'
+import { previewSettings } from '../hooks/useSettings'
 import { useEntrance, usePopIn, useStaggerIn } from '../lib/motion'
 import { DAY_LETTERS, DAY_SHORT, errMsg } from '../lib/format'
 import './settings.css'
@@ -118,6 +119,51 @@ function NumberField({
       </span>
       {hint && <span className="field-hint faint">{hint}</span>}
     </label>
+  )
+}
+
+function SliderField({
+  id,
+  label,
+  hint,
+  value,
+  disabled,
+  onChange
+}: {
+  id: string
+  label: string
+  hint: string
+  value: number
+  disabled?: boolean
+  onChange: (n: number) => void
+}): JSX.Element {
+  return (
+    <div className="slider">
+      <div className="slider-head">
+        <label htmlFor={id} className="field-label">
+          {label}
+        </label>
+        <output htmlFor={id} className="slider-value">
+          {value}
+        </output>
+      </div>
+      <input
+        id={id}
+        className="range"
+        type="range"
+        min={0}
+        max={100}
+        step={1}
+        value={value}
+        disabled={disabled}
+        aria-describedby={`${id}-hint`}
+        style={{ '--fill': `${value}%` } as React.CSSProperties}
+        onChange={(e) => onChange(Number(e.target.value))}
+      />
+      <span id={`${id}-hint`} className="field-hint faint">
+        {hint}
+      </span>
+    </div>
   )
 }
 
@@ -256,6 +302,12 @@ export function SettingsView(): JSX.Element {
   const update = useCallback(
     (patch: Partial<Settings>) => {
       setSettings((s) => (s ? { ...s, ...patch } : s))
+      // The smoke behind this window follows a drag at once, not after the 600ms auto-save.
+      const live: Partial<Settings> = {}
+      for (const k of ['backgroundEnabled', 'backgroundIntensity', 'backgroundSpeed', 'backgroundInteractive'] as const) {
+        if (k in patch) (live as Record<string, unknown>)[k] = patch[k]
+      }
+      if (Object.keys(live).length > 0) previewSettings(live)
       pending.current = { ...pending.current, ...patch }
       if (timer.current) window.clearTimeout(timer.current)
       timer.current = window.setTimeout(() => void flush(), 600)
@@ -445,6 +497,50 @@ export function SettingsView(): JSX.Element {
           </label>
         </section>
       </div>
+
+      <section className="card enter">
+        <h2>Background</h2>
+        <p className="section-sub muted">Soft grey smoke behind the panel, settings and welcome windows. Changes show right away.</p>
+        <label className="row-toggle row-toggle--first">
+          <span>Show background smoke</span>
+          <span className="toggle">
+            <input
+              type="checkbox"
+              checked={settings.backgroundEnabled}
+              onChange={(e) => update({ backgroundEnabled: e.target.checked })}
+            />
+            <span />
+          </span>
+        </label>
+        <SliderField
+          id="bg-intensity"
+          label="Intensity"
+          hint="0 is black, around 55 is clear, 100 is bold. Cards let a bit more through as it rises."
+          value={settings.backgroundIntensity}
+          disabled={!settings.backgroundEnabled}
+          onChange={(n) => update({ backgroundIntensity: n })}
+        />
+        <SliderField
+          id="bg-speed"
+          label="Speed"
+          hint="0 holds a still frame."
+          value={settings.backgroundSpeed}
+          disabled={!settings.backgroundEnabled}
+          onChange={(n) => update({ backgroundSpeed: n })}
+        />
+        <label className="row-toggle">
+          <span>Interactive (follows pointer)</span>
+          <span className="toggle">
+            <input
+              type="checkbox"
+              checked={settings.backgroundInteractive}
+              disabled={!settings.backgroundEnabled}
+              onChange={(e) => update({ backgroundInteractive: e.target.checked })}
+            />
+            <span />
+          </span>
+        </label>
+      </section>
 
       <section className="card enter">
         <div className="section-head">

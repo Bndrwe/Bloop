@@ -2,14 +2,21 @@
 
 import { useEffect, useRef } from "react"
 import { cn } from "@/lib/utils"
+import {
+  DEFAULT_BACKGROUND_INTENSITY,
+  DEFAULT_BACKGROUND_SPEED,
+  smokeUniforms,
+} from "@shared/background"
+
+export { smokeUniforms } from "@shared/background"
 
 export type ShaderSmokeOptions = {
   /**
-   * Overall brightness, 0–1. The smoke itself sits mostly at 0–0.12 grey
-   * with soft highlights up to ~0.3; this scales all of it. Default `0.5`.
+   * Brightness slider, 0–100 (see `smokeUniforms`). 0 is black, ~55 shows soft
+   * grey folds with highlights around 30%, 100 is bold. Default `55`.
    */
   intensity?: number
-  /** Drift speed. `1` is a slow, dreamy drift. Default `1`. */
+  /** Drift slider, 0–100. 0 is a still frame, 40 a slow dreamy drift. Default `40`. */
   speed?: number
   /** The pointer gently swirls and lifts the smoke near it. Default `true`. */
   interactive?: boolean
@@ -28,8 +35,8 @@ export type ShaderSmokeInstance = {
   destroy: () => void
 }
 
-export const DEFAULT_SMOKE_INTENSITY = 0.5
-export const DEFAULT_SMOKE_SPEED = 1
+export const DEFAULT_SMOKE_INTENSITY = DEFAULT_BACKGROUND_INTENSITY
+export const DEFAULT_SMOKE_SPEED = DEFAULT_BACKGROUND_SPEED
 export const DEFAULT_SMOKE_FPS = 30
 
 const VERT = `
@@ -47,7 +54,7 @@ uniform float u_time;
 uniform vec2 u_mouse;
 uniform float u_presence;
 uniform float u_stir;
-uniform float u_intensity;
+uniform float u_gain;
 uniform float u_frame;
 
 float hash(vec2 p) {
@@ -125,26 +132,24 @@ void main() {
   vec3 L = normalize(vec3(-0.55, 0.65, 0.5));
   float lit = clamp(dot(n, L), 0.0, 1.0);
 
-  // Smoke mass: where the warp piles up. Mostly a dim veil, with the
-  // occasional lit crest.
-  float mass = smoothstep(-0.4, 0.5, f + 0.5 * r.x);
-  float crest = smoothstep(0.62, 1.0, lit) * mass;
-  float lum = mass * (0.03 + 0.09 * lit) + 0.28 * crest * crest;
+  // Smoke mass: where the warp piles up. A soft veil with lit crests on top,
+  // normalised so 1.0 is the brightest crest; u_gain sets that crest's grey.
+  float mass = smoothstep(-0.55, 0.2, f + 0.5 * r.x);
+  float crest = smoothstep(0.5, 1.0, lit) * mass;
+  float lum = mass * (0.34 + 0.5 * lit) + 0.7 * crest * crest;
 
   // Calmer in the middle where content sits, a touch livelier at the edges.
   float edge = smoothstep(0.15, 0.75, length((uv - 0.5) * vec2(1.0, 1.15)));
-  lum *= mix(0.75, 1.0, edge);
+  lum *= mix(0.8, 1.0, edge);
 
   // The pointer also lifts the smoke a hair.
-  lum += 0.03 * u_presence * near * (0.5 + mass);
+  lum += 0.12 * u_presence * near * (0.5 + mass);
 
-  // Soft knee: crests roll off toward 0.15 instead of clipping, so at the
-  // default intensity the brightest smoke stays under ~0.075 grey and even
-  // tertiary text (--g4) keeps AA contrast on top of it.
-  float over = max(lum - 0.08, 0.0);
-  lum -= over - over / (1.0 + over / 0.07);
+  // Soft knee: crests roll off toward 1.0 instead of clipping.
+  float over = max(lum - 0.7, 0.0);
+  lum -= over - over / (1.0 + over / 0.3);
 
-  lum *= u_intensity;
+  lum *= u_gain;
 
   // Triangular dither, re-rolled each frame: low greys on 8 bits band badly.
   float h1 = hash(frag + u_frame * 13.1);
@@ -196,7 +201,7 @@ const MAX_PIXELS = 400_000
 
 /**
  * Soft, slow smoke on black: domain-warped noise lit like folds of silk,
- * strictly achromatic and very dim. The pointer stirs it a little. Renders
+ * strictly achromatic and adjustable in brightness. The pointer stirs it a little. Renders
  * at half resolution and at most 30fps; pauses off-screen, in hidden tabs
  * and when `paused`; holds a still frame under `prefers-reduced-motion`.
  * Recovers from a lost WebGL context.
@@ -234,7 +239,7 @@ export function createShaderSmoke(
   let uMouse: WebGLUniformLocation | null = null
   let uPresence: WebGLUniformLocation | null = null
   let uStir: WebGLUniformLocation | null = null
-  let uIntensity: WebGLUniformLocation | null = null
+  let uGain: WebGLUniformLocation | null = null
   let uFrame: WebGLUniformLocation | null = null
 
   // Builds every GL resource. Runs at startup and again after a lost
@@ -288,7 +293,7 @@ export function createShaderSmoke(
     uMouse = u("u_mouse")
     uPresence = u("u_presence")
     uStir = u("u_stir")
-    uIntensity = u("u_intensity")
+    uGain = u("u_gain")
     uFrame = u("u_frame")
     return true
   }
@@ -350,7 +355,11 @@ export function createShaderSmoke(
   const tick = (now: number) => {
     raf = 0
     if (lost || !visible()) return
-    const flowing = !mqReduce.matches
+    const uni = smokeUniforms(
+      numberOr(options.intensity, DEFAULT_SMOKE_INTENSITY, 0, 100),
+      numberOr(options.speed, DEFAULT_SMOKE_SPEED, 0, 100)
+    )
+    const flowing = !mqReduce.matches && uni.speed > 0
     const interval = 1000 / numberOr(options.fps, DEFAULT_SMOKE_FPS, 1, 60)
     // Between capped frames, just wait for the next one.
     if (!due && now - lastDraw < interval - 2) {
@@ -374,16 +383,12 @@ export function createShaderSmoke(
     if (stirKick < 1e-4) stirKick = 0
     if (stir < 1e-4 && stirKick === 0) stir = 0
 
-    const speed = numberOr(options.speed, DEFAULT_SMOKE_SPEED, 0, 4)
     gl.uniform2f(uResolution, canvas.width, canvas.height)
-    gl.uniform1f(uTime, clock * speed * 0.045 + 3.7)
+    gl.uniform1f(uTime, clock * uni.speed * 0.045 + 3.7)
     gl.uniform2f(uMouse, mouse.x, mouse.y)
     gl.uniform1f(uPresence, presence)
     gl.uniform1f(uStir, stir)
-    gl.uniform1f(
-      uIntensity,
-      numberOr(options.intensity, DEFAULT_SMOKE_INTENSITY, 0, 1)
-    )
+    gl.uniform1f(uGain, uni.gain)
     gl.uniform1f(uFrame, flowing ? frame : 0)
     gl.drawArrays(gl.TRIANGLES, 0, 6)
 
@@ -513,7 +518,7 @@ export type ShaderSmokeProps = ShaderSmokeOptions & {
 }
 
 /**
- * A barely-there background: slow grey smoke folding over black, stirred a
+ * A background of slow grey smoke folding over black, stirred a
  * little by the pointer. Sits behind content (z-index 0, no pointer events).
  */
 export function ShaderSmoke({

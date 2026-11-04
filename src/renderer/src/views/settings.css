@@ -341,3 +341,31 @@
   border-style: dashed;
   color: var(--paper);
 }
+
+/* Background card: sliders with a Geist Mono readout. */
+.row-toggle--first {
+  border-top: 0;
+  padding-top: 0;
+  margin-top: 0;
+}
+.slider {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--s3) 0 var(--s2);
+  border-top: 1px solid var(--hairline);
+  margin-top: var(--s2);
+}
+.slider-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.slider-value {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--paper);
+  min-width: 3ch;
+  text-align: right;
+}

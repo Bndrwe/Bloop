@@ -52,6 +52,14 @@ export interface Settings {
   launchAtLogin: boolean
   /** Brightspace (or any) iCal subscription URL. */
   icalUrl: string
+  /** Show the background smoke in the panel, settings and onboarding windows. */
+  backgroundEnabled: boolean
+  /** Smoke brightness, 0–100. */
+  backgroundIntensity: number
+  /** Smoke drift speed, 0–100 (0 is a still frame). */
+  backgroundSpeed: number
+  /** The pointer stirs the smoke. */
+  backgroundInteractive: boolean
 }
 
 export interface NamedDuration {
@@ -179,6 +187,8 @@ export interface StudyPetApi {
   // settings
   getSettings(): Promise<Settings>
   saveSettings(patch: Partial<Settings>): Promise<Settings>
+  /** Fires in every window after settings are saved or reset. Returns an unsubscribe function. */
+  onSettingsChanged(cb: (settings: Settings) => void): () => void
   resetData(): Promise<void>
 
   // windows
