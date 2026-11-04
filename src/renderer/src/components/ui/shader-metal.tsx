@@ -21,6 +21,12 @@ export type ShaderMetalOptions = {
   /** The key light follows the pointer and the ribbons lean toward it. Default `true`. */
   interactive?: boolean
   /**
+   * Stop drawing entirely (no animation frames at all) until set back to
+   * `false`. For hosts that know they're hidden when the page can't tell,
+   * e.g. a hidden Electron window that still reports `visible`.
+   */
+  paused?: boolean
+  /**
    * Studio lighting. Default `auto` follows shadcn / next-themes
    * (`html.dark` class): a bright softbox studio in light mode, a black
    * stage with strip lights in dark.
@@ -482,7 +488,8 @@ export function createShaderMetal(
   let last = 0
   let clock = 0
 
-  const visible = () => onScreen && document.visibilityState !== "hidden"
+  const visible = () =>
+    !options.paused && onScreen && document.visibilityState !== "hidden"
 
   function wake() {
     // An observer callback can still arrive after destroy.
@@ -679,6 +686,7 @@ export function ShaderMetal({
   speed = DEFAULT_SPEED,
   iridescence = DEFAULT_IRIDESCENCE,
   interactive = true,
+  paused = false,
   theme = "auto",
 }: ShaderMetalProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -694,6 +702,7 @@ export function ShaderMetal({
       speed,
       iridescence,
       interactive,
+      paused,
       theme,
     })
     return () => {
@@ -712,9 +721,10 @@ export function ShaderMetal({
       speed,
       iridescence,
       interactive,
+      paused,
       theme,
     })
-  }, [metal, color, ribbons, speed, iridescence, interactive, theme])
+  }, [metal, color, ribbons, speed, iridescence, interactive, paused, theme])
 
   return (
     <div

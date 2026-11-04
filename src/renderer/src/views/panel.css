@@ -11,61 +11,104 @@
   gap: var(--s2);
 }
 
-.panel-head {
+/* Hero: the chrome ribbons run full-bleed behind a big black score disc (the Ditto move:
+   one huge visual, oversized display type over it, a compact pill underneath).
+   The chrome is the one sanctioned exception to "no gradients": it's a lit 3D material.
+   Everything that sits on it is opaque black or white, so it always reads. */
+.hero {
+  --ring-size: 272px;
+  position: relative;
+  isolation: isolate;
+  margin: calc(-1 * var(--s3)) calc(-1 * var(--s3)) 0;
+  padding: var(--s3) var(--s3) var(--s4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-bottom: 1px solid var(--hairline);
+}
+/* Chrome has faint warm/cool strip lights baked in; grayscale keeps it strictly achromatic. */
+.hero-chrome {
+  z-index: -1;
+  filter: grayscale(1);
+}
+
+.hero-bar {
+  align-self: stretch;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 var(--s1);
+  margin-bottom: var(--s1);
 }
-.panel-title {
-  display: flex;
+.hero-brand {
+  display: inline-flex;
   align-items: center;
-  gap: var(--s2);
+  gap: 6px;
+  padding: 2px 12px 2px 4px;
+  border-radius: 999px;
+  background: var(--ink);
+  border: 1px solid var(--hairline);
 }
-.panel-title h1 {
+.hero-brand h1 {
   margin: 0;
-  font-size: 24px;
+  font-size: 20px;
   line-height: 1;
+}
+.hero-actions {
+  display: flex;
+  gap: 6px;
+}
+/* Floating pill buttons (top right), opaque so they hold over the chrome. */
+.hero .icon-btn--pill {
+  width: 32px;
+  height: 32px;
+  background: var(--ink);
+  border-color: var(--g3);
+  color: var(--paper);
+}
+.hero .icon-btn--pill:hover {
+  background: var(--paper);
+  border-color: var(--paper);
+  color: var(--ink);
 }
 
-/* Hero: score ring + phase/timer. */
-.hero {
-  display: flex;
+/* Status pill under the disc: phase tag, mono time left, pomodoros, a hairline of progress. */
+.hero-status {
+  position: relative;
+  display: inline-flex;
   align-items: center;
-  gap: var(--s4);
-  padding: var(--s4) var(--s4) calc(var(--s4) + 2px);
+  gap: var(--s2);
+  margin-top: var(--s3);
+  padding: 5px 14px 8px 6px;
+  border-radius: 999px;
+  background: var(--ink);
+  border: 1px solid var(--g3);
+  box-shadow: 0 6px 18px -6px rgb(0 0 0 / 0.7);
   overflow: hidden;
+  max-width: 100%;
 }
-.hero-info {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  min-width: 0;
-}
-.hero-info .tag {
+.hero-status .tag {
   font-size: 11.5px;
-  margin-bottom: 2px;
+  border-radius: 999px;
+  padding: 1px 9px 2px;
 }
-.timer {
-  font-size: 34px;
-  line-height: 1;
-  letter-spacing: -0.03em;
+.hero-time {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  font-size: 12px;
+  white-space: nowrap;
 }
-.timer--idle {
-  font-size: 24px;
-  line-height: 1.05;
-}
-.hero-cap {
-  font-size: 11px;
-  margin-top: -2px;
+.hero-time .num {
+  font-size: 15px;
+  letter-spacing: -0.02em;
+  color: var(--paper);
 }
 .progress {
   position: absolute;
-  left: var(--s4);
-  right: var(--s4);
-  bottom: 9px;
-  height: 2px;
+  left: 18px;
+  right: 18px;
+  bottom: 2px;
+  height: 1.5px;
   border-radius: 999px;
   background: var(--g2);
   overflow: hidden;
@@ -90,30 +133,41 @@
   background: var(--paper);
 }
 
+/* The disc: a flat black face the ribbons pass behind, so the number and arc never sit on chrome. */
 .ring {
   position: relative;
-  width: 104px;
-  height: 104px;
+  width: var(--ring-size);
+  height: var(--ring-size);
   flex: none;
+  border-radius: 50%;
+  background: var(--ink);
+  box-shadow:
+    0 0 0 1px var(--g2),
+    0 18px 40px -12px rgb(0 0 0 / 0.85);
 }
-/* Arc weight carries the band: heavy solid ink ≥70, a fine line 40–69, a grey dotted line <40. */
+.ring svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+/* Arc weight carries the band: heavy solid ink ≥70, a fine line 40–69, a grey fine line <40. */
 .ring-track {
   fill: none;
   stroke: var(--g2);
-  stroke-width: 1;
+  stroke-width: 0.6;
 }
 .ring-arc {
   fill: none;
   stroke: var(--paper);
-  stroke-width: 7;
+  stroke-width: 4.2;
   stroke-linecap: round;
 }
 .level-ok .ring-arc {
-  stroke-width: 2.5;
+  stroke-width: 1.4;
 }
 .level-bad .ring-arc {
   stroke: var(--g5);
-  stroke-width: 2.5;
+  stroke-width: 1.4;
   stroke-linecap: butt;
 }
 .ring-label {
@@ -123,32 +177,68 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  padding-bottom: 6px;
 }
+/* Ditto-sized headline numeral. */
 .ring-num {
-  font-size: 44px;
-  line-height: 0.9;
+  font-size: 140px;
+  line-height: 0.8;
+  letter-spacing: -0.04em;
   color: var(--paper);
+  font-variant-numeric: lining-nums;
+  /* italic overhang: nudge left so the optical centre sits in the disc */
+  margin-left: -0.06em;
 }
 .level-none .ring-num {
   color: var(--text-3);
 }
 .ring-cap {
-  font-size: 9.5px;
-  color: var(--text-3);
-  letter-spacing: 0.02em;
-}
-.ring-band {
-  margin-top: 1px;
+  margin-top: 10px;
   font-family: var(--mono);
-  font-size: 9px;
-  color: var(--text-2);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--text-3);
 }
-.level-good .ring-band {
+
+/* Band word as a tilted sticker hanging off the disc's edge. Fill/outline/dash carry the band. */
+.ring-sticker {
+  position: absolute;
+  right: -4px;
+  bottom: 30px;
+  transform: rotate(-9deg);
+}
+.band-sticker {
+  display: inline-block;
+  padding: 4px 12px 5px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1.5px solid var(--ink);
+  box-shadow: 0 6px 14px -4px rgb(0 0 0 / 0.75);
+}
+.band-sticker.level-ok {
+  background: var(--ink);
   color: var(--paper);
+  border: 1.5px solid var(--paper);
+}
+.band-sticker.level-bad {
+  background: var(--ink);
+  color: var(--paper);
+  border: 1.5px dashed var(--paper);
+}
+.band-sticker.level-none {
+  background: var(--ink);
+  color: var(--text-2);
+  border: 1.5px solid var(--g3);
 }
 
 .controls {
   display: flex;
+  justify-content: center;
   gap: var(--s2);
 }
 .controls > .btn {
@@ -413,9 +503,4 @@
 
 .btn--wide {
   width: 100%;
-}
-
-.panel-foot {
-  display: flex;
-  justify-content: center;
 }

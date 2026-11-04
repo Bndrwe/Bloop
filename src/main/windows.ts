@@ -14,8 +14,8 @@ function setTopLevel(win: BrowserWindow, kind: 'pet' | 'panel'): void {
 }
 
 export const PET_SIZE = 180
-const PANEL_W = 300
-const PANEL_H = 440
+const PANEL_W = 352
+const PANEL_H = 580
 const MARGIN = 16
 
 let petWin: BrowserWindow | null = null

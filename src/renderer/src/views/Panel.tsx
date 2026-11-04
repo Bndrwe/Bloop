@@ -4,7 +4,8 @@ import type { AppStatus, Deadline, Stats, StudyPlan } from '@shared/types'
 import { useStatus } from '../hooks/useStatus'
 import { Pet } from '../pet/Pet'
 import { Icon } from '../lib/Icon'
-import { prefersReducedMotion, useBreathe, useCountUp, useEntrance, useReveal, useStaggerIn } from '../lib/motion'
+import { ShaderMetal } from '@/components/ui/shader-metal'
+import { prefersReducedMotion, useBreathe, useCountUp, useEntrance, usePopIn, useReveal, useStaggerIn } from '../lib/motion'
 import {
   DAY_LETTERS,
   DAY_SHORT,
@@ -20,8 +21,40 @@ import {
 } from '../lib/format'
 import './panel.css'
 
-const RING_R = 40
+const RING_R = 45
 const RING_C = 2 * Math.PI * RING_R
+
+/** The band word as a tilted sticker; it pops back in whenever the band changes. */
+function BandSticker({ score }: { score: number | null }): JSX.Element {
+  const ref = useRef<HTMLSpanElement>(null)
+  usePopIn(ref)
+  return (
+    <span ref={ref} className={`band-sticker level-${scoreLevel(score)}`}>
+      {scoreBand(score)}
+    </span>
+  )
+}
+
+/**
+ * The window hides on blur, and a hidden Electron window doesn't always report itself hidden,
+ * so the chrome stops drawing whenever the panel loses focus or visibility.
+ */
+function usePanelAwake(): boolean {
+  const [awake, setAwake] = useState(() => document.visibilityState !== 'hidden')
+  useEffect(() => {
+    const wake = (): void => setAwake(document.visibilityState !== 'hidden')
+    const sleep = (): void => setAwake(false)
+    document.addEventListener('visibilitychange', wake)
+    window.addEventListener('focus', wake)
+    window.addEventListener('blur', sleep)
+    return () => {
+      document.removeEventListener('visibilitychange', wake)
+      window.removeEventListener('focus', wake)
+      window.removeEventListener('blur', sleep)
+    }
+  }, [])
+  return awake
+}
 
 /** Score ring: number counts up and the arc tweens together, driven by one anime.js tween. */
 function ScoreRing({ score }: { score: number | null }): JSX.Element {
@@ -56,8 +89,8 @@ function ScoreRing({ score }: { score: number | null }): JSX.Element {
   }, [score])
 
   return (
-    <div className={`ring level-${scoreLevel(score)}`}>
-      <svg viewBox="0 0 100 100" width="104" height="104" aria-hidden="true">
+    <div className={`ring level-${scoreLevel(score)}`} role="img" aria-label={`Focus score ${scoreText(score)}, ${scoreBand(score)}`}>
+      <svg viewBox="0 0 100 100" aria-hidden="true">
         <circle cx="50" cy="50" r={RING_R} className="ring-track" />
         <circle
           ref={arcRef}
@@ -70,13 +103,15 @@ function ScoreRing({ score }: { score: number | null }): JSX.Element {
           transform="rotate(-90 50 50)"
         />
       </svg>
-      <div className="ring-label">
+      <div className="ring-label" aria-hidden="true">
         <span ref={numRef} className="ring-num serif">
           {scoreText(score)}
         </span>
         <span className="ring-cap">focus score</span>
-        <span className="ring-band">{scoreBand(score)}</span>
       </div>
+      <span className="ring-sticker">
+        <BandSticker key={scoreLevel(score)} score={score} />
+      </span>
     </div>
   )
 }
@@ -446,6 +481,7 @@ export function Panel(): JSX.Element {
   const [statsError, setStatsError] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
   const phase = status?.phase ?? 'idle'
+  const awake = usePanelAwake()
 
   useEntrance(rootRef, ':scope > .enter', status != null)
 
@@ -491,35 +527,42 @@ export function Panel(): JSX.Element {
 
   return (
     <div className="panel" ref={rootRef}>
-      <header className="panel-head enter">
-        <div className="panel-title">
-          <Pet mood={status.pet.mood} size={34} />
-          <h1 className="serif">Study Pet</h1>
-        </div>
-        <button className="icon-btn" aria-label="Close panel" onClick={() => void window.studyPet.closePanel()}>
-          <Icon name="close" />
-        </button>
-      </header>
+      <section className="hero enter">
+        <ShaderMetal className="hero-chrome" metal="chrome" ribbons={3} speed={0.35} iridescence={0} interactive theme="dark" paused={!awake} />
+        <header className="hero-bar">
+          <div className="hero-brand">
+            <Pet mood={status.pet.mood} size={30} />
+            <h1 className="serif">Study Pet</h1>
+          </div>
+          <div className="hero-actions">
+            <button className="icon-btn icon-btn--pill" aria-label="Settings" onClick={() => void window.studyPet.openSettings()}>
+              <Icon name="gear" size={15} />
+            </button>
+            <button className="icon-btn icon-btn--pill" aria-label="Close panel" onClick={() => void window.studyPet.closePanel()}>
+              <Icon name="close" />
+            </button>
+          </div>
+        </header>
 
-      <section className="card hero enter">
         <ScoreRing score={status.score} />
-        <div className="hero-info">
+
+        <div className="hero-status">
           <span className={`tag ${PHASE_TAG[phase] ?? ''}`}>{phaseLabel(phase)}</span>
           {timed ? (
-            <div className="timer num" aria-label={`${mmss(remaining)} left`}>
-              {mmss(remaining)}
-            </div>
+            <span className="hero-time" aria-label={`${mmss(remaining)} ${phase === 'break' ? 'left of your break' : 'left in this round'}`}>
+              <span className="num">{mmss(remaining)}</span>
+              <span className="faint">left</span>
+            </span>
           ) : (
-            <div className="timer timer--idle serif">{phase === 'done' ? 'Nice work.' : 'Ready when you are.'}</div>
+            <span className="hero-time muted">{phase === 'done' ? 'Nice work.' : 'Ready when you are.'}</span>
           )}
-          {timed && <span className="faint hero-cap">{phase === 'break' ? 'left of your break' : 'left in this round'}</span>}
           <Pomodoros n={status.pomodorosCompleted} />
+          {timed && (
+            <span className="progress" aria-hidden="true">
+              <span style={{ transform: `scaleX(${Math.min(1, Math.max(0, progress))})` }} />
+            </span>
+          )}
         </div>
-        {timed && (
-          <div className="progress" aria-hidden="true">
-            <span style={{ transform: `scaleX(${Math.min(1, Math.max(0, progress))})` }} />
-          </div>
-        )}
       </section>
 
       <div className="enter">
@@ -579,13 +622,6 @@ export function Panel(): JSX.Element {
 
       <Deadlines refreshKey={phase} />
       <AiPlan />
-
-      <footer className="panel-foot enter">
-        <button className="btn btn--ghost btn--small" onClick={() => void window.studyPet.openSettings()}>
-          <Icon name="gear" size={14} />
-          Settings
-        </button>
-      </footer>
     </div>
   )
 }
