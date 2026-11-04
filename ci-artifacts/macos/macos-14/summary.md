@@ -1,19 +1,20 @@
-# Bloop macOS e2e (macOS 14.8.9, arm64, runner GitHub Actions 1000001844)
+# Bloop macOS e2e (macOS 14.8.9, arm64, runner GitHub Actions 1000001846)
 
 App: `/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app` (bundle id edu.bloop.app)
 
 ## A: launch without permissions
-  launched A via open (LaunchServices), pid(s): 22387 
+  launched A via open (LaunchServices), pid(s): 22863 
   `[bloop] permissions: screen=denied automation=unknown onboarding=true`
   last refresh: `[bloop] permissions(refresh): screen=denied automation=unknown onboarding=true`
 - PASS: A: app started and logged its permission state
 - PASS: A: Screen Recording is NOT reported granted before the grant
 - PASS: A: session auto-started
-- PASS: A: real active-window samples are being taken
+- PASS: A: real active-window samples are being taken (not "Unknown")
+  raw samples: `[bloop] trace raw: app="Bloop" titleLen=0 url=- nativeUrl=no`
   sample lines (last 3):
-      [bloop] sample app="Unknown" category=neutral score=null
-      [bloop] sample app="Unknown" category=neutral score=null
-      [bloop] sample app="Unknown" category=neutral score=null
+      [bloop] sample app="Bloop" category=neutral score=null
+      [bloop] sample app="Bloop" category=neutral score=null
+      [bloop] sample app="Bloop" category=neutral score=null
 
 ## A2: grant in TCC.db while Bloop is still running (no relaunch)
       designated requirement (Safari): identifier "com.apple.Safari" and anchor apple
@@ -31,80 +32,84 @@ App: `/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app` (bundle id 
       inserted kTCCServiceAppleEvents /Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/MacOS/Bloop (1) -> com.apple.Safari into Application Support/TCC.db [system]
       --- rows for Bloop in /Library/Application Support/com.apple.TCC/TCC.db
       service|client|client_type|auth_value|auth_reason|indirect_object_identifier|csreq_len|ind_req_len
-      kTCCServiceScreenCapture|edu.bloop.app|0|2|4|UNUSED||
-      kTCCServiceScreenCapture|/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/MacOS/Bloop|1|2|4|UNUSED||
-      kTCCServiceAppleEvents|edu.bloop.app|0|2|4|com.apple.Safari||44
-      kTCCServiceAppleEvents|/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/MacOS/Bloop|1|2|4|com.apple.Safari||44
+      kTCCServiceScreenCapture|edu.bloop.app|0|2|4|UNUSED|40|
+      kTCCServiceScreenCapture|/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/MacOS/Bloop|1|2|4|UNUSED|40|
+      kTCCServiceAppleEvents|edu.bloop.app|0|2|4|com.apple.Safari|40|44
+      kTCCServiceAppleEvents|/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/MacOS/Bloop|1|2|4|com.apple.Safari|40|44
       --- rows for Bloop in /Users/runner/Library/Application Support/com.apple.TCC/TCC.db
       service|client|client_type|auth_value|auth_reason|indirect_object_identifier|csreq_len|ind_req_len
-      kTCCServiceScreenCapture|edu.bloop.app|0|2|4|UNUSED||
-      kTCCServiceScreenCapture|/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/MacOS/Bloop|1|2|4|UNUSED||
-      kTCCServiceAppleEvents|edu.bloop.app|0|2|4|com.apple.Safari||44
-      kTCCServiceAppleEvents|/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/MacOS/Bloop|1|2|4|com.apple.Safari||44
+      kTCCServiceScreenCapture|edu.bloop.app|0|2|4|UNUSED|40|
+      kTCCServiceScreenCapture|/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/MacOS/Bloop|1|2|4|UNUSED|40|
+      kTCCServiceAppleEvents|edu.bloop.app|0|2|4|com.apple.Safari|40|44
+      kTCCServiceAppleEvents|/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/MacOS/Bloop|1|2|4|com.apple.Safari|40|44
   frontmost after activating Safari: Safari
   refresh after grant: `[bloop] permissions(refresh): screen=denied automation=granted onboarding=true`
-      [bloop] automation permission -> granted
+      [bloop] trace raw: app="Safari" titleLen=0 url=https://en.wikipedia.org/wiki/Study_skills nativeUrl=no
+      [bloop] trace raw: app="Safari" titleLen=0 url=https://en.wikipedia.org/wiki/Study_skills nativeUrl=no
+      [bloop] trace raw: app="Safari" titleLen=0 url=https://en.wikipedia.org/wiki/Study_skills nativeUrl=no
+      [bloop] trace raw: app="Safari" titleLen=0 url=https://en.wikipedia.org/wiki/Study_skills nativeUrl=no
 - PASS: A2: running app picks up the Automation grant without relaunch
   observation: Screen Recording still not granted in the running process (macOS caches it per process; needs relaunch)
 
 ## B: relaunch with permissions granted, drive real apps
-  launched B via open (LaunchServices), pid(s): 24115 
-  `[bloop] permissions: screen=granted automation=unknown onboarding=true`
+  launched B via open (LaunchServices), pid(s): 24897 
+  `[bloop] permissions: screen=granted automation=granted onboarding=false`
 - PASS: B: Screen Recording reported granted after relaunch
 - PASS: B: session auto-started
+- PASS: B: welcome screen not reopened when everything is granted (browser running)
 
 ### 1-textedit
   frontmost after activating TextEdit: TextEdit
-      [bloop] sample app="Unknown" category=neutral score=null
-      [bloop] sample app="Unknown" category=neutral score=null
-      [bloop] sample app="Unknown" category=neutral score=null
-      [bloop] sample app="Unknown" category=neutral score=null
-      [bloop] sample app="Unknown" category=neutral score=null
-      [bloop] sample app="Unknown" category=neutral score=null
-- **FAIL**: TextEdit sampled as neutral
+      [bloop] sample app="TextEdit" category=neutral score=100
+      [bloop] sample app="TextEdit" category=neutral score=100
+      [bloop] sample app="TextEdit" category=neutral score=100
+      [bloop] sample app="TextEdit" category=neutral score=100
+      [bloop] sample app="TextEdit" category=neutral score=100
+      [bloop] sample app="TextEdit" category=neutral score=100
+- PASS: TextEdit sampled as neutral
 
 ### 2-terminal
   frontmost after activating Terminal: Terminal
-      [bloop] sample app="Unknown" category=neutral score=null
-      [bloop] sample app="Unknown" category=neutral score=null
-      [bloop] sample app="Unknown" category=neutral score=null
-      [bloop] sample app="Unknown" category=neutral score=null
-      [bloop] sample app="Unknown" category=neutral score=null
-      [bloop] sample app="Unknown" category=neutral score=null
-- **FAIL**: Terminal sampled as focus
-  score on Terminal: 
-- **FAIL**: score is 100 after only focus time
+      [bloop] sample app="Terminal" category=focus score=100
+      [bloop] sample app="Terminal" category=focus score=100
+      [bloop] sample app="Terminal" category=focus score=100
+      [bloop] sample app="Terminal" category=focus score=100
+      [bloop] sample app="Terminal" category=focus score=100
+      [bloop] sample app="Terminal" category=focus score=100
+- PASS: Terminal sampled as focus
+  score on Terminal: 100
+- PASS: score is 100 after only focus time
 
 ### 3-youtube
   frontmost after activating Safari: Safari
-      [bloop] sample app="Unknown" category=neutral score=null
-      [bloop] sample app="Unknown" category=neutral score=null
-      [bloop] sample app="Unknown" category=neutral score=null
-      [bloop] sample app="Unknown" category=neutral score=null
-      [bloop] sample app="Unknown" category=neutral score=null
-      [bloop] sample app="Unknown" category=neutral score=null
-- **FAIL**: Safari on YouTube sampled as distract (URL via AppleScript)
-- **FAIL**: pet turned worried after the nudge threshold
-- **FAIL**: nudge fired
-  score after YouTube: 
-- **FAIL**: score dropped below 100 on YouTube
+      [bloop] nudge (distracted 19s)
+      [bloop] pet says: "future you will say thanks. let's go!"
+      [bloop] nudge notification
+      [bloop] sample app="Safari" domain=youtube.com category=distract score=56
+      [bloop] sample app="Safari" domain=youtube.com category=distract score=54
+      [bloop] sample app="Safari" domain=youtube.com category=distract score=53
+- PASS: Safari on YouTube sampled as distract (URL via AppleScript)
+- PASS: pet turned worried after the nudge threshold
+- PASS: nudge fired
+  score after YouTube: 53
+- PASS: score dropped below 100 on YouTube
 
 ### 4-wikipedia
   frontmost after activating Safari: Safari
-      [bloop] sample app="Unknown" category=neutral score=null
-      [bloop] sample app="Unknown" category=neutral score=null
-      [bloop] sample app="Unknown" category=neutral score=null
-      [bloop] sample app="Unknown" category=neutral score=null
-      [bloop] sample app="Unknown" category=neutral score=null
-      [bloop] sample app="Unknown" category=neutral score=null
-- **FAIL**: Safari on Wikipedia sampled as focus
-- **FAIL**: pet happy again after coming back
-  score after Wikipedia: 
-- **FAIL**: score recovered on Wikipedia
+      [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=62
+      [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=62
+      [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=63
+      [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=64
+      [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=64
+      [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=65
+- PASS: Safari on Wikipedia sampled as focus
+- PASS: pet happy again after coming back
+  score after Wikipedia: 65
+- PASS: score recovered on Wikipedia
 
 ### permissions as seen by the running app (B)
   `[bloop] permissions(refresh): screen=granted automation=granted onboarding=false`
 - PASS: B: Automation reported granted
-- **FAIL**: B: window titles readable (Screen Recording effective)
+- PASS: B: window titles readable (Screen Recording effective)
 
-## Result: 11 failed assertion(s)
+## Result: 0 failed assertion(s)
