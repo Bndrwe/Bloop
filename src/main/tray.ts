@@ -1,0 +1,80 @@
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { Menu, Tray, app, nativeImage, type MenuItemConstructorOptions } from 'electron'
+import type { AppStatus } from '@shared/types'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+
+export interface TrayActions {
+  start(): void
+  pause(): void
+  resume(): void
+  stop(): void
+  openSettings(): void
+  togglePanel(): void
+}
+
+let tray: Tray | null = null
+let lastKey = ''
+
+function iconPath(): string {
+  // out/main -> <root>/resources ; packaged: resources are asar-unpacked
+  return join(__dirname, '../../resources/trayTemplate.png').replace('app.asar', 'app.asar.unpacked')
+}
+
+function fmt(sec: number): string {
+  const m = Math.floor(sec / 60)
+  const s = sec % 60
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
+export function createTray(actions: TrayActions, status: AppStatus): Tray | null {
+  try {
+    const img = nativeImage.createFromPath(iconPath())
+    if (process.platform === 'darwin') img.setTemplateImage(true)
+    tray = new Tray(img)
+  } catch (e) {
+    console.log(`[studypet] tray unavailable: ${(e as Error).message}`)
+    return null
+  }
+  if (process.platform !== 'darwin') tray.on('click', () => actions.togglePanel())
+  updateTray(actions, status)
+  return tray
+}
+
+export function updateTray(actions: TrayActions, s: AppStatus): void {
+  if (!tray || tray.isDestroyed()) return
+  const scoreText = s.score === null ? '—' : `${s.score}`
+  const tip =
+    s.phase === 'idle'
+      ? 'Study Pet — no session running'
+      : `Study Pet — ${s.phase === 'paused' ? 'paused' : s.phase} · focus score ${scoreText}`
+  tray.setToolTip(tip)
+  // the countdown next to the menu-bar icon (mac only)
+  if (process.platform === 'darwin') {
+    tray.setTitle(s.phase === 'focus' || s.phase === 'break' ? ` ${fmt(s.remainingSec)}` : s.phase === 'paused' ? ' ⏸' : '')
+  }
+  // rebuild the menu only when its shape changes
+  const key = `${s.phase}|${s.pausedPhase}|${scoreText}`
+  if (key === lastKey) return
+  lastKey = key
+  const running = s.phase === 'focus' || s.phase === 'break' || s.phase === 'paused'
+  const items: MenuItemConstructorOptions[] = [
+    { label: running ? `Focus score: ${scoreText}` : 'Study Pet', enabled: false },
+    { type: 'separator' }
+  ]
+  if (!running) items.push({ label: 'Start session', click: () => actions.start() })
+  else {
+    if (s.phase === 'paused') items.push({ label: 'Resume', click: () => actions.resume() })
+    else items.push({ label: 'Pause', click: () => actions.pause() })
+    items.push({ label: 'Stop session', click: () => actions.stop() })
+  }
+  items.push(
+    { type: 'separator' },
+    { label: 'Show panel', click: () => actions.togglePanel() },
+    { label: 'Settings…', click: () => actions.openSettings() },
+    { type: 'separator' },
+    { label: 'Quit Study Pet', role: 'quit', click: () => app.quit() }
+  )
+  tray.setContextMenu(Menu.buildFromTemplate(items))
+}
