@@ -1,6 +1,6 @@
 # Brief for Codex: weight-space editing of the Bloop model (MIT-style)
 
-Use this **after** the training run from `docs/codex-colab-prompt.md` has finished. You need a merged Bloop model at `ml/out/bloop-merged`, or the plain base. Paste everything below the line into Codex. It works in Colab on a free T4 (upload `ml/` as a zip, same as the training brief) or on an Apple Silicon Mac (`ml/.venv`).
+Use this **after** the training run from `docs/codex-colab-prompt.md` has finished. You need the merged Bloop model the training run writes to `ml/out/merged` (it's never in git; it's created in the same workspace), or the plain base model. Paste everything below the line into Codex. It works in Colab on a free T4 (upload `ml/` as a zip, same as the training brief) or on an Apple Silicon Mac (`ml/.venv`).
 
 ---
 
@@ -31,9 +31,10 @@ Scoring lives in `ml/train/scoring.py`: JSON valid, schema valid, rule checks, n
 Use `ml/wsp/harness.py` (read `ml/wsp/README.md` first) from a Python REPL or `ml/wsp/session.ipynb`:
 
 ```python
-from ml.wsp.harness import Workspace
-from ml.wsp import presets
-ws = Workspace(model="ml/out/bloop-merged", data_dir="ml/data", budget=50)   # or model="Qwen/Qwen3.5-0.8B"
+import sys; sys.path.insert(0, "ml/wsp")
+from harness import Workspace
+import presets
+ws = Workspace(model="ml/out/merged", data_dir="ml/data", budget=50)   # or model="qwen" (plain base) / "mit" (MIT's edit)
 base = ws.generate("dev")                    # costs budget; returns outputs + per-example scores
 acts = ws.activations(texts, layers=[...], site="mlp_out")
 d    = ws.contrast_direction(good_texts, bad_texts, layer=L, site="mlp_out")
@@ -42,8 +43,8 @@ cols = ws.top_columns(L, d, k=64)
 eid  = ws.edit_subtract_direction(L, d, columns=cols, strength=1.0)
 ws.revert(eid); ws.diff_summary(); ws.notes("why I did this")
 presets.apply_mit_edit(ws, mode="delta")     # MIT's own edit, as a baseline to beat
-ws.final_test()                              # ONE shot on the locked eval set
-ws.save("ml/out/bloop-wsp")                  # full model + edits.json + EDIT_REPORT.md + patch
+ws.final_test()                              # ONE shot on the locked eval set (not charged to budget)
+ws.save("ml/out/wsp")                       # model/ + patch.safetensors + edits.json + EDIT_REPORT.md + notes.md
 ```
 
 If the harness's exact names differ from these, follow `ml/wsp/README.md`. It's the source of truth.
@@ -64,14 +65,14 @@ If the harness's exact names differ from these, follow `ml/wsp/README.md`. It's 
    - Otherwise `revert` it and try the next hypothesis.
    - Keep the total change under 0.05% of parameters. The harness hard-caps at 0.1%.
    - Prefer one clean edit over many small ones.
-6. **Final (1 pass):** call `ws.final_test()` once on the best configuration, then `ws.save("ml/out/bloop-wsp")`.
-7. **Export:** `bash ml/train/convert_quantize.sh --src ml/out/bloop-wsp --name bloop-qwen3.5-0.8b-wsp --quant Q4_K_M`. Then run `ml/train/eval.py` to compare **base, mit-edit, bloop-tuned and bloop-tuned+wsp** (with and without the JSON grammar). Print the size and sha256 of the final GGUF.
+6. **Final:** call `ws.final_test()` once on the best configuration, then `ws.save("ml/out/wsp")`.
+7. **Export:** `bash ml/train/convert_quantize.sh --src ml/out/wsp/model --name bloop-edit`, then `python ml/train/eval.py --tuned-edit-gguf ml/out/bloop-edit-qwen3.5-0.8b-Q4_K_M.gguf` (add `--mit-gguf` if you converted MIT's checkpoint) to compare **base, mit-edit, bloop-tuned and bloop-tuned+edit** (with and without the JSON grammar). Print the size and sha256 of the final GGUF. See `ml/wsp/README.md` for exact flags.
 8. **Optional:** retrain the LoRA on top of MIT's checkpoint: `BASE=RikiyaT/Qwen3.5-0.8B-weight-space-programming bash ml/run_mac.sh`, or set `BASE` in the Colab notebook. Compare it in the same eval.
 
 ## Rules
 
 - **No gradient training in this session.** Only direct weight edits through the harness. LoRA training belongs to the separate training brief.
-- **Budget:** never exceed 50 forward passes. Don't look at the `test` split before `final_test()`, and call it exactly once.
+- **Budget:** never exceed 50 forward passes (1 pass = up to 64 generations or 128 activation reads; the harness enforces it). Don't look at the `test` split before `final_test()`, and call it exactly once.
 - **Edits stay small:** never edit embeddings, the unembedding or the vision tower.
 - **Reversible:** every edit must stay reversible and logged with a reason in `ws.notes`.
 - **Honest results:** if no edit beats the baseline, say so and ship nothing. If the MIT edit or plain fine-tuning is better, recommend that.
@@ -83,5 +84,5 @@ If the harness's exact names differ from these, follow `ml/wsp/README.md`. It's 
 - **Metrics table:** dev and final-test results (schema-valid %, rule pass %, nudge pass %, loop/token-limit %, latency) for base, MIT edit, your edit, and tuned plus edit.
 - **The edit:** layers, site, k, strength, # params changed, % of the model, and the logit-lens tokens that explain it.
 - **Budget:** how many forward passes you used.
-- **Output:** the path of `ml/out/bloop-wsp`, the patch file, and the GGUF size and sha256.
+- **Output:** the path of `ml/out/wsp`, the patch file (`patch.safetensors`), and the GGUF size and sha256.
 - **Recommendation:** which variant Bloop should ship, and why.

@@ -6,6 +6,10 @@
 #   DRY_RUN=1 bash ml/run_mac.sh       # only set up + time a few steps and print the ETA
 #   TRAIN_ARGS="--max-len 768 --grad-checkpointing" bash ml/run_mac.sh   # extra flags for train_lora.py
 #   SKIP_EVAL=1 / SKIP_BASE=1          # skip eval / skip converting the base model for comparison
+#   BASE=mit bash ml/run_mac.sh        # train the LoRA on top of MIT's weight-space edit
+#                                      # (RikiyaT/Qwen3.5-0.8B-weight-space-programming); the eval then also
+#                                      # converts that checkpoint and compares base / mit-edit / tuned.
+#                                      # BASE takes an HF id or local path too; default Qwen/Qwen3.5-0.8B.
 #
 # Untested end to end in the authoring sandbox - see ml/README.md.
 set -euo pipefail
@@ -15,6 +19,13 @@ VENV="$ML_DIR/.venv"
 OUT="$ML_DIR/out"
 DONE="$OUT/.done"
 TRAIN_ARGS="${TRAIN_ARGS:-}"
+QWEN_BASE="Qwen/Qwen3.5-0.8B"
+MIT_BASE="RikiyaT/Qwen3.5-0.8B-weight-space-programming"
+BASE="${BASE:-$QWEN_BASE}"
+case "$(printf '%s' "$BASE" | tr '[:upper:]' '[:lower:]')" in
+  qwen|base) BASE="$QWEN_BASE" ;;
+  mit|wsp)   BASE="$MIT_BASE" ;;
+esac
 mkdir -p "$OUT" "$DONE" "$ML_DIR/cache"
 
 step()  { printf '\n\033[1;36m[%s] %s\033[0m\n' "$1" "$2"; }
@@ -62,16 +73,22 @@ PYEOF
 export PYTORCH_ENABLE_MPS_FALLBACK=1   # a few ops used by linear attention may lack MPS kernels
 export TOKENIZERS_PARALLELISM=false
 
+echo "    base model: $BASE"
+
 step "3/7" "Timing a few steps (ETA)"
 # shellcheck disable=SC2086
-"$PY" "$ML_DIR/train/train_lora.py" --dry-run $TRAIN_ARGS
+"$PY" "$ML_DIR/train/train_lora.py" --base "$BASE" --dry-run $TRAIN_ARGS
 if [[ -n "${DRY_RUN:-}" ]]; then echo; echo "DRY_RUN set - stopping here."; exit 0; fi
 
 step "4/7" "Training LoRA + merging (loss on assistant tokens only)"
-if finished train && [[ -f "$OUT/merged/config.json" ]]; then skip "training"; else
+# a merged model trained on a different base does not count as done
+SAME_BASE=0
+if [[ -f "$OUT/merged/bloop_merge_info.json" ]] && grep -qF "\"base_model\": \"$BASE\"" "$OUT/merged/bloop_merge_info.json"; then SAME_BASE=1; fi
+if finished train && [[ -f "$OUT/merged/config.json" && "$SAME_BASE" == "1" ]]; then skip "training"; else
   # shellcheck disable=SC2086
-  "$PY" "$ML_DIR/train/train_lora.py" $TRAIN_ARGS
+  "$PY" "$ML_DIR/train/train_lora.py" --base "$BASE" $TRAIN_ARGS
   mark train
+  rm -f "$OUT/bloop-qwen3.5-0.8b-Q4_K_M.gguf" "$DONE/eval"   # the old GGUF/eval belong to the previous run
 fi
 
 step "5/7" "Convert to GGUF and quantize to Q4_K_M"
@@ -83,10 +100,15 @@ if [[ "${SKIP_EVAL:-0}" != "1" && "${SKIP_BASE:-0}" != "1" ]]; then
     "$PY" -c "from huggingface_hub import snapshot_download; snapshot_download('Qwen/Qwen3.5-0.8B', local_dir='$ML_DIR/cache/base', allow_patterns=['*.json','*.safetensors','*.txt','*.jinja','*.model'])"
     bash "$ML_DIR/train/convert_quantize.sh" --src "$ML_DIR/cache/base" --name base
   fi
+  if [[ "$BASE" == "$MIT_BASE" && ! -f "$OUT/mit-qwen3.5-0.8b-Q4_K_M.gguf" ]]; then
+    echo "    preparing MIT's weight-space edit (the LoRA's base) for the side-by-side eval ..."
+    "$PY" -c "from huggingface_hub import snapshot_download; snapshot_download('$MIT_BASE', local_dir='$ML_DIR/cache/mit', allow_patterns=['*.json','*.safetensors','*.txt','*.jinja','*.model'])"
+    bash "$ML_DIR/train/convert_quantize.sh" --src "$ML_DIR/cache/mit" --name mit
+  fi
 fi
 mark gguf
 
-step "6/7" "Evaluation (base vs tuned, with and without JSON grammar)"
+step "6/7" "Evaluation (base [/ mit-edit] vs tuned, with and without JSON grammar)"
 if [[ "${SKIP_EVAL:-0}" == "1" ]]; then echo "    SKIP_EVAL=1"; elif finished eval; then skip "eval"; else
   "$PY" "$ML_DIR/train/eval.py"
   mark eval

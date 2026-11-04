@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""LoRA fine-tune Qwen/Qwen3.5-0.8B for the Bloop model, then merge the adapter.
+"""LoRA fine-tune Qwen/Qwen3.5-0.8B (or another --base) for the Bloop model, then merge the adapter.
 
 Usage (from the repo root, inside ml/.venv):
     python ml/train/train_lora.py --dry-run          # time a few steps, print ETA, stop
     python ml/train/train_lora.py                    # full run: train -> adapter -> merged model
     python ml/train/train_lora.py --merge-only       # re-merge an existing adapter
+    python ml/train/train_lora.py --base mit         # LoRA on top of MIT's weight-space edit
+                                                     # (RikiyaT/Qwen3.5-0.8B-weight-space-programming)
 
 Devices: cuda (fp16 autocast, T4 has no bf16) -> mps (fp32 by default, --dtype bf16 optional) -> cpu.
 
@@ -30,6 +32,11 @@ os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 
 ML_DIR = Path(__file__).resolve().parent.parent
 END_TOKEN = "<|im_end|>"
+
+# Base checkpoints the LoRA can start from (--base / BASE=). Any other HF id or local path is accepted too.
+DEFAULT_BASE = "Qwen/Qwen3.5-0.8B"
+MIT_WSP_BASE = "RikiyaT/Qwen3.5-0.8B-weight-space-programming"  # MIT CSAIL weight-space edit of the base (Apache-2.0)
+BASE_ALIASES = {"qwen": DEFAULT_BASE, "base": DEFAULT_BASE, "mit": MIT_WSP_BASE, "wsp": MIT_WSP_BASE}
 
 
 # --------------------------------------------------------------------------- pure helpers
@@ -69,6 +76,14 @@ def estimate_eta(micro_seconds: float, n_train: int, n_eval: int, epochs: int, m
     return micro_seconds * train_micros + (micro_seconds / 3.0) * eval_micros
 
 
+def resolve_base(name: str) -> str:
+    """'qwen'/'base' -> Qwen/Qwen3.5-0.8B, 'mit'/'wsp' -> MIT's edited checkpoint; anything else unchanged."""
+    name = (name or "").strip()
+    if not name:
+        return DEFAULT_BASE
+    return BASE_ALIASES.get(name.lower(), name)
+
+
 def read_jsonl(path: Path) -> list[dict]:
     rows = []
     with open(path, encoding="utf-8") as f:
@@ -86,7 +101,9 @@ def read_jsonl(path: Path) -> list[dict]:
 # --------------------------------------------------------------------------- CLI
 def parse_args(argv=None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--model", default="Qwen/Qwen3.5-0.8B", help="HF model id or local path")
+    p.add_argument("--base", "--model", dest="model", default=DEFAULT_BASE,
+                   help=f"base checkpoint: HF id or local path (default {DEFAULT_BASE}). Aliases: qwen, mit "
+                        f"(= {MIT_WSP_BASE}, to train the LoRA on top of MIT's weight-space edit). --model is the old name")
     p.add_argument("--train-file", default=str(ML_DIR / "data" / "train.jsonl"))
     p.add_argument("--eval-file", default=str(ML_DIR / "data" / "eval.jsonl"))
     p.add_argument("--out-dir", default=str(ML_DIR / "out"), help="adapter/ and merged/ are created inside")
@@ -118,7 +135,9 @@ def parse_args(argv=None) -> argparse.Namespace:
     p.add_argument("--no-merge", action="store_true", help="train and save the adapter only")
     p.add_argument("--max-train", type=int, default=0, help="debug: use only the first N training rows")
     p.add_argument("--max-eval", type=int, default=0, help="debug: use only the first N eval rows")
-    return p.parse_args(argv)
+    args = p.parse_args(argv)
+    args.model = resolve_base(args.model)
+    return args
 
 
 # --------------------------------------------------------------------------- torch-dependent parts
@@ -371,6 +390,7 @@ def main(argv=None) -> int:
 
     device = pick_device(args.device)
     weight_dtype, autocast_dtype = resolve_dtypes(device, args.dtype)
+    print(f"[env] base model: {args.model}")
     print(f"[env] torch {torch.__version__} | device={device} | weights={weight_dtype} | autocast={autocast_dtype}")
     try:
         import transformers

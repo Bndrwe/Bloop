@@ -43,7 +43,12 @@ python ml/train/train_lora.py --merge-only              # re-merge ml/out/adapte
 bash ml/train/convert_quantize.sh                       # merged -> GGUF -> Q4_K_M, prints size and sha256
 python ml/train/eval.py --limit 25                      # quick eval
 python -m unittest discover -s ml/train                 # scoring + helper tests (stdlib only)
+python ml/train/train_lora.py --base mit                # LoRA on top of MIT's weight-space edit (BASE=mit for run_mac.sh)
 ```
+
+## Weight-space editing (no gradients)
+
+`ml/wsp/` is a harness for editing the model's weights directly, after MIT CSAIL's [weight-space programming](https://rikiyat.github.io/blog/weight-space-programming/). You get a forward-pass budget, a locked test split, logged and revertible edits, and a changed-parameter cap. Start with `ml/wsp/README.md` and `ml/wsp/session.ipynb`. `eval.py` compares base, mit-edit, tuned and tuned+edit, using whichever GGUFs exist.
 
 ## Expected times and disk
 

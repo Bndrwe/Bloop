@@ -27,6 +27,17 @@ class Helpers(unittest.TestCase):
         self.assertEqual(T.fmt_duration(65), "1m 05s")
         self.assertEqual(T.fmt_duration(4), "4s")
 
+    def test_resolve_base(self):
+        self.assertEqual(T.resolve_base(""), "Qwen/Qwen3.5-0.8B")
+        self.assertEqual(T.resolve_base("mit"), "RikiyaT/Qwen3.5-0.8B-weight-space-programming")
+        self.assertEqual(T.resolve_base("MIT"), T.MIT_WSP_BASE)
+        self.assertEqual(T.resolve_base("ml/out/merged"), "ml/out/merged")
+
+    def test_base_flag(self):
+        self.assertEqual(T.parse_args([]).model, "Qwen/Qwen3.5-0.8B")
+        self.assertEqual(T.parse_args(["--base", "mit"]).model, T.MIT_WSP_BASE)
+        self.assertEqual(T.parse_args(["--model", "x/y"]).model, "x/y")  # old flag still works
+
 
 if __name__ == "__main__":
     unittest.main()

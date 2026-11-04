@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 """Evaluate the base and tuned Bloop GGUFs on ml/data/eval.jsonl with llama.cpp's llama-server.
 
+Up to four variants are compared, in this order (each is skipped when its GGUF does not exist):
+  base        untouched Qwen/Qwen3.5-0.8B                       --base-gguf
+  mit-edit    MIT's weight-space edit of the base               --mit-gguf
+  tuned       the Bloop LoRA (on whichever base it was trained)  --tuned-gguf
+  tuned+edit  the Bloop LoRA + a weight-space edit (ml/wsp)      --tuned-edit-gguf
+By default only base + tuned exist, which is the original behaviour.
+
 For every model it runs the plan prompts twice (free generation, and with a JSON-schema grammar) and the
 nudge prompts once, then writes ml/eval/REPORT.md (+ results.json) and fills the table in ml/MODEL_CARD.md.
 
@@ -28,7 +35,24 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import scoring as S  # noqa: E402
 
 ML_DIR = Path(__file__).resolve().parent.parent
+VARIANTS = ("base", "mit-edit", "tuned", "tuned+edit")
 CARD_START, CARD_END = "<!-- EVAL_TABLE_START -->", "<!-- EVAL_TABLE_END -->"
+
+
+def select_variants(paths: dict, exists=os.path.exists, skip: tuple = ()) -> tuple[list, list]:
+    """Pure: ([(name, path)] in VARIANTS order for existing files, [(name, path)] missing). Unknown names last."""
+    order = [v for v in VARIANTS if v in paths] + [v for v in paths if v not in VARIANTS]
+    present, missing = [], []
+    for name in order:
+        path = paths[name]
+        if name in skip or not path:
+            continue
+        (present if exists(path) else missing).append((name, path))
+    return present, missing
+
+
+def present_variants(results: dict) -> list:
+    return [v for v in VARIANTS if v in results] + [v for v in results if v not in VARIANTS]
 
 
 def find_server(explicit: str | None) -> str:
@@ -144,7 +168,7 @@ def run_model(name: str, gguf: str, items: list[dict], args, binary: str, log_di
 
 
 def table(results: dict) -> str:
-    cols = [(m, mode) for m in ("base", "tuned") if m in results for mode in ("free", "grammar")]
+    cols = [(m, mode) for m in present_variants(results) for mode in ("free", "grammar")]
     head = "| Metric | " + " | ".join(f"{m} / {'grammar' if mo == 'grammar' else 'free'}" for m, mo in cols) + " |"
     sep = "|---|" + "---|" * len(cols)
     rows = []
@@ -175,11 +199,11 @@ def write_report(results: dict, args, path: Path) -> str:
              "`free` = unconstrained generation; `grammar` = JSON-schema constrained decoding (plan prompts only).",
              "Rule checks are computed over schema-valid plans; the last rule row counts unparseable replies as failures.", "",
              "## Side-by-side", "", tbl, "", "## Files", ""]
-    for m in ("base", "tuned"):
+    for m in present_variants(results):
         if m in results:
             lines.append(f"- {m}: `{results[m]['gguf']}` ({results[m]['size_bytes'] / 1e6:.0f} MB)")
     lines += ["", "## Samples", ""]
-    for m in ("base", "tuned"):
+    for m in present_variants(results):
         if m not in results:
             continue
         for mode in ("free", "grammar"):
@@ -209,6 +233,10 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--base-gguf", default=str(ML_DIR / "out" / "base-qwen3.5-0.8b-Q4_K_M.gguf"))
     ap.add_argument("--tuned-gguf", default=str(ML_DIR / "out" / "bloop-qwen3.5-0.8b-Q4_K_M.gguf"))
+    ap.add_argument("--mit-gguf", default=str(ML_DIR / "out" / "mit-qwen3.5-0.8b-Q4_K_M.gguf"),
+                    help="MIT's weight-space edit of the base (convert_quantize.sh --name mit); skipped if missing")
+    ap.add_argument("--tuned-edit-gguf", default=str(ML_DIR / "out" / "bloop-edit-qwen3.5-0.8b-Q4_K_M.gguf"),
+                    help="Bloop LoRA + weight-space edit (ml/wsp, convert_quantize.sh --name bloop-edit); skipped if missing")
     ap.add_argument("--eval-file", default=str(ML_DIR / "data" / "eval.jsonl"))
     ap.add_argument("--report", default=str(ML_DIR / "eval" / "REPORT.md"))
     ap.add_argument("--model-card", default=str(ML_DIR / "MODEL_CARD.md"))
@@ -221,6 +249,8 @@ def main() -> int:
     ap.add_argument("--samples", type=int, default=2)
     ap.add_argument("--seed", type=int, default=7)
     ap.add_argument("--skip-base", action="store_true")
+    ap.add_argument("--skip-mit", action="store_true")
+    ap.add_argument("--skip-tuned-edit", action="store_true")
     args = ap.parse_args()
 
     items = load_eval(Path(args.eval_file), args.limit)
@@ -231,15 +261,22 @@ def main() -> int:
     log_dir = report.parent
     log_dir.mkdir(parents=True, exist_ok=True)
 
-    results: dict = {}
-    if not args.skip_base:
-        if Path(args.base_gguf).exists():
-            results["base"] = run_model("base", args.base_gguf, items, args, binary, log_dir)
-        else:
-            print(f"[eval] base GGUF missing ({args.base_gguf}); comparing tuned only")
-    if not Path(args.tuned_gguf).exists():
+    skip = tuple(n for n, flag in (("base", args.skip_base), ("mit-edit", args.skip_mit),
+                                   ("tuned+edit", args.skip_tuned_edit)) if flag)
+    present, missing = select_variants({"base": args.base_gguf, "mit-edit": args.mit_gguf, "tuned": args.tuned_gguf,
+                                        "tuned+edit": args.tuned_edit_gguf}, skip=skip)
+    for name, path in missing:
+        if name == "base":
+            print(f"[eval] base GGUF missing ({path}); skipping base")
+        elif name != "tuned":
+            print(f"[eval] ({name} not found at {path}; skipped)")
+    names = [n for n, _ in present]
+    if "tuned" not in names and not any(n in names for n in ("mit-edit", "tuned+edit")):
         raise SystemExit(f"tuned GGUF not found: {args.tuned_gguf}")
-    results["tuned"] = run_model("tuned", args.tuned_gguf, items, args, binary, log_dir)
+    print(f"[eval] variants: {', '.join(names)}")
+    results: dict = {}
+    for name, path in present:
+        results[name] = run_model(name, path, items, args, binary, log_dir)
 
     (log_dir / "results.json").write_text(json.dumps(results, indent=2), encoding="utf-8")
     tbl = write_report(results, args, report)
