@@ -1,0 +1,57 @@
+== codesign -dv --verbose=4
+Executable=/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/MacOS/Bloop
+Identifier=edu.bloop.app
+Format=app bundle with Mach-O thin (arm64)
+CodeDirectory v=20500 size=622 flags=0x10002(adhoc,runtime) hashes=9+7 location=embedded
+VersionPlatform=1
+VersionMin=786432
+VersionSDK=1703936
+Hash type=sha256 size=32
+CandidateCDHash sha256=eb000ceb4e06e45b8f173b8c2980f422ee19bde0
+CandidateCDHashFull sha256=eb000ceb4e06e45b8f173b8c2980f422ee19bde09f6071d0ba90cea30b59cf7a
+Hash choices=sha256
+CMSDigest=eb000ceb4e06e45b8f173b8c2980f422ee19bde09f6071d0ba90cea30b59cf7a
+CMSDigestType=2
+Executable Segment base=0
+Executable Segment limit=16384
+Executable Segment flags=0x1
+Page size=4096
+CDHash=eb000ceb4e06e45b8f173b8c2980f422ee19bde0
+Signature=adhoc
+Info.plist entries=33
+TeamIdentifier=not set
+Runtime Version=26.0.0
+Sealed Resources version=2 rules=13 files=25
+Internal requirements count=0 size=12
+== designated requirement
+Executable=/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/MacOS/Bloop
+# designated => cdhash H"eb000ceb4e06e45b8f173b8c2980f422ee19bde0"
+== codesign --verify --deep --strict
+--prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper (Plugin).app
+--validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper (Plugin).app
+--prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Electron Framework.framework/Versions/Current/.
+--prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Electron Framework.framework/Versions/Current/Helpers/chrome_crashpad_handler
+--validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Electron Framework.framework/Versions/Current/Helpers/chrome_crashpad_handler
+--validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Electron Framework.framework/Versions/Current/.
+--prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper (GPU).app
+--prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Squirrel.framework/Versions/Current/.
+--validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper (GPU).app
+--validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Squirrel.framework/Versions/Current/.
+--prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper.app
+--validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper.app
+--prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/ReactiveObjC.framework/Versions/Current/.
+--validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/ReactiveObjC.framework/Versions/Current/.
+--prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Mantle.framework/Versions/Current/.
+--prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper (Renderer).app
+--validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper (Renderer).app
+--validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Mantle.framework/Versions/Current/.
+dist/mac-arm64/Bloop.app: valid on disk
+dist/mac-arm64/Bloop.app: satisfies its Designated Requirement
+exit=0
+== spctl (Gatekeeper, expected to reject an ad-hoc build)
+dist/mac-arm64/Bloop.app: rejected
+== Info.plist
+  "CFBundleExecutable" => "Bloop"
+  "CFBundleIdentifier" => "edu.bloop.app"
+  "LSUIElement" => 1
+  "NSAppleEventsUsageDescription" => "Bloop reads the URL of your front browser tab to tell study sites from distracting ones. Nothing leaves your Mac."
