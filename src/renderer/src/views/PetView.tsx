@@ -4,12 +4,12 @@ import { animate } from 'animejs'
 import { Pet } from '../pet/Pet'
 import { prefersReducedMotion } from '../lib/motion'
 import { useStatus } from '../hooks/useStatus'
-import { mmss, phaseLabel, scoreLevel, scoreText } from '../lib/format'
+import { mmss, phaseLabel, scoreBand, scoreLevel, scoreText } from '../lib/format'
 import './pet-view.css'
 
 const PET_SIZE = 110
 
-/** Dark-glass speech bubble; pops in on mount (remounted per messageId). */
+/** Paper-and-ink speech bubble; pops in on mount (remounted per messageId). */
 function Bubble({ text, onEnter, onLeave }: { text: string; onEnter: () => void; onLeave: () => void }): JSX.Element {
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -124,7 +124,7 @@ export function PetView(): JSX.Element {
       >
         <Pet mood={mood} size={PET_SIZE} outlined />
         {status && (status.phase !== 'idle' || status.score != null) && (
-          <span className="pv-dot" aria-label={`Focus score ${scoreText(status.score)}`} />
+          <span className="pv-dot" aria-label={`Focus score ${scoreText(status.score)}, ${scoreBand(status.score)}`} />
         )}
         {hover && (
           <div className="pv-badge">

@@ -15,6 +15,20 @@ export function scoreLevel(score: number | null | undefined): ScoreLevel {
   return 'bad'
 }
 
+/** Word for a score band, so the level is never carried by fill/weight alone. */
+export function scoreBand(score: number | null | undefined): string {
+  switch (scoreLevel(score)) {
+    case 'good':
+      return 'on track'
+    case 'ok':
+      return 'wobbly'
+    case 'bad':
+      return 'drifting'
+    default:
+      return 'no score yet'
+  }
+}
+
 export function scoreText(score: number | null | undefined): string {
   return score == null ? '—' : String(Math.round(score))
 }

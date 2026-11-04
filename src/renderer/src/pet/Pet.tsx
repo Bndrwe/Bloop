@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useId, useRef } from 'react'
 import type { CSSProperties } from 'react'
 import type { PetMood } from '@shared/types'
 import { skins, DEFAULT_SKIN, type SkinName } from './skins'
@@ -10,7 +10,7 @@ export interface PetProps {
   /** Rendered width/height in px. */
   size: number
   skin?: SkinName
-  /** Soft dark outline + drop shadow so the pet reads on any wallpaper. */
+  /** Desktop pet (kept for API stability; the ink-outlined art already reads on any wallpaper). */
   outlined?: boolean
   className?: string
 }
@@ -37,7 +37,11 @@ export function Pet({ mood, size, skin = DEFAULT_SKIN, outlined = false, classNa
     return startMoodMotion(el, mood)
   }, [mood, skin])
 
-  const style: CSSProperties = { width: size, height: size }
+  // A flat white "sticker cut" around the ink outline (dilate, no blur): invisible on light
+  // backgrounds, it keeps the black linework legible on dark wallpapers and the black panel.
+  const haloId = `pet-halo-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`
+  const halo = Math.max(1, Math.round(size / 55))
+  const style = { width: size, height: size, '--pet-halo': `url(#${haloId})` } as CSSProperties
   return (
     <div
       ref={ref}
@@ -46,6 +50,17 @@ export function Pet({ mood, size, skin = DEFAULT_SKIN, outlined = false, classNa
       role="img"
       aria-label={`Study Pet, ${MOOD_LABEL[mood]}`}
     >
+      <svg className="pet-halo-defs" width="0" height="0" aria-hidden="true" focusable="false">
+        <filter id={haloId} x="-20%" y="-20%" width="140%" height="140%" colorInterpolationFilters="sRGB">
+          <feMorphology in="SourceAlpha" operator="dilate" radius={halo} result="grown" />
+          <feFlood floodColor="#fff" result="paper" />
+          <feComposite in="paper" in2="grown" operator="in" result="halo" />
+          <feMerge>
+            <feMergeNode in="halo" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </svg>
       <Skin mood={mood} />
     </div>
   )

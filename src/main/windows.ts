@@ -189,7 +189,7 @@ function createPanelWindow(): BrowserWindow {
     skipTaskbar: true,
     show: false,
     title: 'Study Pet',
-    backgroundColor: '#fffaf3',
+    backgroundColor: '#000000',
     roundedCorners: true,
     webPreferences: webPreferences()
   })
@@ -244,7 +244,7 @@ function framedWindow(route: string, width: number, height: number, title: strin
     minHeight: Math.min(height, 420),
     show: false,
     title,
-    backgroundColor: '#fffaf3',
+    backgroundColor: '#000000',
     webPreferences: webPreferences()
   })
   win.setMenuBarVisibility(false)

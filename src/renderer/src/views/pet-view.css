@@ -19,18 +19,39 @@
   cursor: grabbing;
 }
 
-/* Score dot: ring of the score color with a dark rim so it reads on any wallpaper. */
+/* Score dot: a self-contained coin — black disc with a 1px white rim, so it reads on any wallpaper.
+   The mark inside carries the band: solid disc ≥70, half disc 40–69, empty ring <40, dashed ring = no score. */
 .pv-dot {
   position: absolute;
-  bottom: 10px;
-  right: 2px;
-  width: 12px;
-  height: 12px;
+  bottom: 9px;
+  right: 1px;
+  width: 17px;
+  height: 17px;
   border-radius: 50%;
-  background: var(--level);
-  box-shadow:
-    0 0 0 2px rgba(5, 9, 15, 0.85),
-    0 2px 5px rgba(0, 0, 0, 0.4);
+  background: var(--ink);
+  box-shadow: 0 0 0 1px var(--paper);
+}
+.pv-dot::before,
+.pv-dot::after {
+  content: '';
+  position: absolute;
+  inset: 4.5px;
+  border-radius: 50%;
+}
+.pv-dot::before {
+  border: 1.5px solid var(--paper);
+}
+.level-good .pv-dot::before {
+  background: var(--paper);
+}
+.level-ok .pv-dot::after {
+  left: 50%;
+  border-radius: 0 999px 999px 0;
+  background: var(--paper);
+}
+.level-none .pv-dot::before {
+  border-style: dashed;
+  border-color: var(--g4);
 }
 
 .pv-badge {
@@ -45,26 +66,39 @@
   gap: 6px;
   padding: 3px 9px 3px 3px;
   border-radius: 999px;
-  background: rgba(8, 15, 25, 0.88);
-  border: 1px solid var(--hairline);
+  background: var(--ink);
+  border: 1px solid var(--g5);
   color: var(--text);
   font-size: 10.5px;
   white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   pointer-events: none;
 }
+/* Score pill: solid ≥70, outline 40–69, dashed <40, grey when there's no score. */
 .pv-badge-score {
   min-width: 22px;
   height: 18px;
   padding: 0 5px;
   border-radius: 999px;
-  background: var(--level);
-  color: #05090f;
+  border: 1px solid var(--paper);
+  background: transparent;
+  color: var(--paper);
   font-family: var(--mono);
   font-size: 10.5px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+.level-good .pv-badge-score {
+  background: var(--paper);
+  color: var(--ink);
+  font-weight: 600;
+}
+.level-bad .pv-badge-score {
+  border-style: dashed;
+}
+.level-none .pv-badge-score {
+  border-color: var(--g3);
+  color: var(--text-2);
 }
 .pv-badge-phase {
   color: var(--text-2);
@@ -74,6 +108,7 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Speech bubble: a comic balloon — white paper, black ink line. Reads on light and dark desktops. */
 .pv-bubble {
   position: absolute;
   top: 6px;
@@ -84,17 +119,19 @@
   width: max-content;
   padding: 6px 11px;
   border-radius: 14px;
-  background: rgb(9, 17, 28);
-  border: 1px solid rgba(214, 228, 255, 0.16);
-  color: var(--text);
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  color: var(--ink);
   font-size: 11px;
+  font-weight: 500;
   line-height: 1.32;
   text-align: center;
-  box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.5);
   transform-origin: 50% 100%;
   z-index: 2;
 }
 .pv-bubble span {
+  /* Pet copy can include emoji; keep them in ink too. */
+  filter: grayscale(1);
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -104,14 +141,14 @@
 .pv-bubble::after {
   content: '';
   position: absolute;
-  bottom: -5px;
+  bottom: -5.5px;
   left: 50%;
   width: 9px;
   height: 9px;
   margin-left: -4.5px;
-  background: rgb(9, 17, 28);
-  border-right: 1px solid rgba(214, 228, 255, 0.16);
-  border-bottom: 1px solid rgba(214, 228, 255, 0.16);
+  background: var(--paper);
+  border-right: 1.5px solid var(--ink);
+  border-bottom: 1.5px solid var(--ink);
   transform: rotate(45deg);
   border-bottom-right-radius: 2px;
 }

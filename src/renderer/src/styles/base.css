@@ -1,39 +1,24 @@
-/* Study Pet — dark "night desk" world: near-black navy, frosted glass, hot-pink accent, film grain. */
+/* Study Pet — monochrome ink: black canvas, white ink, grey hairlines. Flat fills only, no hue.
+   State is carried by fill vs outline vs dashes, weight and labels — never by colour. */
 :root {
   --sans: 'Geist Sans', 'Geist', system-ui, sans-serif;
   --mono: 'Geist Mono', ui-monospace, Menlo, monospace;
   --serif: 'Instrument Serif', Georgia, serif;
 
-  --bg-0: #05090f;
-  --bg-1: #0a1420;
-  --bg-2: #0f1c2b;
-  --glass: rgba(150, 180, 220, 0.055);
-  --glass-strong: rgba(150, 180, 220, 0.1);
-  --hairline: rgba(214, 228, 255, 0.12);
-  --hairline-strong: rgba(214, 228, 255, 0.22);
+  /* Achromatic palette (R = G = B everywhere). */
+  --ink: #000000; /* canvas */
+  --paper: #ffffff; /* primary ink */
+  --g1: #0e0e0e; /* raised surface / hover wash */
+  --g2: #262626; /* hairline */
+  --g3: #474747; /* strong hairline, idle outlines */
+  --g4: #7d7d7d; /* tertiary text (4.9:1 on black) */
+  --g5: #b3b3b3; /* secondary text (10:1 on black) */
 
-  --text: #eef3fa;
-  --text-2: #a9b5c7;
-  --text-3: #7d8aa0;
-
-  --pink: #f748b1;
-  --pink-soft: rgba(247, 72, 177, 0.16);
-  --pink-ink: #1c0410;
-  --cyan: #5ee6e0;
-  --cyan-soft: rgba(94, 230, 224, 0.14);
-  --peri: #9aa8ff;
-  --peri-soft: rgba(154, 168, 255, 0.15);
-  --amber: #ffb547;
-  --amber-soft: rgba(255, 181, 71, 0.15);
-  --red: #ff5c7a;
-  --red-soft: rgba(255, 92, 122, 0.15);
-  --paper: #f4f1ea;
-  --ink: #081721;
-
-  --good: #5eeacb;
-  --ok: var(--amber);
-  --bad: var(--red);
-  --none: #5b6678;
+  --text: var(--paper);
+  --text-2: var(--g5);
+  --text-3: var(--g4);
+  --hairline: var(--g2);
+  --hairline-strong: var(--g3);
 
   --s1: 4px;
   --s2: 8px;
@@ -42,15 +27,16 @@
   --s5: 24px;
   --s6: 32px;
 
-  --r-sm: 10px;
-  --r-md: 14px;
-  --r-lg: 22px;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --shadow: 0 14px 34px -14px rgba(0, 0, 0, 0.7);
 
-  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  --zigzag: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='8'%3E%3Cpath d='M0 7 L7 1 L14 7' fill='none' stroke='%23f748b1' stroke-width='1.4' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --zigzag: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M0 6.5 L6 1.5 L12 6.5' fill='none' stroke='%23474747' stroke-width='1.2' stroke-linejoin='round'/%3E%3C/svg%3E");
+
+  /* 45° white hatch tile: the "low" pattern, used where a pattern stands in for a colour. */
+  --hatch: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Cpath d='M-1 1 L1 -1 M0 4 L4 0 M3 5 L5 3' stroke='%23fff' stroke-width='1.1'/%3E%3C/svg%3E");
 
   color-scheme: dark;
 }
@@ -72,12 +58,12 @@ body,
   line-height: 1.45;
   color: var(--text);
   -webkit-font-smoothing: antialiased;
-  caret-color: var(--pink);
+  caret-color: var(--paper);
 }
 
 ::selection {
-  background: var(--pink);
-  color: var(--pink-ink);
+  background: var(--paper);
+  color: var(--ink);
 }
 
 ::-webkit-scrollbar {
@@ -88,13 +74,13 @@ body,
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(214, 228, 255, 0.14);
+  background: var(--g2);
   border-radius: 999px;
   border: 3px solid transparent;
   background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(214, 228, 255, 0.26);
+  background-color: var(--g4);
 }
 
 /* Pet window: fully transparent, no scrollbars. */
@@ -109,34 +95,18 @@ html.route-pet #root {
   -webkit-user-select: none;
 }
 
+html.route-panel,
+html.route-settings,
+html.route-onboarding,
+html.route-panel body,
+html.route-settings body,
+html.route-onboarding body {
+  background: var(--ink);
+}
 html.route-panel body,
 html.route-settings body,
 html.route-onboarding body {
   min-height: 100vh;
-  background:
-    radial-gradient(120% 70% at 90% -15%, rgba(247, 72, 177, 0.17), transparent 55%),
-    radial-gradient(90% 60% at -15% 105%, rgba(94, 230, 224, 0.09), transparent 60%),
-    linear-gradient(180deg, var(--bg-1), var(--bg-0));
-  background-color: var(--bg-0);
-}
-html.route-panel,
-html.route-settings,
-html.route-onboarding {
-  background: var(--bg-0);
-}
-
-/* Film grain over everything (except the transparent pet window). */
-html.route-panel body::after,
-html.route-settings body::after,
-html.route-onboarding body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background-image: var(--grain);
-  opacity: 0.07;
-  mix-blend-mode: overlay;
-  z-index: 100;
 }
 
 html.route-panel body {
@@ -179,7 +149,7 @@ textarea {
   outline: none;
 }
 :focus-visible {
-  outline: 2px solid var(--pink);
+  outline: 2px solid var(--paper);
   outline-offset: 2px;
 }
 
@@ -189,62 +159,56 @@ textarea {
   vertical-align: -0.15em;
 }
 
-/* Buttons: pills. Primary = off-white paper, secondary = glass with hairline. */
+/* Buttons: pills. Primary = solid white ink; secondary = black with a white hairline. */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  border: 1px solid var(--hairline);
+  border: 1px solid var(--paper);
   border-radius: 999px;
   padding: 7px 14px;
   font-weight: 500;
-  background: var(--glass);
-  color: var(--text);
+  background: var(--ink);
+  color: var(--paper);
   white-space: nowrap;
   transition:
     background 0.15s ease,
+    color 0.15s ease,
     border-color 0.15s ease,
     transform 0.1s ease;
 }
 .btn:hover {
-  background: var(--glass-strong);
-  border-color: var(--hairline-strong);
+  background: var(--g2);
 }
 .btn:active {
   transform: scale(0.97);
 }
 .btn:disabled {
-  opacity: 0.45;
+  opacity: 0.4;
   cursor: default;
   transform: none;
 }
-.btn--primary {
+.btn--primary,
+.btn--accent {
   background: var(--paper);
   border-color: var(--paper);
   color: var(--ink);
 }
-.btn--primary:hover {
-  background: #fff;
-  border-color: #fff;
-}
-.btn--accent {
-  background: var(--pink);
-  border-color: var(--pink);
-  color: var(--pink-ink);
-}
+.btn--primary:hover,
 .btn--accent:hover {
-  background: #ff63bf;
-  border-color: #ff63bf;
+  background: var(--g5);
+  border-color: var(--g5);
 }
+/* Destructive: quieter until hovered, then it inverts so the commitment is felt. */
 .btn--danger {
-  background: var(--red-soft);
-  border-color: rgba(255, 92, 122, 0.35);
-  color: #ffb3c1;
+  border-color: var(--g3);
+  color: var(--paper);
 }
 .btn--danger:hover {
-  background: rgba(255, 92, 122, 0.24);
-  border-color: rgba(255, 92, 122, 0.55);
+  background: var(--paper);
+  border-color: var(--paper);
+  color: var(--ink);
 }
 .btn--ghost {
   background: transparent;
@@ -253,8 +217,8 @@ textarea {
 }
 .btn--ghost:hover {
   color: var(--text);
-  background: var(--glass);
-  border-color: transparent;
+  background: var(--g1);
+  border-color: var(--g2);
 }
 .btn--small {
   padding: 5px 11px;
@@ -273,68 +237,61 @@ textarea {
   color: var(--text-2);
   transition:
     background 0.15s ease,
-    color 0.15s ease;
+    color 0.15s ease,
+    border-color 0.15s ease;
 }
 .icon-btn:hover {
-  background: var(--glass-strong);
+  border-color: var(--g3);
   color: var(--text);
 }
 
-/* Frosted glass surface. */
-.glass {
+/* Flat card: black on black, held by a hairline. */
+.card {
   position: relative;
-  background: linear-gradient(180deg, rgba(160, 190, 230, 0.085), rgba(160, 190, 230, 0.035));
+  background: var(--ink);
   border: 1px solid var(--hairline);
   border-radius: var(--r-lg);
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
-  box-shadow:
-    var(--shadow),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
-/* Tilted sticker tag with a hard shadow (the Ditto-ish signature). */
-.sticker {
-  display: inline-block;
+/* Tags: small flat labels. Solid = active/important, outline = resting, dashed = suspended, muted = idle. */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 1px 8px 2px;
-  border-radius: 7px;
-  background: var(--pink);
-  color: var(--pink-ink);
+  border-radius: 6px;
+  border: 1px solid var(--paper);
+  background: var(--paper);
+  color: var(--ink);
   font-weight: 500;
-  transform: rotate(-3deg);
-  box-shadow: 2px 2px 0 #000;
   white-space: nowrap;
 }
-.sticker--cyan {
-  background: var(--cyan);
-  color: #04201f;
+.tag--outline {
+  background: transparent;
+  color: var(--paper);
 }
-.sticker--peri {
-  background: var(--peri);
-  color: #0b1036;
+.tag--dashed {
+  background: transparent;
+  color: var(--paper);
+  border-style: dashed;
 }
-.sticker--amber {
-  background: var(--amber);
-  color: #2a1700;
-}
-.sticker--muted {
-  background: #2a3647;
-  color: var(--text);
-}
-.sticker--tilt-r {
-  transform: rotate(2.5deg);
+.tag--muted {
+  background: transparent;
+  border-color: var(--g3);
+  color: var(--text-2);
 }
 
+/* The one ornament: a fine grey zigzag rule, an ink doodle in the margin. */
 .zigzag {
   height: 8px;
   background-image: var(--zigzag);
   background-repeat: repeat-x;
   background-position: center;
-  opacity: 0.55;
   border: none;
   margin: 0;
 }
 
+/* Category chips: focus = solid ink, distract = dashed outline, neutral = grey. */
 .chip {
   display: inline-flex;
   align-items: center;
@@ -343,23 +300,54 @@ textarea {
   border-radius: 999px;
   font-size: 11.5px;
   font-weight: 500;
-  border: 1px solid var(--hairline);
-  background: var(--glass);
+  border: 1px solid var(--g3);
+  background: transparent;
   color: var(--text-2);
   white-space: nowrap;
 }
 .chip--focus {
-  background: var(--cyan-soft);
-  border-color: rgba(94, 230, 224, 0.3);
-  color: var(--cyan);
+  background: var(--paper);
+  border-color: var(--paper);
+  color: var(--ink);
 }
 .chip--distract {
-  background: var(--pink-soft);
-  border-color: rgba(247, 72, 177, 0.35);
-  color: #ff8fd0;
+  border: 1px dashed var(--paper);
+  color: var(--paper);
 }
 .chip--neutral {
   color: var(--text-2);
+}
+
+/* Score mark: filled = ≥70, half = 40–69, empty ring = <40, dashed grey = no data. */
+.mark {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid var(--paper);
+  overflow: hidden;
+  vertical-align: 0.05em;
+}
+.level-good .mark,
+.mark.level-good {
+  background: var(--paper);
+}
+.level-ok .mark::after,
+.mark.level-ok::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  right: 0;
+  background: var(--paper);
+}
+.level-none .mark,
+.mark.level-none {
+  border-style: dashed;
+  border-color: var(--g4);
 }
 
 .toggle {
@@ -379,9 +367,11 @@ textarea {
   position: absolute;
   inset: 0;
   border-radius: 999px;
-  background: rgba(214, 228, 255, 0.12);
-  border: 1px solid var(--hairline);
-  transition: background 0.2s var(--ease-out);
+  background: var(--ink);
+  border: 1px solid var(--g3);
+  transition:
+    background 0.2s var(--ease-out),
+    border-color 0.2s var(--ease-out);
   cursor: pointer;
 }
 .toggle span::after {
@@ -392,21 +382,21 @@ textarea {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: var(--text-2);
+  background: var(--g4);
   transition:
     transform 0.25s var(--ease-out),
     background 0.2s ease;
 }
 .toggle input:checked + span {
-  background: var(--pink);
-  border-color: var(--pink);
+  background: var(--paper);
+  border-color: var(--paper);
 }
 .toggle input:checked + span::after {
   transform: translateX(16px);
-  background: var(--paper);
+  background: var(--ink);
 }
 .toggle input:focus-visible + span {
-  outline: 2px solid var(--pink);
+  outline: 2px solid var(--paper);
   outline-offset: 2px;
 }
 
@@ -415,19 +405,6 @@ textarea {
 }
 .faint {
   color: var(--text-3);
-}
-
-.level-good {
-  --level: var(--good);
-}
-.level-ok {
-  --level: var(--ok);
-}
-.level-bad {
-  --level: var(--bad);
-}
-.level-none {
-  --level: var(--none);
 }
 
 .visually-hidden {

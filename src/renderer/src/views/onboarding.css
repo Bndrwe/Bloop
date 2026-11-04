@@ -19,13 +19,14 @@
   font-size: 30px;
   line-height: 1.1;
 }
-.onb-hero h1 .sticker {
+.onb-hero h1 .tag {
   font-family: var(--sans);
   font-style: normal;
   font-size: 20px;
   font-weight: 500;
   vertical-align: 4px;
   margin-left: 4px;
+  padding: 0 9px 2px;
 }
 .onb-hero p {
   margin: 0;
@@ -60,14 +61,16 @@
   white-space: nowrap;
   padding: 2px 9px;
   border-radius: 999px;
+  border: 1px solid var(--paper);
 }
+/* Granted = solid ink + check; needs attention = dashed outline + alert. */
 .onb-state--ok {
-  color: var(--good);
-  background: rgba(94, 234, 203, 0.12);
+  background: var(--paper);
+  color: var(--ink);
 }
 .onb-state--warn {
-  color: var(--amber);
-  background: var(--amber-soft);
+  border-style: dashed;
+  color: var(--paper);
 }
 .onb .row {
   display: flex;
@@ -78,7 +81,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #ffb3c1;
+  color: var(--paper);
   margin: 0;
   font-size: 12px;
 }

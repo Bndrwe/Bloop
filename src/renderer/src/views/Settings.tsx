@@ -320,12 +320,12 @@ export function SettingsView(): JSX.Element {
             <span className="serif">Settings</span>
           </h1>
           <p className="muted">
-            Teach your pet what counts as studying. <span className="sticker sticker--tilt-r">auto-saves</span>
+            Teach your pet what counts as studying. <span className="tag tag--outline">auto-saves</span>
           </p>
         </div>
       </header>
 
-      <section className="glass enter">
+      <section className="card enter">
         <h2>Apps</h2>
         <p className="section-sub muted">Matched against the app name in your menu bar, like “Notion” or “Discord”.</p>
         <div className="grid2 grid2--inner">
@@ -348,7 +348,7 @@ export function SettingsView(): JSX.Element {
         </div>
       </section>
 
-      <section className="glass enter">
+      <section className="card enter">
         <h2>Websites</h2>
         <p className="section-sub muted">Paste a domain or a full link; it’s trimmed to the domain, like youtube.com.</p>
         <div className="grid2 grid2--inner">
@@ -376,7 +376,7 @@ export function SettingsView(): JSX.Element {
       <hr className="zigzag enter" />
 
       <div className="grid2">
-        <section className="glass enter">
+        <section className="card enter">
           <h2>Nudges</h2>
           <NumberField
             label="Pet speaks up after"
@@ -401,7 +401,7 @@ export function SettingsView(): JSX.Element {
           />
         </section>
 
-        <section className="glass enter">
+        <section className="card enter">
           <h2>Pomodoro</h2>
           <NumberField
             label="Focus round"
@@ -431,7 +431,7 @@ export function SettingsView(): JSX.Element {
         </section>
       </div>
 
-      <section className="glass enter">
+      <section className="card enter">
         <div className="section-head">
           <h2>Study reminders</h2>
           <button className="btn btn--small btn--primary" onClick={addReminder}>
@@ -458,7 +458,7 @@ export function SettingsView(): JSX.Element {
         )}
       </section>
 
-      <section className="glass enter">
+      <section className="card enter">
         <h2>Deadlines</h2>
         <label className="field field--wide">
           <span className="field-label">Brightspace calendar link (iCal)</span>
@@ -480,7 +480,7 @@ export function SettingsView(): JSX.Element {
         </div>
       </section>
 
-      <section className="glass danger-zone enter">
+      <section className="card danger-zone enter">
         <div>
           <h2>Reset data</h2>
           <p className="muted">Deletes your session history and restores default settings.</p>

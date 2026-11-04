@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { animate } from 'animejs'
 import type { AppStatus, Deadline, Stats, StudyPlan } from '@shared/types'
 import { useStatus } from '../hooks/useStatus'
@@ -14,6 +14,7 @@ import {
   parseLocalDate,
   phaseLabel,
   relativeDate,
+  scoreBand,
   scoreLevel,
   scoreText
 } from '../lib/format'
@@ -74,6 +75,7 @@ function ScoreRing({ score }: { score: number | null }): JSX.Element {
           {scoreText(score)}
         </span>
         <span className="ring-cap">focus score</span>
+        <span className="ring-band">{scoreBand(score)}</span>
       </div>
     </div>
   )
@@ -142,39 +144,63 @@ function WeekChart({ stats }: { stats: Stats }): JSX.Element {
   const gap = 10
   const bw = (W - gap * (days.length - 1)) / Math.max(1, days.length)
   const total = days.reduce((a, d) => a + d.focusSec, 0)
+  const hatch = `week-hatch-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`
   return (
     <div className="week-wrap">
       <div className="week-head">
         <span className="muted">Last 7 days</span>
         <span className="num faint">{minutes(total)}</span>
       </div>
-      <svg className="week" viewBox={`0 0 ${W} ${H + 16}`} width="100%" role="img" aria-label="Focus minutes per day, last 7 days">
+      <svg className="week" viewBox={`0 0 ${W} ${H + 18}`} width="100%" role="img" aria-label="Focus minutes per day, last 7 days">
+        <defs>
+          {/* Low-score days are hatched, not tinted: the pattern carries the band. */}
+          <pattern id={hatch} width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <line x1="0" y1="0" x2="0" y2="4" className="week-hatch-line" />
+          </pattern>
+        </defs>
         {days.map((d, i) => {
           const h = d.focusSec > 0 ? Math.max(4, (d.focusSec / max) * H) : 3
           const x = i * (bw + gap)
           const date = parseLocalDate(d.date)
           const today = i === days.length - 1
+          const level = d.focusSec > 0 ? scoreLevel(d.avgScore) : 'none'
           return (
             <g key={d.date} className={today ? 'week-today' : undefined}>
               <title>
-                {`${DAY_SHORT[date.getDay()]} ${d.date}: ${minutes(d.focusSec)} focused · avg score ${scoreText(d.avgScore)} · ${d.sessions} session${d.sessions === 1 ? '' : 's'}`}
+                {`${DAY_SHORT[date.getDay()]} ${d.date}: ${minutes(d.focusSec)} focused · avg score ${scoreText(d.avgScore)} (${scoreBand(d.avgScore)}) · ${d.sessions} session${d.sessions === 1 ? '' : 's'}`}
               </title>
               <rect x={x} y={0} width={bw} height={H} rx={6} className="week-hit" />
               <rect
-                x={x}
-                y={H - h}
-                width={bw}
-                height={h}
-                rx={Math.min(5, bw / 2)}
-                className={`week-bar level-${d.focusSec > 0 ? scoreLevel(d.avgScore) : 'none'}`}
+                x={x + 0.75}
+                y={H - h + 0.75}
+                width={bw - 1.5}
+                height={Math.max(1.5, h - 1.5)}
+                rx={Math.min(4, bw / 2)}
+                className={`week-bar level-${level}`}
+                style={level === 'bad' ? { fill: `url(#${hatch})` } : undefined}
               />
               <text x={x + bw / 2} y={H + 13} textAnchor="middle" className="week-label">
                 {DAY_LETTERS[date.getDay()]}
               </text>
+              {today && <rect x={x + bw / 2 - 5} y={H + 16} width={10} height={1.5} rx={0.75} className="week-today-mark" />}
             </g>
           )
         })}
       </svg>
+      <ul className="week-key" aria-hidden="true">
+        <li>
+          <span className="week-swatch level-good" />
+          70+
+        </li>
+        <li>
+          <span className="week-swatch level-ok" />
+          40–69
+        </li>
+        <li>
+          <span className="week-swatch level-bad" />
+          under 40
+        </li>
+      </ul>
     </div>
   )
 }
@@ -221,7 +247,7 @@ function Deadlines({ refreshKey }: { refreshKey: string }): JSX.Element | null {
   if (!visible || items == null) return null
 
   return (
-    <section className="glass section" ref={ref}>
+    <section className="card section" ref={ref}>
       <h2 className="section-title">
         <Icon name="calendar" size={14} />
         Upcoming deadlines
@@ -241,7 +267,7 @@ function Deadlines({ refreshKey }: { refreshKey: string }): JSX.Element | null {
                 {d.summary}
               </span>
               <span className="dl-meta">
-                {d.isExam && <span className="sticker sticker--amber dl-exam">exam</span>}
+                {d.isExam && <span className="tag dl-exam">exam</span>}
                 <span className="faint">{relativeDate(d.start)}</span>
               </span>
             </li>
@@ -305,7 +331,7 @@ function AiPlan(): JSX.Element | null {
 
   if (!hasKey) {
     return (
-      <section className="glass section section--quiet" ref={ref}>
+      <section className="card section section--quiet" ref={ref}>
         <h2 className="section-title">
           <Icon name="spark" size={14} />
           AI study plan
@@ -318,7 +344,7 @@ function AiPlan(): JSX.Element | null {
   }
 
   return (
-    <section className="glass section" ref={ref} aria-busy={loading}>
+    <section className="card section" ref={ref} aria-busy={loading}>
       <h2 className="section-title">
         <Icon name="spark" size={14} />
         AI study plan
@@ -392,12 +418,13 @@ function Pomodoros({ n }: { n: number }): JSX.Element | null {
   )
 }
 
-const PHASE_STICKER: Record<string, string> = {
-  focus: 'sticker--cyan',
-  break: 'sticker--peri',
-  paused: 'sticker--amber',
+/** Phase tag: solid while focusing or done, outline on break, dashed while paused, grey when idle. */
+const PHASE_TAG: Record<string, string> = {
+  focus: '',
+  break: 'tag--outline',
+  paused: 'tag--dashed',
   done: '',
-  idle: 'sticker--muted'
+  idle: 'tag--muted'
 }
 
 export function Panel(): JSX.Element {
@@ -461,10 +488,10 @@ export function Panel(): JSX.Element {
         </button>
       </header>
 
-      <section className="glass hero enter">
+      <section className="card hero enter">
         <ScoreRing score={status.score} />
         <div className="hero-info">
-          <span className={`sticker ${PHASE_STICKER[phase] ?? ''}`}>{phaseLabel(phase)}</span>
+          <span className={`tag ${PHASE_TAG[phase] ?? ''}`}>{phaseLabel(phase)}</span>
           {timed ? (
             <div className="timer num" aria-label={`${mmss(remaining)} left`}>
               {mmss(remaining)}
@@ -502,7 +529,7 @@ export function Panel(): JSX.Element {
 
       <hr className="zigzag enter" />
 
-      <section className="glass section enter">
+      <section className="card section enter">
         <h2 className="section-title">Today</h2>
         {statsError && !stats ? (
           <p className="note note--error">
@@ -514,7 +541,10 @@ export function Panel(): JSX.Element {
             <dl className="stats">
               <div>
                 <dt>avg score</dt>
-                <dd className={`num level-${scoreLevel(stats?.todayAvgScore)}`}>{scoreText(stats?.todayAvgScore)}</dd>
+                <dd className={`num level-${scoreLevel(stats?.todayAvgScore)}`} title={scoreBand(stats?.todayAvgScore)}>
+                  {scoreText(stats?.todayAvgScore)}
+                  <span className="mark" aria-label={scoreBand(stats?.todayAvgScore)} />
+                </dd>
               </div>
               <div>
                 <dt>focused</dt>

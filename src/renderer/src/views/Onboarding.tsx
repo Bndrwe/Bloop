@@ -81,7 +81,7 @@ export function Onboarding(): JSX.Element {
       <div className="onb-hero enter">
         <Pet mood="wave" size={92} />
         <h1>
-          Hi, I’m your <span className="sticker">Study Pet</span>
+          Hi, I’m your <span className="tag">Study Pet</span>
         </h1>
         <p className="muted">
           I sit in the corner, keep score of your focus, and give you a gentle nudge when you drift off.
@@ -89,7 +89,7 @@ export function Onboarding(): JSX.Element {
       </div>
 
       {!isMac ? (
-        <div className="glass onb-perm enter">
+        <div className="card onb-perm enter">
           <div className="onb-perm-head">
             <h2>Permissions</h2>
             <StateBadge state="not-applicable" />
@@ -98,7 +98,7 @@ export function Onboarding(): JSX.Element {
         </div>
       ) : (
         <>
-          <div className="glass onb-perm enter">
+          <div className="card onb-perm enter">
             <div className="onb-perm-head">
               <h2>Screen Recording</h2>
               <StateBadge state={perm?.screenRecording ?? 'unknown'} />
@@ -113,7 +113,7 @@ export function Onboarding(): JSX.Element {
             )}
           </div>
 
-          <div className="glass onb-perm enter">
+          <div className="card onb-perm enter">
             <div className="onb-perm-head">
               <h2>Automation for browsers</h2>
               <StateBadge state={perm?.automation ?? 'unknown'} />

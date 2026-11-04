@@ -43,7 +43,7 @@
   gap: 6px;
   min-width: 0;
 }
-.hero-info .sticker {
+.hero-info .tag {
   font-size: 11.5px;
   margin-bottom: 2px;
 }
@@ -65,15 +65,15 @@
   left: var(--s4);
   right: var(--s4);
   bottom: 9px;
-  height: 3px;
+  height: 2px;
   border-radius: 999px;
-  background: rgba(214, 228, 255, 0.08);
+  background: var(--g2);
   overflow: hidden;
 }
 .progress span {
   display: block;
   height: 100%;
-  background: var(--pink);
+  background: var(--paper);
   transform-origin: 0 50%;
   transition: transform 1s linear;
 }
@@ -87,7 +87,7 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--pink);
+  background: var(--paper);
 }
 
 .ring {
@@ -96,17 +96,25 @@
   height: 104px;
   flex: none;
 }
+/* Arc weight carries the band: heavy solid ink ≥70, a fine line 40–69, a grey dotted line <40. */
 .ring-track {
   fill: none;
-  stroke: rgba(214, 228, 255, 0.08);
-  stroke-width: 7;
+  stroke: var(--g2);
+  stroke-width: 1;
 }
 .ring-arc {
   fill: none;
-  stroke: var(--level);
+  stroke: var(--paper);
   stroke-width: 7;
   stroke-linecap: round;
-  filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--level) 45%, transparent));
+}
+.level-ok .ring-arc {
+  stroke-width: 2.5;
+}
+.level-bad .ring-arc {
+  stroke: var(--g5);
+  stroke-width: 2.5;
+  stroke-linecap: butt;
 }
 .ring-label {
   position: absolute;
@@ -119,7 +127,7 @@
 .ring-num {
   font-size: 44px;
   line-height: 0.9;
-  color: var(--level);
+  color: var(--paper);
 }
 .level-none .ring-num {
   color: var(--text-3);
@@ -128,6 +136,15 @@
   font-size: 9.5px;
   color: var(--text-3);
   letter-spacing: 0.02em;
+}
+.ring-band {
+  margin-top: 1px;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-2);
+}
+.level-good .ring-band {
+  color: var(--paper);
 }
 
 .controls {
@@ -160,8 +177,8 @@
   padding: var(--s3) var(--s4) var(--s4);
 }
 .section--quiet {
-  background: rgba(160, 190, 230, 0.03);
-  box-shadow: none;
+  border-style: dashed;
+  border-color: var(--g3);
 }
 .section-title {
   display: flex;
@@ -173,7 +190,7 @@
   color: var(--text);
 }
 .section-title .icon {
-  color: var(--pink);
+  color: var(--paper);
 }
 
 .note {
@@ -188,18 +205,16 @@
 .note .icon {
   align-self: center;
 }
-.note--error {
-  color: #ffb3c1;
-}
+.note--error,
 .note--ok {
-  color: var(--good);
+  color: var(--paper);
 }
 .note code {
   font-family: var(--mono);
   font-size: 11px;
   padding: 0 4px;
   border-radius: 4px;
-  background: rgba(214, 228, 255, 0.08);
+  border: 1px solid var(--g2);
   color: var(--text);
 }
 
@@ -229,11 +244,10 @@
   font-size: 18px;
   line-height: 1.1;
 }
-.stats dd[class*='level-'] {
-  color: var(--level);
-}
-.stats dd.level-none {
-  color: var(--text);
+.stats dd {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .week-head {
@@ -247,20 +261,27 @@
 }
 .week-hit {
   fill: transparent;
+  transition: fill 0.15s ease;
 }
-.week-hit:hover + .week-bar {
-  opacity: 1;
+.week-hit:hover {
+  fill: var(--g1);
 }
+/* Bars: solid ink ≥70, outline 40–69, hatched <40, grey stub = no focus. */
 .week-bar {
-  fill: var(--level);
-  opacity: 0.5;
-  transition: opacity 0.15s ease;
+  fill: var(--paper);
+  stroke: var(--paper);
+  stroke-width: 1.5;
+}
+.week-bar.level-ok {
+  fill: var(--ink);
 }
 .week-bar.level-none {
-  fill: rgba(214, 228, 255, 0.14);
+  fill: var(--g3);
+  stroke: none;
 }
-.week-today .week-bar {
-  opacity: 1;
+.week-hatch-line {
+  stroke: var(--paper);
+  stroke-width: 1.3;
 }
 .week-label {
   font-family: var(--mono);
@@ -268,7 +289,39 @@
   fill: var(--text-3);
 }
 .week-today .week-label {
-  fill: var(--pink);
+  fill: var(--paper);
+  font-weight: 600;
+}
+.week-today-mark {
+  fill: var(--paper);
+}
+.week-key {
+  display: flex;
+  gap: var(--s3);
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--text-3);
+}
+.week-key li {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.week-swatch {
+  width: 8px;
+  height: 10px;
+  border-radius: 2px;
+  border: 1.5px solid var(--paper);
+  background: var(--paper);
+}
+.week-swatch.level-ok {
+  background: transparent;
+}
+.week-swatch.level-bad {
+  background: var(--hatch);
 }
 
 .deadlines {
@@ -328,7 +381,7 @@
 }
 .plan-when {
   white-space: nowrap;
-  color: var(--peri);
+  color: var(--text-2);
   font-size: 11.5px;
 }
 .plan-label {
@@ -346,16 +399,15 @@
 .shimmer {
   height: 9px;
   border-radius: 999px;
-  background: linear-gradient(90deg, rgba(214, 228, 255, 0.06), rgba(214, 228, 255, 0.16), rgba(214, 228, 255, 0.06));
-  background-size: 200% 100%;
-  animation: shimmer 1.4s linear infinite;
+  background: var(--g2);
+  animation: shimmer 1.4s ease-in-out infinite alternate;
 }
 .shimmer--short {
   width: 60%;
 }
 @keyframes shimmer {
   to {
-    background-position: -200% 0;
+    opacity: 0.4;
   }
 }
 @media (prefers-reduced-motion: reduce) {
