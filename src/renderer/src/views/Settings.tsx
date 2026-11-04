@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import type { Reminder, Settings } from '@shared/types'
 import { Pet } from '../pet/Pet'
+import { Icon } from '../lib/Icon'
+import { useEntrance } from '../lib/motion'
 import { DAY_LETTERS, DAY_SHORT, errMsg } from '../lib/format'
 import './settings.css'
 
@@ -54,13 +56,14 @@ function ChipList({
           <span key={item} className={`chip chip--${kind}`}>
             {item}
             <button aria-label={`Remove ${item}`} onClick={() => onChange(items.filter((i) => i !== item))}>
-              ×
+              <Icon name="close" size={10} />
             </button>
           </span>
         ))}
         <input
           value={draft}
-          placeholder={placeholder}
+          placeholder={items.length === 0 ? placeholder : 'Add…'}
+          aria-label={`Add to ${title}`}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={onKey}
           onBlur={add}
@@ -108,9 +111,9 @@ function NumberField({
           }}
           onBlur={() => setText(String(value))}
         />
-        <span className="muted">{unit}</span>
+        <span className="faint">{unit}</span>
       </span>
-      {hint && <span className="field-hint muted">{hint}</span>}
+      {hint && <span className="field-hint faint">{hint}</span>}
     </label>
   )
 }
@@ -142,13 +145,14 @@ function ReminderRow({
   }
   return (
     <div className={`reminder${r.enabled ? '' : ' reminder--off'}`}>
-      <label className="toggle" title={r.enabled ? 'Enabled' : 'Disabled'}>
-        <input type="checkbox" checked={r.enabled} onChange={(e) => onChange({ ...r, enabled: e.target.checked })} />
+      <label className="toggle" title={r.enabled ? 'On' : 'Off'}>
+        <input type="checkbox" aria-label="Reminder on" checked={r.enabled} onChange={(e) => onChange({ ...r, enabled: e.target.checked })} />
         <span />
       </label>
       <input
         className="reminder-time"
         type="time"
+        aria-label="Time"
         value={r.time}
         onChange={(e) => e.target.value && onChange({ ...r, time: e.target.value })}
       />
@@ -168,11 +172,12 @@ function ReminderRow({
       <input
         className="reminder-label"
         value={r.label}
+        aria-label="Reminder message"
         placeholder="Study time!"
         onChange={(e) => onChange({ ...r, label: e.target.value })}
       />
-      <button className="icon-del" aria-label="Delete reminder" onClick={onDelete}>
-        ×
+      <button className="icon-btn icon-del" aria-label="Delete reminder" onClick={onDelete}>
+        <Icon name="trash" size={15} />
       </button>
     </div>
   )
@@ -181,15 +186,17 @@ function ReminderRow({
 export function SettingsView(): JSX.Element {
   const [settings, setSettings] = useState<Settings | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
-  const [toast, setToast] = useState<{ text: string; id: number } | null>(null)
+  const [toast, setToast] = useState<{ text: string; ok: boolean; id: number } | null>(null)
   const [deadlineNote, setDeadlineNote] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const pending = useRef<Partial<Settings>>({})
   const timer = useRef<number | null>(null)
   const toastTimer = useRef<number | null>(null)
+  const rootRef = useRef<HTMLDivElement>(null)
+  useEntrance(rootRef, ':scope > .enter, :scope > .grid2 > .enter', settings != null)
 
-  const showToast = useCallback((text: string) => {
-    setToast({ text, id: Date.now() })
+  const showToast = useCallback((text: string, ok = true) => {
+    setToast({ text, ok, id: Date.now() })
     if (toastTimer.current) window.clearTimeout(toastTimer.current)
     toastTimer.current = window.setTimeout(() => setToast(null), 1600)
   }, [])
@@ -216,9 +223,9 @@ export function SettingsView(): JSX.Element {
     pending.current = {}
     try {
       await window.studyPet.saveSettings(patch)
-      showToast('Saved ✓')
+      showToast('Saved')
     } catch (e) {
-      showToast(`Couldn’t save: ${errMsg(e)}`)
+      showToast(`Couldn’t save: ${errMsg(e)}`, false)
     }
   }, [showToast])
 
@@ -244,8 +251,19 @@ export function SettingsView(): JSX.Element {
   if (!settings) {
     return (
       <div className="settings settings--loading">
-        <Pet mood={loadError ? 'sad' : 'sleeping'} size={90} />
-        <p className="muted">{loadError ? `Couldn’t load settings: ${loadError}` : 'Loading…'}</p>
+        <Pet mood={loadError ? 'sad' : 'sleeping'} size={96} />
+        {loadError ? (
+          <>
+            <p>Couldn’t load your settings.</p>
+            <p className="faint">{loadError}</p>
+            <button className="btn" onClick={load}>
+              <Icon name="refresh" size={14} />
+              Try again
+            </button>
+          </>
+        ) : (
+          <p className="faint">Loading settings…</p>
+        )}
       </div>
     )
   }
@@ -288,180 +306,7 @@ export function SettingsView(): JSX.Element {
       load()
       showToast('Data reset')
     } catch (e) {
-      showToast(`Reset failed: ${errMsg(e)}`)
+      showToast(`Reset failed: ${errMsg(e)}`, false)
     }
   }
 
-  return (
-    <div className="settings">
-      <header className="settings-head">
-        <Pet mood="happy" size={52} />
-        <div>
-          <h1>Settings</h1>
-          <p className="muted">Changes save automatically.</p>
-        </div>
-      </header>
-
-      <section className="card">
-        <h2>Apps</h2>
-        <div className="grid2">
-          <ChipList
-            title="Focus apps"
-            hint="count as studying"
-            kind="focus"
-            placeholder="e.g. Notion — press Enter"
-            items={settings.focusApps}
-            onChange={setList('focusApps')}
-          />
-          <ChipList
-            title="Distracting apps"
-            hint="make the pet worried"
-            kind="distract"
-            placeholder="e.g. Discord — press Enter"
-            items={settings.distractApps}
-            onChange={setList('distractApps')}
-          />
-        </div>
-      </section>
-
-      <section className="card">
-        <h2>Websites</h2>
-        <div className="grid2">
-          <ChipList
-            title="Focus sites"
-            hint="domains"
-            kind="focus"
-            placeholder="e.g. docs.google.com"
-            normalize={normalizeDomain}
-            items={settings.focusDomains}
-            onChange={setList('focusDomains')}
-          />
-          <ChipList
-            title="Distracting sites"
-            hint="domains"
-            kind="distract"
-            placeholder="e.g. youtube.com"
-            normalize={normalizeDomain}
-            items={settings.distractDomains}
-            onChange={setList('distractDomains')}
-          />
-        </div>
-      </section>
-
-      <div className="grid2">
-        <section className="card">
-          <h2>Nudges</h2>
-          <NumberField
-            label="Pet speaks up after"
-            unit="sec"
-            hint={asMin(settings.nudgeAfterSec)}
-            value={settings.nudgeAfterSec}
-            onChange={(n) => update({ nudgeAfterSec: n })}
-          />
-          <NumberField
-            label="Notification after"
-            unit="sec"
-            hint={asMin(settings.notifyAfterSec)}
-            value={settings.notifyAfterSec}
-            onChange={(n) => update({ notifyAfterSec: n })}
-          />
-          <NumberField
-            label="Quiet time between nudges"
-            unit="sec"
-            hint={asMin(settings.nudgeCooldownSec)}
-            value={settings.nudgeCooldownSec}
-            onChange={(n) => update({ nudgeCooldownSec: n })}
-          />
-        </section>
-
-        <section className="card">
-          <h2>Pomodoro</h2>
-          <NumberField
-            label="Focus length"
-            unit="min"
-            max={240}
-            value={settings.focusMinutes}
-            onChange={(n) => update({ focusMinutes: n })}
-          />
-          <NumberField
-            label="Break length"
-            unit="min"
-            max={120}
-            value={settings.breakMinutes}
-            onChange={(n) => update({ breakMinutes: n })}
-          />
-          <label className="row-toggle">
-            <span>Launch at login</span>
-            <span className="toggle">
-              <input
-                type="checkbox"
-                checked={settings.launchAtLogin}
-                onChange={(e) => update({ launchAtLogin: e.target.checked })}
-              />
-              <span />
-            </span>
-          </label>
-        </section>
-      </div>
-
-      <section className="card">
-        <div className="section-head">
-          <h2>Study reminders</h2>
-          <button className="btn btn--small btn--primary" onClick={addReminder}>
-            + Add reminder
-          </button>
-        </div>
-        {settings.reminders.length === 0 ? (
-          <p className="muted">No reminders yet. Your pet will wave at you at the times you pick.</p>
-        ) : (
-          <div className="reminders">
-            {settings.reminders.map((r) => (
-              <ReminderRow
-                key={r.id}
-                r={r}
-                onChange={setReminder}
-                onDelete={() => update({ reminders: settings.reminders.filter((x) => x.id !== r.id) })}
-              />
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section className="card">
-        <h2>Deadlines</h2>
-        <label className="field field--wide">
-          <span className="field-label">Brightspace iCal URL</span>
-          <input
-            className="text-input"
-            type="url"
-            value={settings.icalUrl}
-            placeholder="https://…/calendar/feed/….ics"
-            onChange={(e) => update({ icalUrl: e.target.value.trim() })}
-          />
-        </label>
-        <div className="row">
-          <button className="btn btn--small" disabled={refreshing} onClick={() => void refreshDeadlines()}>
-            {refreshing ? 'Refreshing…' : 'Refresh deadlines'}
-          </button>
-          {deadlineNote && <span className="muted">{deadlineNote}</span>}
-        </div>
-      </section>
-
-      <section className="card danger-zone">
-        <div>
-          <h2>Reset data</h2>
-          <p className="muted">Delete session history and restore default settings.</p>
-        </div>
-        <button className="btn btn--danger" onClick={() => void reset()}>
-          Reset…
-        </button>
-      </section>
-
-      {toast && (
-        <div className="toast" key={toast.id}>
-          {toast.text}
-        </div>
-      )}
-    </div>
-  )
-}
