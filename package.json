@@ -1,0 +1,70 @@
+{
+  "name": "study-pet",
+  "version": "0.1.0",
+  "description": "A cute desktop study companion that tracks your focus and nudges you back on task.",
+  "main": "./out/main/index.js",
+  "type": "module",
+  "author": "Study Pet team",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "dev": "electron-vite dev",
+    "start": "electron-vite preview",
+    "typecheck:node": "tsc --noEmit -p tsconfig.node.json",
+    "typecheck:web": "tsc --noEmit -p tsconfig.web.json",
+    "typecheck": "npm run typecheck:node && npm run typecheck:web",
+    "test": "vitest run",
+    "build": "npm run typecheck && electron-vite build && electron-builder --mac --dir",
+    "build:dmg": "npm run typecheck && electron-vite build && electron-builder --mac",
+    "build:vite": "electron-vite build"
+  },
+  "build": {
+    "appId": "edu.studypet.app",
+    "productName": "Study Pet",
+    "directories": {
+      "buildResources": "build",
+      "output": "dist"
+    },
+    "files": [
+      "out/**/*",
+      "resources/**/*",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "resources/**",
+      "node_modules/get-windows/**"
+    ],
+    "mac": {
+      "category": "public.app-category.education",
+      "target": [
+        "dmg"
+      ],
+      "identity": null,
+      "extendInfo": {
+        "LSUIElement": true,
+        "NSAppleEventsUsageDescription": "Study Pet reads the URL of your front browser tab to tell study sites from distracting ones. Nothing leaves your Mac."
+      }
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.7.0",
+    "electron": "^38.8.6",
+    "electron-builder": "^26.18.0",
+    "electron-vite": "^4.0.1",
+    "typescript": "~5.9",
+    "vite": "^6.4.5",
+    "vitest": "^3.2.7"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.4.0",
+    "dotenv": "^16.6.1",
+    "electron-store": "^10.1.0",
+    "get-windows": "^9.3.0",
+    "node-ical": "^0.20.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}
