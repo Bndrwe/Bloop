@@ -1,0 +1,61 @@
+/* Confirmation modal: solid black sheet, white hairline, white primary pill. No hue. */
+.cdlg-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s4);
+  background: rgb(0 0 0 / 0.72);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.cdlg {
+  width: min(420px, 100%);
+  padding: var(--s5);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--paper);
+  background: var(--ink);
+  box-shadow: 0 0 0 6px rgb(0 0 0 / 0.6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+.cdlg-eyebrow {
+  align-self: flex-start;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  border: 1px dashed var(--g3);
+  border-radius: 6px;
+  padding: 1px 7px;
+}
+.cdlg-title {
+  margin: 0;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 26px;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+.cdlg-body {
+  color: var(--text-2);
+  font-size: 13px;
+}
+.cdlg-body p {
+  margin: 0 0 var(--s2);
+}
+.cdlg-body strong {
+  color: var(--paper);
+  font-weight: 500;
+}
+.cdlg-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s2);
+  margin-top: var(--s3);
+}

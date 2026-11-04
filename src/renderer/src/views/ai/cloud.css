@@ -1,0 +1,195 @@
+/* Cloud AI section: strict black and white. State = fill vs outline, never colour. */
+.cloud {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+.cloud-row {
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+  padding: var(--s2) var(--s3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+.cloud-row.is-selected {
+  border-color: var(--paper);
+}
+.cloud-row.is-off .cloud-name {
+  color: var(--text-2);
+}
+.cloud-row__main {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  flex-wrap: wrap;
+}
+.cloud-pick {
+  flex: 1 1 260px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  background: none;
+  border: 0;
+  padding: 4px 0;
+  text-align: left;
+  border-radius: var(--r-sm);
+}
+.cloud-pick[aria-disabled='true'] {
+  cursor: default;
+}
+.cloud-dot {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid var(--g4);
+}
+.cloud-pick[aria-checked='true'] .cloud-dot {
+  background: var(--paper);
+  border-color: var(--paper);
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+.cloud-name {
+  font-weight: 500;
+  white-space: nowrap;
+}
+.cloud-badge {
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+}
+.cloud-status {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-3);
+  font-family: var(--mono);
+  font-size: 11.5px;
+}
+.cloud-link {
+  color: var(--paper);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.cloud-link--quiet {
+  color: var(--text-3);
+}
+.cloud-link:hover {
+  color: var(--g5);
+}
+
+.cloud-select,
+.cloud-input {
+  background: var(--ink);
+  color: var(--paper);
+  border: 1px solid var(--g3);
+  border-radius: var(--r-sm);
+  padding: 5px 9px;
+  font-size: 12.5px;
+  min-width: 0;
+}
+.cloud-select {
+  width: 190px;
+  max-width: 100%;
+}
+.cloud-select:hover,
+.cloud-input:hover {
+  border-color: var(--g4);
+}
+.cloud-input::placeholder {
+  color: var(--text-3);
+}
+
+.cloud-combo {
+  position: relative;
+  width: 260px;
+  max-width: 100%;
+}
+.cloud-combo .cloud-input {
+  width: 100%;
+}
+.cloud-list {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 4px);
+  right: 0;
+  width: min(380px, 90vw);
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--ink);
+  border: 1px solid var(--paper);
+  border-radius: var(--r-sm);
+}
+.cloud-opt {
+  display: flex;
+  flex-direction: column;
+  padding: 5px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12.5px;
+}
+.cloud-opt__id {
+  color: var(--text-3);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+.cloud-opt.is-active {
+  background: var(--paper);
+  color: var(--ink);
+}
+.cloud-opt.is-active .cloud-opt__id {
+  color: var(--g3);
+}
+.cloud-opt.is-selected > span:first-child::after {
+  content: ' ✓';
+}
+.cloud-list__empty {
+  padding: 6px 8px;
+  color: var(--text-3);
+  font-size: 12px;
+}
+
+.cloud-key {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  flex-wrap: wrap;
+}
+.cloud-key .cloud-input {
+  flex: 1 1 220px;
+}
+.cloud-msg {
+  flex: 1 0 100%;
+  margin: 0;
+  min-height: 0;
+  font-size: 11.5px;
+  color: var(--text-2);
+}
+.cloud-msg:empty {
+  display: none;
+}
+.cloud-msg.is-error {
+  color: var(--paper);
+  font-weight: 500;
+}
+.cloud-msg.is-error::before {
+  content: '! ';
+}
+.cloud-hint {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--text-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cloud-row * {
+    transition: none !important;
+  }
+}

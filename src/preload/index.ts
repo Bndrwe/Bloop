@@ -1,8 +1,30 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import { IPC } from '../shared/ipc'
 import type { AppStatus, Settings, StudyPetApi } from '../shared/types'
+import type { AiApi, AiStatus } from '../shared/ai'
 
 const inv = (ch: string, ...args: unknown[]) => ipcRenderer.invoke(ch, ...args)
+
+const ai: AiApi = {
+  getStatus: (refresh) => inv(IPC.aiGetStatus, refresh === true),
+  onStatus: (cb) => {
+    const l = (_e: IpcRendererEvent, s: AiStatus): void => cb(s)
+    ipcRenderer.on(IPC.aiStatusPush, l)
+    return () => ipcRenderer.removeListener(IPC.aiStatusPush, l)
+  },
+  getSettings: () => inv(IPC.aiGetSettings),
+  setChoice: (choice) => inv(IPC.aiSetChoice, choice),
+  setCloudModel: (provider, model) => inv(IPC.aiSetCloudModel, provider, model),
+  setOllamaUrl: (url) => inv(IPC.aiSetOllamaUrl, url),
+  downloadBloopModel: (confirmed) => inv(IPC.aiDownloadBloop, confirmed === true),
+  cancelBloopDownload: () => inv(IPC.aiCancelBloop),
+  deleteBloopModel: () => inv(IPC.aiDeleteBloop),
+  importBloopModelFile: () => inv(IPC.aiImportBloop),
+  dismissBloopOffer: () => inv(IPC.aiDismissBloopOffer),
+  pullOllamaModel: (model, confirmed) => inv(IPC.aiPullOllama, model, confirmed === true),
+  setApiKey: (provider, key) => inv(IPC.aiSetApiKey, provider, key),
+  test: (choice) => inv(IPC.aiTest, choice)
+}
 
 const api: StudyPetApi = {
   getStatus: () => inv(IPC.getStatus),
@@ -54,7 +76,9 @@ const api: StudyPetApi = {
   getPlan: () => inv(IPC.getPlan),
   generatePlan: () => inv(IPC.generatePlan),
   addPlanReminders: () => inv(IPC.addPlanReminders),
-  hasApiKey: () => inv(IPC.hasApiKey)
+
+  openExternal: (url) => inv(IPC.openExternal, url),
+  ai
 }
 
 contextBridge.exposeInMainWorld('studyPet', api)

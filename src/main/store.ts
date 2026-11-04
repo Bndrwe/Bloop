@@ -1,5 +1,7 @@
 import Store from 'electron-store'
 import type { Deadline, SessionRecord, Settings, Stats, StudyPlan } from '@shared/types'
+import { DEFAULT_AI_SETTINGS, type AiSettings } from '@shared/ai'
+import { validateAiSettings } from './ai/settings'
 import { DEFAULT_SETTINGS, mergeSettings } from './defaults'
 import { computeStats } from './stats'
 
@@ -18,6 +20,8 @@ interface Schema {
   lastReminderFired: Record<string, number>
   studyPlan: StudyPlan | null
   deadlines: DeadlinesCache | null
+  /** AI provider choice (Settings → AI). */
+  ai: AiSettings
 }
 
 const DEFAULTS: Schema = {
@@ -27,7 +31,8 @@ const DEFAULTS: Schema = {
   onboardingDismissed: false,
   lastReminderFired: {},
   studyPlan: null,
-  deadlines: null
+  deadlines: null,
+  ai: DEFAULT_AI_SETTINGS
 }
 
 const MAX_SESSIONS = 1000
@@ -101,6 +106,15 @@ export function getDeadlinesCache(): DeadlinesCache | null {
 }
 export function setDeadlinesCache(c: DeadlinesCache | null): void {
   s().set('deadlines', c)
+}
+
+export function getAiSettings(): AiSettings {
+  return validateAiSettings(s().get('ai'))
+}
+export function saveAiSettings(patch: Partial<AiSettings>): AiSettings {
+  const next = validateAiSettings({ ...getAiSettings(), ...patch })
+  s().set('ai', next)
+  return next
 }
 
 /**

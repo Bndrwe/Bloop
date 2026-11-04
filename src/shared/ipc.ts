@@ -37,5 +37,21 @@ export const IPC = {
   getPlan: 'plan:get',
   generatePlan: 'plan:generate',
   addPlanReminders: 'plan:add-reminders',
-  hasApiKey: 'plan:has-key'
+
+  // AI (window.studyPet.ai) — handlers live in src/main/ai/ipc.ts
+  aiGetStatus: 'ai:get-status',
+  aiStatusPush: 'ai:status',
+  aiGetSettings: 'ai:get-settings',
+  aiSetChoice: 'ai:set-choice',
+  aiSetCloudModel: 'ai:set-cloud-model',
+  aiSetOllamaUrl: 'ai:set-ollama-url',
+  aiDownloadBloop: 'ai:bloop-download',
+  aiCancelBloop: 'ai:bloop-cancel',
+  aiDeleteBloop: 'ai:bloop-delete',
+  aiImportBloop: 'ai:bloop-import',
+  aiDismissBloopOffer: 'ai:bloop-dismiss-offer',
+  aiPullOllama: 'ai:ollama-pull',
+  aiSetApiKey: 'ai:set-api-key',
+  aiTest: 'ai:test',
+  openExternal: 'app:open-external'
 } as const

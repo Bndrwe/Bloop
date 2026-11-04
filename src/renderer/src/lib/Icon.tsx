@@ -14,6 +14,8 @@ export type IconName =
   | 'calendar'
   | 'bell'
   | 'trash'
+  | 'download'
+  | 'folder'
 
 const PATHS: Record<IconName, JSX.Element> = {
   close: <path d="M4 4l8 8M12 4l-8 8" />,
@@ -54,7 +56,9 @@ const PATHS: Record<IconName, JSX.Element> = {
       <path d="M6.6 14h2.8" />
     </>
   ),
-  trash: <path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5" />
+  trash: <path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5" />,
+  download: <path d="M8 2.5v7.5M4.8 7l3.2 3.2L11.2 7M3 13.2h10" />,
+  folder: <path d="M2 4.6c0-.7.5-1.2 1.2-1.2h3l1.4 1.6h5.2c.7 0 1.2.5 1.2 1.2v5.6c0 .7-.5 1.2-1.2 1.2H3.2c-.7 0-1.2-.5-1.2-1.2z" />
 }
 
 export function Icon({ name, size = 16, label }: { name: IconName; size?: number; label?: string }): JSX.Element {

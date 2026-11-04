@@ -1,5 +1,6 @@
 // Shared contract between the main process, preload bridge and renderer.
 // Keep this file free of runtime imports from electron/node so both sides can use it.
+import type { AiApi } from './ai'
 
 export type Category = 'focus' | 'distract' | 'neutral'
 
@@ -217,5 +218,10 @@ export interface StudyPetApi {
   getPlan(): Promise<StudyPlan | null>
   generatePlan(): Promise<Result<StudyPlan>>
   addPlanReminders(): Promise<Result<number>>
-  hasApiKey(): Promise<boolean>
+
+  /** Open an https link in the system browser (help/install/key pages). */
+  openExternal(url: string): Promise<void>
+
+  /** AI providers: Use Local (Bloop model, Ollama) and Cloud. See src/shared/ai.ts. */
+  ai: AiApi
 }

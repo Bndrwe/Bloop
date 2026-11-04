@@ -1,13 +1,12 @@
-// AI study plan (stretch). The API key lives only in the main process (loaded from .env) and is
-// never sent to the renderer.
+// AI study plan. Generation goes through the AI registry (src/main/ai/registry.ts), which picks
+// the user's provider: the Bloop model, an Ollama model or a cloud provider. API keys (including
+// the .env ANTHROPIC_API_KEY fallback, read by the cloud side) stay in the main process.
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import Anthropic from '@anthropic-ai/sdk'
 import dotenv from 'dotenv'
 import type { Deadline, PlanBlock, Reminder, Result, Settings, Stats, StudyPlan } from '@shared/types'
+import type { CompleteOptions } from './ai/types'
 
-/** Model used for plan generation — change here. */
-export const PLAN_MODEL = 'claude-sonnet-5-5'
 
 let envLoaded = false
 /** Load .env from the given directories (first match wins for each var; existing env vars are kept). */
@@ -23,13 +22,10 @@ export function loadEnv(dirs: string[]): void {
   }
 }
 
-export function hasApiKey(): boolean {
-  return Boolean(process.env['ANTHROPIC_API_KEY']?.trim())
-}
-
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
-function buildPrompt(deadlines: Deadline[], stats: Stats, settings: Settings, now: Date): string {
+/** The plan prompt. The dataset in ml/ mirrors this exact text: don't change the wording casually. */
+export function buildPrompt(deadlines: Deadline[], stats: Stats, settings: Settings, now: Date): string {
   const dl = deadlines.length
     ? deadlines
         .map((d) => `- ${d.summary}${d.isExam ? ' (EXAM)' : ''}: ${new Date(d.start).toString()}`)
@@ -95,31 +91,61 @@ export function parsePlan(text: string, now = Date.now()): StudyPlan {
   }
 }
 
-export async function generatePlan(deadlines: Deadline[], stats: Stats, settings: Settings): Promise<Result<StudyPlan>> {
-  if (!hasApiKey()) {
-    return { ok: false, error: 'No ANTHROPIC_API_KEY set in .env — add one to the project folder (or app folder) and restart Bloop.' }
+/** JSON schema the plan must follow (local runtimes enforce it as a grammar / Ollama `format`). */
+export const PLAN_JSON_SCHEMA: Record<string, unknown> = {
+  type: 'object',
+  properties: {
+    summary: { type: 'string' },
+    blocks: {
+      type: 'array',
+      minItems: 1,
+      maxItems: 10,
+      items: {
+        type: 'object',
+        properties: {
+          day: { enum: [0, 1, 2, 3, 4, 5, 6] },
+          time: { type: 'string', pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$' },
+          minutes: { type: 'integer', minimum: 5, maximum: 600 },
+          label: { type: 'string' }
+        },
+        required: ['day', 'time', 'minutes', 'label'],
+        additionalProperties: false
+      }
+    }
+  },
+  required: ['summary', 'blocks'],
+  additionalProperties: false
+}
+
+export type GenerateText = (prompt: string, opts?: CompleteOptions) => Promise<string>
+
+async function defaultGenerateText(prompt: string, opts?: CompleteOptions): Promise<string> {
+  const { generateText } = await import('./ai/registry')
+  return generateText(prompt, opts)
+}
+
+export async function generatePlan(
+  deadlines: Deadline[],
+  stats: Stats,
+  settings: Settings,
+  generate: GenerateText = defaultGenerateText
+): Promise<Result<StudyPlan>> {
+  let text: string
+  try {
+    text = await generate(buildPrompt(deadlines, stats, settings, new Date()), {
+      jsonSchema: PLAN_JSON_SCHEMA,
+      maxTokens: 2048,
+      timeoutMs: 180_000
+    })
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || String(e) }
   }
   try {
-    const client = new Anthropic({ apiKey: process.env['ANTHROPIC_API_KEY'] })
-    const res = await client.beta.messages.create({
-      model: PLAN_MODEL,
-      max_tokens: 16000,
-      output_config: { effort: 'low' },
-      // server-side refusal fallback (routes declined requests to another model automatically)
-      betas: ['server-side-fallback-2026-07-01'],
-      fallbacks: 'default',
-      messages: [{ role: 'user', content: buildPrompt(deadlines, stats, settings, new Date()) }]
-    })
-    if (res.stop_reason === 'refusal') return { ok: false, error: 'The model declined to make a plan. Try again later.' }
-    const text = res.content.map((b) => (b.type === 'text' ? b.text : '')).join('')
     const plan = parsePlan(text)
     console.log(`[bloop] plan generated: ${plan.blocks.length} blocks`)
     return { ok: true, value: plan }
   } catch (e) {
-    if (e instanceof Anthropic.AuthenticationError) return { ok: false, error: 'Your ANTHROPIC_API_KEY was rejected. Check the key in .env.' }
-    if (e instanceof Anthropic.RateLimitError) return { ok: false, error: 'Rate limited by the API — try again in a minute.' }
-    if (e instanceof Anthropic.APIError) return { ok: false, error: `API error ${e.status ?? ''}: ${e.message}` }
-    return { ok: false, error: `Couldn't generate a plan: ${(e as Error).message}` }
+    return { ok: false, error: `The AI's answer wasn't a usable plan. Try again. (${(e as Error).message})` }
   }
 }
 

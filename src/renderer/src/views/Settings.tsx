@@ -6,6 +6,7 @@ import { Icon } from '../lib/Icon'
 import { previewSettings } from '../hooks/useSettings'
 import { useEntrance, usePopIn, useStaggerIn } from '../lib/motion'
 import { DAY_LETTERS, DAY_SHORT, errMsg } from '../lib/format'
+import { AiSection } from './ai/AiSection'
 import './settings.css'
 
 type ListKey = 'focusApps' | 'distractApps' | 'focusDomains' | 'distractDomains'
@@ -391,6 +392,8 @@ export function SettingsView(): JSX.Element {
           </p>
         </div>
       </header>
+
+      <AiSection />
 
       <section className="card enter">
         <h2>Apps</h2>

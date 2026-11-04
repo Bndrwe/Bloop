@@ -4,7 +4,8 @@ import { BrowserWindow, Notification, app, ipcMain, type IpcMainInvokeEvent } fr
 import { IPC } from '@shared/ipc'
 import type { AppStatus, Settings } from '@shared/types'
 import { getDeadlines, refreshDeadlines } from './deadlines'
-import { generatePlan, hasApiKey, loadEnv, planToReminders } from './plan'
+import { generatePlan, loadEnv, planToReminders } from './plan'
+import { registerAiIpc } from './ai/ipc'
 import { getPermissions, openPermissionSettings, probeAutomation, refreshPermissions, requestAutomation } from './permissions'
 import { ReminderScheduler } from './reminders'
 import { SessionEngine, type NotifyOptions } from './session'
@@ -210,7 +211,6 @@ function registerIpc(): void {
     store.saveSettings({ reminders: [...own, ...added] })
     return { ok: true, value: added.length }
   })
-  h(IPC.hasApiKey, () => hasApiKey())
 }
 
 // ------------------------------------------------------------------ lifecycle
@@ -237,6 +237,7 @@ app.whenReady().then(() => {
   log(`starting (platform=${process.platform}, fast=${FAST}, fake=${process.env['BLOOP_FAKE_ACTIVE'] ?? 'no'})`)
   if (isMac) app.dock?.hide()
   registerIpc()
+  registerAiIpc(ipcMain, { allWindows: windows.allWindows })
   windows.createPetWindow()
   windows.ensurePanelWindow()
   createTray(trayActions, engine.getStatus())
