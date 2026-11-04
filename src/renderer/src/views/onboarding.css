@@ -1,13 +1,9 @@
 .onb {
   min-height: 100vh;
-  padding: 18px 26px 20px;
+  padding: var(--s4) var(--s5);
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  background:
-    radial-gradient(circle at 15% 0%, var(--accent-soft), transparent 45%),
-    radial-gradient(circle at 90% 10%, var(--lilac), transparent 40%),
-    var(--bg);
+  gap: var(--s3);
 }
 .onb-hero {
   display: flex;
@@ -16,60 +12,90 @@
   text-align: center;
 }
 .onb-hero h1 {
-  margin: 4px 0 2px;
+  margin: var(--s1) 0 4px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 30px;
+  line-height: 1.1;
+}
+.onb-hero h1 .sticker {
+  font-family: var(--sans);
+  font-style: normal;
   font-size: 20px;
+  font-weight: 500;
+  vertical-align: 4px;
+  margin-left: 4px;
 }
 .onb-hero p {
   margin: 0;
-  max-width: 400px;
-  line-height: 1.4;
+  max-width: 40ch;
 }
 .onb-perm {
-  padding: 12px 14px;
+  padding: var(--s3) var(--s4) var(--s4);
 }
 .onb-perm p {
-  margin: 4px 0 8px;
-  line-height: 1.4;
+  margin: 4px 0 var(--s3);
+  font-size: 12.5px;
+}
+.onb-perm p:last-child {
+  margin-bottom: 0;
 }
 .onb-perm-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--s2);
 }
 .onb-perm-head h2 {
   margin: 0;
   font-size: 14px;
+  font-weight: 500;
 }
 .onb-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-size: 12px;
-  font-weight: 600;
   white-space: nowrap;
+  padding: 2px 9px;
+  border-radius: 999px;
 }
 .onb-state--ok {
   color: var(--good);
+  background: rgba(94, 234, 203, 0.12);
 }
 .onb-state--warn {
-  color: var(--ok);
+  color: var(--amber);
+  background: var(--amber-soft);
 }
 .onb .row {
   display: flex;
-  gap: 8px;
+  gap: var(--s2);
   flex-wrap: wrap;
 }
-.onb-note {
-  margin: 2px 0 0;
-  text-align: center;
+.onb-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #ffb3c1;
+  margin: 0;
   font-size: 12px;
 }
-.onb-error {
-  color: var(--bad);
+.onb > .zigzag {
+  margin-top: auto;
+}
+.onb-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+}
+.onb-note {
   margin: 0;
-  text-align: center;
+  font-size: 12px;
+  flex: 1;
 }
 .onb-actions {
-  margin-top: auto;
   display: flex;
-  justify-content: flex-end;
-  gap: 8px;
+  gap: var(--s2);
 }

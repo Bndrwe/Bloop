@@ -5,6 +5,13 @@ import { getPetPosition, setPetPosition } from './store'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const isMac = process.platform === 'darwin'
+const isWin = process.platform === 'win32'
+
+/** Always-on-top level: above the Windows taskbar, or floating over normal windows on macOS/Linux. */
+function setTopLevel(win: BrowserWindow, kind: 'pet' | 'panel'): void {
+  if (isWin) win.setAlwaysOnTop(true, kind === 'pet' ? 'screen-saver' : 'pop-up-menu')
+  else win.setAlwaysOnTop(true, isMac ? 'floating' : 'normal')
+}
 
 export const PET_SIZE = 180
 const PANEL_W = 300
@@ -74,12 +81,14 @@ export function createPetWindow(): BrowserWindow {
     fullscreenable: false,
     hasShadow: false,
     skipTaskbar: true,
-    focusable: true,
+    // Windows: don't steal focus from the app being studied in; mouse clicks still work.
+    focusable: !isWin,
+    ...(isWin ? { thickFrame: false, roundedCorners: false } : {}),
     show: false,
     title: 'Study Pet',
     webPreferences: webPreferences()
   })
-  win.setAlwaysOnTop(true, isMac ? 'floating' : 'normal')
+  setTopLevel(win, 'pet')
   try {
     win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
   } catch {
@@ -152,12 +161,14 @@ function positionPanel(win: BrowserWindow): void {
   let x = anchor.x + anchor.width - PANEL_W
   let y = anchor.y + anchor.height + 4
   if (y + PANEL_H > wa.y + wa.height) y = anchor.y - PANEL_H - 4
-  if (y < wa.y) y = Math.max(wa.y, Math.min(wa.y + wa.height - PANEL_H, anchor.y))
-  x = Math.max(wa.x + 8, Math.min(x, wa.x + wa.width - PANEL_W - 8))
-  if (y === anchor.y) {
-    // side-by-side fallback
+  if (y < wa.y) {
+    // no room above or below (small work area): sit beside the pet
+    y = anchor.y
     x = anchor.x - PANEL_W - 4 >= wa.x ? anchor.x - PANEL_W - 4 : anchor.x + anchor.width + 4
   }
+  // never leave the work area (taskbar excluded), whatever branch was taken
+  x = Math.max(wa.x + 8, Math.min(x, wa.x + wa.width - PANEL_W - 8))
+  y = Math.max(wa.y, Math.min(y, wa.y + wa.height - PANEL_H))
   win.setPosition(Math.round(x), Math.round(y))
 }
 
@@ -182,7 +193,7 @@ function createPanelWindow(): BrowserWindow {
     roundedCorners: true,
     webPreferences: webPreferences()
   })
-  win.setAlwaysOnTop(true, isMac ? 'floating' : 'normal')
+  setTopLevel(win, 'panel')
   try {
     win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
   } catch {

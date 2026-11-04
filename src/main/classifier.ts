@@ -1,5 +1,6 @@
 // Pure classification logic: no electron imports (unit-tested in tests/classifier.test.ts).
 import type { Category, Settings } from '@shared/types'
+import { inferDomainFromTitle } from './titleDomain'
 
 export type ClassifyLists = Pick<Settings, 'focusApps' | 'distractApps' | 'focusDomains' | 'distractDomains'>
 
@@ -7,6 +8,17 @@ export interface ClassifyInput {
   app: string
   url?: string
   title?: string
+}
+
+/**
+ * The site being viewed: the URL's host when known, otherwise (browsers only, e.g. Windows or
+ * macOS without Automation) a domain inferred from the window title.
+ */
+export function resolveDomain(input: ClassifyInput): string | undefined {
+  const fromUrl = domainFromUrl(input.url)
+  if (fromUrl) return fromUrl
+  if (input.title && isBrowser(input.app)) return inferDomainFromTitle(input.title)
+  return undefined
 }
 
 /** Owner names of browsers we know about (macOS names first, then common Linux/Windows ones). */
@@ -17,7 +29,10 @@ export const BROWSER_APPS = [
   'Brave Browser',
   'Microsoft Edge',
   'Firefox',
+  'Mozilla Firefox',
   'Chromium',
+  'Opera',
+  'Vivaldi',
   // Linux / Windows owner names
   'google-chrome',
   'chrome',
@@ -30,10 +45,18 @@ export const BROWSER_APPS = [
   'microsoft-edge'
 ]
 
+/** Lowercased app name without a Windows ".exe" suffix. */
+export function normalizeAppName(app: string): string {
+  return app.trim().toLowerCase().replace(/\.exe$/, '')
+}
+
 export function isBrowser(app: string): boolean {
-  const a = app.trim().toLowerCase()
+  const a = normalizeAppName(app)
   if (!a) return false
-  return BROWSER_APPS.some((b) => b.toLowerCase() === a) || /^(google chrome|firefox|safari|brave|microsoft edge)\b/.test(a)
+  return (
+    BROWSER_APPS.some((b) => b.toLowerCase() === a) ||
+    /^(google chrome|mozilla firefox|firefox|safari|brave|microsoft edge|opera|vivaldi)\b/.test(a)
+  )
 }
 
 /** Hostname of a URL, lowercased, without a leading "www.". Returns undefined if not parseable. */
@@ -96,8 +119,8 @@ function escapeRe(s: string): string {
 
 /** Specificity score (>0) if the app owner name matches the pattern (equal, or contains it as a word). */
 export function appPatternScore(pattern: string, app: string): number {
-  const p = pattern.trim().toLowerCase()
-  const a = app.trim().toLowerCase()
+  const p = normalizeAppName(pattern)
+  const a = normalizeAppName(app)
   if (!p || !a) return 0
   if (a === p) return p.length + 1000 // exact match beats any partial match
   const re = new RegExp('(^|[^a-z0-9])' + escapeRe(p) + '([^a-z0-9]|$)')
@@ -131,9 +154,9 @@ function titlePatternScore(pattern: string, title: string): number {
 }
 
 export function classify(input: ClassifyInput, lists: ClassifyLists): Category {
-  const domain = domainFromUrl(input.url)
+  const domain = resolveDomain(input)
   if (domain) {
-    const path = pathFromUrl(input.url as string)
+    const path = domainFromUrl(input.url) ? pathFromUrl(input.url as string) : '/'
     return decide(
       best(lists.focusDomains, (p) => domainPatternScore(p, domain, path)),
       best(lists.distractDomains, (p) => domainPatternScore(p, domain, path))

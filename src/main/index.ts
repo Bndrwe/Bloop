@@ -21,6 +21,9 @@ const log = (m: string): void => console.log(`[studypet] ${m}`)
 
 // ------------------------------------------------------------------ single instance
 
+// Windows: needed for toast notifications (must match build.appId) and taskbar grouping.
+if (process.platform === 'win32') app.setAppUserModelId('edu.studypet.app')
+
 if (!app.requestSingleInstanceLock()) {
   app.quit()
   process.exit(0)
@@ -37,7 +40,8 @@ function notify(title: string, body: string, opts?: NotifyOptions): void {
   try {
     const n = new Notification({
       title,
-      body,
+      // Notification buttons are mac-only; elsewhere clicking the notification itself triggers the action.
+      body: opts?.actionText && !isMac ? `${body}\nClick to ${opts.actionText.toLowerCase()}.` : body,
       silent: false,
       ...(opts?.actionText && isMac ? { actions: [{ type: 'button' as const, text: opts.actionText }] } : {})
     })

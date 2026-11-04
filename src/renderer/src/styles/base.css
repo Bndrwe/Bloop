@@ -117,7 +117,12 @@ html.route-onboarding body {
     radial-gradient(120% 70% at 90% -15%, rgba(247, 72, 177, 0.17), transparent 55%),
     radial-gradient(90% 60% at -15% 105%, rgba(94, 230, 224, 0.09), transparent 60%),
     linear-gradient(180deg, var(--bg-1), var(--bg-0));
-  background-attachment: fixed;
+  background-color: var(--bg-0);
+}
+html.route-panel,
+html.route-settings,
+html.route-onboarding {
+  background: var(--bg-0);
 }
 
 /* Film grain over everything (except the transparent pet window). */

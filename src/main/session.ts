@@ -2,7 +2,7 @@
 // injected via SessionDeps, so it can be driven with a fake clock in tests.
 import { EventEmitter } from 'node:events'
 import type { ActiveSample, AppStatus, PetMood, PetState, SessionPhase, SessionRecord, Settings } from '@shared/types'
-import { classify, domainFromUrl } from './classifier'
+import { classify, resolveDomain } from './classifier'
 import { computeFocusScore, summarizeSession } from './score'
 import type { RawActive } from './tracker'
 
@@ -388,7 +388,7 @@ export class SessionEngine extends EventEmitter {
     const t = this.d.now()
     const app = raw?.app || 'Unknown'
     const category = raw ? classify(raw, settings) : 'neutral'
-    const domain = domainFromUrl(raw?.url)
+    const domain = raw ? resolveDomain(raw) : undefined
     const s: StoredSample = {
       t,
       app,

@@ -15,23 +15,23 @@
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "test": "vitest run",
     "build": "npm run typecheck && electron-vite build && electron-builder --mac --dir",
-    "build:dmg": "npm run typecheck && electron-vite build && electron-builder --mac",
+    "build:mac": "npm run typecheck && electron-vite build && electron-builder --mac",
+    "build:win": "npm run typecheck && electron-vite build && electron-builder --win",
     "build:vite": "electron-vite build"
   },
   "build": {
     "appId": "edu.studypet.app",
     "productName": "Study Pet",
+    "npmRebuild": false,
     "directories": {
       "buildResources": "build",
       "output": "dist"
     },
     "files": [
       "out/**/*",
-      "resources/**/*",
       "package.json"
     ],
     "asarUnpack": [
-      "resources/**",
       "node_modules/get-windows/**"
     ],
     "mac": {
@@ -44,6 +44,40 @@
         "LSUIElement": true,
         "NSAppleEventsUsageDescription": "Study Pet reads the URL of your front browser tab to tell study sites from distracting ones. Nothing leaves your Mac."
       }
+    },
+    "extraResources": [
+      {
+        "from": "resources",
+        "to": "resources",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false
     }
   },
   "devDependencies": {

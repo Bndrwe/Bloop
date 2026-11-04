@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Menu, Tray, app, nativeImage, type MenuItemConstructorOptions } from 'electron'
@@ -17,9 +18,19 @@ export interface TrayActions {
 let tray: Tray | null = null
 let lastKey = ''
 
+/**
+ * Tray icon: macOS uses a monochrome template image; Windows/Linux need a coloured PNG
+ * (template images are mac-only). Packaged builds ship resources/ via electron-builder
+ * `extraResources` (<install>/resources/resources); in dev it is <project>/resources.
+ */
 function iconPath(): string {
-  // out/main -> <root>/resources ; packaged: resources are asar-unpacked
-  return join(__dirname, '../../resources/trayTemplate.png').replace('app.asar', 'app.asar.unpacked')
+  const name = process.platform === 'darwin' ? 'trayTemplate.png' : 'tray-win.png'
+  const candidates = [
+    join(process.resourcesPath ?? '', 'resources', name), // packaged
+    join(app.getAppPath(), 'resources', name), // dev (app path = project root)
+    join(__dirname, '../../resources', name) // out/main -> <root>/resources
+  ]
+  return candidates.find((p) => existsSync(p)) ?? (candidates[2] as string)
 }
 
 function fmt(sec: number): string {
@@ -31,6 +42,7 @@ function fmt(sec: number): string {
 export function createTray(actions: TrayActions, status: AppStatus): Tray | null {
   try {
     const img = nativeImage.createFromPath(iconPath())
+    if (img.isEmpty()) throw new Error(`tray icon not found at ${iconPath()}`)
     if (process.platform === 'darwin') img.setTemplateImage(true)
     tray = new Tray(img)
   } catch (e) {

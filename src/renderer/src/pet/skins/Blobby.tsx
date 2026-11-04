@@ -155,10 +155,10 @@ function Confetti(): JSX.Element {
       {bits.map((b, i) => (
         <g key={i} className="pb-confetto" style={{ animationDelay: `${b.d}s` }}>
           {b.kind === 'rect' && (
-            <rect x={b.x - 2.5} y={b.y - 1.5} width={5} height={3} rx={1} fill={b.c} transform={`rotate(${i * 37} ${b.x} ${b.y})`} />
+            <rect x={b.x - 2.5} y={b.y - 1.5} width={7} height={4} rx={1.2} fill={b.c} transform={`rotate(${i * 37} ${b.x} ${b.y})`} />
           )}
-          {b.kind === 'dot' && <circle cx={b.x} cy={b.y} r={2.4} fill={b.c} />}
-          {b.kind === 'star' && <Star x={b.x} y={b.y} r={5} fill={b.c} />}
+          {b.kind === 'dot' && <circle cx={b.x} cy={b.y} r={3} fill={b.c} />}
+          {b.kind === 'star' && <Star x={b.x} y={b.y} r={6.5} fill={b.c} />}
         </g>
       ))}
     </g>
@@ -213,7 +213,8 @@ export function Blobby({ mood }: PetSkinProps): JSX.Element {
         <ellipse className="pb-arm-left" cx={17.5} cy={82} rx={6.5} ry={9} fill={BODY} stroke={OUTLINE} strokeWidth={1.6} transform="rotate(20 17.5 82)" />
         {waving ? (
           <g className="pb-arm-wave">
-            <ellipse cx={104} cy={60} rx={6.5} ry={10} fill={BODY} stroke={OUTLINE} strokeWidth={1.6} transform="rotate(30 104 60)" />
+            <ellipse cx={107} cy={56} rx={7} ry={12} fill={BODY} stroke={OUTLINE} strokeWidth={1.6} transform="rotate(38 107 56)" />
+            <ellipse cx={111.5} cy={49} rx={2.4} ry={1.6} fill="#fff" opacity={0.5} transform="rotate(38 111.5 49)" />
           </g>
         ) : (
           <ellipse className="pb-arm-right" cx={102.5} cy={82} rx={6.5} ry={9} fill={BODY} stroke={OUTLINE} strokeWidth={1.6} transform="rotate(-20 102.5 82)" />
@@ -259,11 +260,11 @@ export function Blobby({ mood }: PetSkinProps): JSX.Element {
       </g>
 
       {mood === 'sleeping' && (
-        <g className="pb-zzz" fill="#8a8fb8" fontFamily="-apple-system, sans-serif" fontWeight={700}>
-          <text className="pb-z pb-z--1" x={88} y={34} fontSize={14}>
+        <g className="pb-zzz" fill="#c4ccff" stroke="#1a2236" strokeWidth={1.2} paintOrder="stroke" fontFamily="'Geist Sans', system-ui, sans-serif" fontWeight={500}>
+          <text className="pb-z pb-z--1" x={80} y={30} fontSize={17}>
             z
           </text>
-          <text className="pb-z pb-z--2" x={99} y={20} fontSize={10}>
+          <text className="pb-z pb-z--2" x={93} y={14} fontSize={12}>
             z
           </text>
         </g>

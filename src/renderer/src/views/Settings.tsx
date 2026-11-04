@@ -310,3 +310,192 @@ export function SettingsView(): JSX.Element {
     }
   }
 
+
+  return (
+    <div className="settings" ref={rootRef}>
+      <header className="settings-head enter">
+        <Pet mood="happy" size={64} />
+        <div>
+          <h1>
+            <span className="serif">Settings</span>
+          </h1>
+          <p className="muted">
+            Teach your pet what counts as studying. <span className="sticker sticker--tilt-r">auto-saves</span>
+          </p>
+        </div>
+      </header>
+
+      <section className="glass enter">
+        <h2>Apps</h2>
+        <p className="section-sub muted">Matched against the app name in your menu bar, like “Notion” or “Discord”.</p>
+        <div className="grid2 grid2--inner">
+          <ChipList
+            title="Focus apps"
+            hint="count as studying"
+            kind="focus"
+            placeholder="e.g. Notion, then Enter"
+            items={settings.focusApps}
+            onChange={setList('focusApps')}
+          />
+          <ChipList
+            title="Distracting apps"
+            hint="make your pet worry"
+            kind="distract"
+            placeholder="e.g. Discord, then Enter"
+            items={settings.distractApps}
+            onChange={setList('distractApps')}
+          />
+        </div>
+      </section>
+
+      <section className="glass enter">
+        <h2>Websites</h2>
+        <p className="section-sub muted">Paste a domain or a full link; it’s trimmed to the domain, like youtube.com.</p>
+        <div className="grid2 grid2--inner">
+          <ChipList
+            title="Focus sites"
+            hint="count as studying"
+            kind="focus"
+            placeholder="e.g. docs.google.com"
+            normalize={normalizeDomain}
+            items={settings.focusDomains}
+            onChange={setList('focusDomains')}
+          />
+          <ChipList
+            title="Distracting sites"
+            hint="make your pet worry"
+            kind="distract"
+            placeholder="e.g. youtube.com"
+            normalize={normalizeDomain}
+            items={settings.distractDomains}
+            onChange={setList('distractDomains')}
+          />
+        </div>
+      </section>
+
+      <hr className="zigzag enter" />
+
+      <div className="grid2">
+        <section className="glass enter">
+          <h2>Nudges</h2>
+          <NumberField
+            label="Pet speaks up after"
+            unit="sec"
+            hint={asMin(settings.nudgeAfterSec)}
+            value={settings.nudgeAfterSec}
+            onChange={(n) => update({ nudgeAfterSec: n })}
+          />
+          <NumberField
+            label="Notification after"
+            unit="sec"
+            hint={asMin(settings.notifyAfterSec)}
+            value={settings.notifyAfterSec}
+            onChange={(n) => update({ notifyAfterSec: n })}
+          />
+          <NumberField
+            label="Quiet time between nudges"
+            unit="sec"
+            hint={asMin(settings.nudgeCooldownSec)}
+            value={settings.nudgeCooldownSec}
+            onChange={(n) => update({ nudgeCooldownSec: n })}
+          />
+        </section>
+
+        <section className="glass enter">
+          <h2>Pomodoro</h2>
+          <NumberField
+            label="Focus round"
+            unit="min"
+            max={240}
+            value={settings.focusMinutes}
+            onChange={(n) => update({ focusMinutes: n })}
+          />
+          <NumberField
+            label="Break"
+            unit="min"
+            max={120}
+            value={settings.breakMinutes}
+            onChange={(n) => update({ breakMinutes: n })}
+          />
+          <label className="row-toggle">
+            <span>Open Study Pet when you log in</span>
+            <span className="toggle">
+              <input
+                type="checkbox"
+                checked={settings.launchAtLogin}
+                onChange={(e) => update({ launchAtLogin: e.target.checked })}
+              />
+              <span />
+            </span>
+          </label>
+        </section>
+      </div>
+
+      <section className="glass enter">
+        <div className="section-head">
+          <h2>Study reminders</h2>
+          <button className="btn btn--small btn--primary" onClick={addReminder}>
+            <Icon name="plus" size={13} />
+            Add reminder
+          </button>
+        </div>
+        {settings.reminders.length === 0 ? (
+          <div className="empty">
+            <Pet mood="wave" size={56} />
+            <p className="muted">No reminders yet. Pick a time and your pet will wave you over to study.</p>
+          </div>
+        ) : (
+          <div className="reminders">
+            {settings.reminders.map((r) => (
+              <ReminderRow
+                key={r.id}
+                r={r}
+                onChange={setReminder}
+                onDelete={() => update({ reminders: settings.reminders.filter((x) => x.id !== r.id) })}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="glass enter">
+        <h2>Deadlines</h2>
+        <label className="field field--wide">
+          <span className="field-label">Brightspace calendar link (iCal)</span>
+          <input
+            className="text-input"
+            type="url"
+            value={settings.icalUrl}
+            placeholder="https://…/calendar/feed/….ics"
+            onChange={(e) => update({ icalUrl: e.target.value.trim() })}
+          />
+          <span className="faint field-help">Paste your calendar subscription link to see upcoming due dates in the panel.</span>
+        </label>
+        <div className="row">
+          <button className="btn btn--small" disabled={refreshing} onClick={() => void refreshDeadlines()}>
+            <Icon name="refresh" size={13} />
+            {refreshing ? 'Refreshing…' : 'Refresh deadlines'}
+          </button>
+          {deadlineNote && <span className="muted">{deadlineNote}</span>}
+        </div>
+      </section>
+
+      <section className="glass danger-zone enter">
+        <div>
+          <h2>Reset data</h2>
+          <p className="muted">Deletes your session history and restores default settings.</p>
+        </div>
+        <button className="btn btn--danger" onClick={() => void reset()}>
+          Reset everything…
+        </button>
+      </section>
+
+      {toast && (
+        <div className={`toast${toast.ok ? '' : ' toast--error'}`} key={toast.id} role="status">
+          <Icon name={toast.ok ? 'check' : 'alert'} size={14} />
+          {toast.text}
+        </div>
+      )}
+    </div>
+  )
+}
