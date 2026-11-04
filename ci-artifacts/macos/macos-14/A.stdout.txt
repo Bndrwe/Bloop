@@ -1,6 +1,6 @@
 [bloop] starting (platform=darwin, fast=true, fake=no)
 [bloop] permissions: screen=denied automation=unknown onboarding=true
-[bloop] trace: userData=/Users/runner/Library/Application Support/bloop exe=/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/MacOS/Bloop pid=21043
+[bloop] trace: userData=/Users/runner/Library/Application Support/bloop exe=/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/MacOS/Bloop pid=22387
 [bloop] session start
 [bloop] phase -> focus (400s)
 [bloop] mood idle -> happy
@@ -47,14 +47,14 @@
 [bloop] sample app="Unknown" category=neutral score=null
 [bloop] sample app="Unknown" category=neutral score=null
 [bloop] sample app="Unknown" category=neutral score=null
-[bloop] permissions(refresh): screen=denied automation=granted onboarding=true
-[bloop] sample app="Unknown" category=neutral score=null
-[bloop] sample app="Unknown" category=neutral score=null
-[bloop] sample app="Unknown" category=neutral score=null
-[bloop] sample app="Unknown" category=neutral score=null
 [bloop] sample app="Unknown" category=neutral score=null
 [bloop] permissions(refresh): screen=denied automation=granted onboarding=true
 [bloop] sample app="Unknown" category=neutral score=null
+[bloop] sample app="Unknown" category=neutral score=null
+[bloop] sample app="Unknown" category=neutral score=null
+[bloop] sample app="Unknown" category=neutral score=null
+[bloop] sample app="Unknown" category=neutral score=null
+[bloop] permissions(refresh): screen=denied automation=granted onboarding=true
 [bloop] sample app="Unknown" category=neutral score=null
 [bloop] sample app="Unknown" category=neutral score=null
 [bloop] session stop: 41s, score=null, pomodoros=0, completed=false

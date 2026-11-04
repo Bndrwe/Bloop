@@ -1,9 +1,9 @@
-# Bloop macOS e2e (macOS 14.8.9, arm64, runner GitHub Actions 1000001843)
+# Bloop macOS e2e (macOS 14.8.9, arm64, runner GitHub Actions 1000001844)
 
 App: `/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app` (bundle id edu.bloop.app)
 
 ## A: launch without permissions
-  launched A via open (LaunchServices), pid(s): 21043 
+  launched A via open (LaunchServices), pid(s): 22387 
   `[bloop] permissions: screen=denied automation=unknown onboarding=true`
   last refresh: `[bloop] permissions(refresh): screen=denied automation=unknown onboarding=true`
 - PASS: A: app started and logged its permission state
@@ -48,7 +48,7 @@ App: `/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app` (bundle id 
   observation: Screen Recording still not granted in the running process (macOS caches it per process; needs relaunch)
 
 ## B: relaunch with permissions granted, drive real apps
-  launched B via open (LaunchServices), pid(s): 22639 
+  launched B via open (LaunchServices), pid(s): 24115 
   `[bloop] permissions: screen=granted automation=unknown onboarding=true`
 - PASS: B: Screen Recording reported granted after relaunch
 - PASS: B: session auto-started

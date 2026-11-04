@@ -1,12 +1,4 @@
 [bloop] sample app="Unknown" category=neutral score=null
-[bloop] permissions(refresh): screen=granted automation=granted onboarding=false
-[bloop] sample app="Unknown" category=neutral score=null
-[bloop] sample app="Unknown" category=neutral score=null
-[bloop] sample app="Unknown" category=neutral score=null
-[bloop] sample app="Unknown" category=neutral score=null
-[bloop] sample app="Unknown" category=neutral score=null
-[bloop] permissions(refresh): screen=granted automation=granted onboarding=false
-[bloop] sample app="Unknown" category=neutral score=null
 [bloop] sample app="Unknown" category=neutral score=null
 [bloop] sample app="Unknown" category=neutral score=null
 [bloop] sample app="Unknown" category=neutral score=null
@@ -24,4 +16,12 @@
 [bloop] sample app="Unknown" category=neutral score=null
 [bloop] sample app="Unknown" category=neutral score=null
 [bloop] permissions(refresh): screen=granted automation=granted onboarding=false
+[bloop] sample app="Unknown" category=neutral score=null
+[bloop] sample app="Unknown" category=neutral score=null
+[bloop] sample app="Unknown" category=neutral score=null
+[bloop] sample app="Unknown" category=neutral score=null
+[bloop] sample app="Unknown" category=neutral score=null
+[bloop] permissions(refresh): screen=granted automation=granted onboarding=false
+[bloop] sample app="Unknown" category=neutral score=null
+[bloop] sample app="Unknown" category=neutral score=null
 [bloop] sample app="Unknown" category=neutral score=null
