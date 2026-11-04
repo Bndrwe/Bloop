@@ -53,7 +53,7 @@ Because the build is unsigned, macOS Gatekeeper will complain the first time. Ri
 
 ### Windows
 
-`npm run build:win` writes an NSIS installer and a portable `.exe` to `dist/`. The build is unsigned, so SmartScreen will warn you the first time. Click **More info → Run anyway**.
+`npm run build:win` writes an NSIS installer and a portable `.exe` to `dist/`. Run it on a Windows machine (after `npm install` there), because `get-windows` downloads its Windows native binary at install time, so a cross-build from macOS or Linux would ship without it. The build is unsigned, so SmartScreen will warn you the first time. Click **More info → Run anyway**.
 
 Windows needs no special permissions. Active window detection works out of the box.
 
