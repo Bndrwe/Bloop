@@ -1,5 +1,5 @@
 [bloop] starting (platform=darwin, fast=true, fake=no)
-[bloop] trace: userData=/Users/runner/Library/Application Support/bloop exe=/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/MacOS/Bloop pid=21973
+[bloop] trace: userData=/Users/runner/Library/Application Support/bloop exe=/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/MacOS/Bloop pid=22413
 [bloop] permissions: screen=denied automation=unknown onboarding=true
 [bloop] session start
 [bloop] phase -> focus (400s)
@@ -60,13 +60,13 @@
 [bloop] permissions(refresh): screen=denied automation=granted onboarding=true
 [bloop] trace raw: app="Safari" titleLen=0 url=- nativeUrl=no
 [bloop] sample app="Safari" category=neutral score=null
+[bloop] trace raw: app="Safari" titleLen=0 url=- nativeUrl=no
+[bloop] sample app="Safari" category=neutral score=null
+[bloop] trace raw: app="Safari" titleLen=0 url=- nativeUrl=no
+[bloop] sample app="Safari" category=neutral score=null
 [bloop] trace raw: app="Safari" titleLen=0 url=https://en.wikipedia.org/wiki/Study_skills nativeUrl=no
 [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=100
 [bloop] mood idle -> happy
-[bloop] trace raw: app="Safari" titleLen=0 url=https://en.wikipedia.org/wiki/Study_skills nativeUrl=no
-[bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=100
-[bloop] trace raw: app="Safari" titleLen=0 url=https://en.wikipedia.org/wiki/Study_skills nativeUrl=no
-[bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=100
 [bloop] trace raw: app="Safari" titleLen=0 url=https://en.wikipedia.org/wiki/Study_skills nativeUrl=no
 [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=100
 [bloop] permissions(refresh): screen=denied automation=granted onboarding=true
