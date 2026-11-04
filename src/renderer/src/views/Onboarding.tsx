@@ -107,9 +107,17 @@ export function Onboarding(): JSX.Element {
               Lets me read window titles, like the name of the doc you’re in. Nothing is recorded or saved.
             </p>
             {perm?.screenRecording !== 'granted' && perm?.screenRecording !== 'not-applicable' && (
-              <button className="btn btn--small" onClick={() => void window.studyPet.openPermissionSettings('screenRecording')}>
-                Open Screen Recording settings
-              </button>
+              <>
+                <div className="row">
+                  <button className="btn btn--small" onClick={() => void window.studyPet.openPermissionSettings('screenRecording')}>
+                    Open Screen Recording settings
+                  </button>
+                  <button className="btn btn--small btn--primary" onClick={() => void window.studyPet.relaunchApp()}>
+                    Restart Bloop
+                  </button>
+                </div>
+                <p className="muted onb-hint">Turned it on already? macOS only applies it after Bloop restarts.</p>
+              </>
             )}
           </div>
 

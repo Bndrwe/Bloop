@@ -102,3 +102,8 @@
   display: flex;
   gap: var(--s2);
 }
+
+.onb-hint {
+  margin-top: 10px;
+  font-size: 12px;
+}

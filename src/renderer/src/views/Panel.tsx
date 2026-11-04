@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { animate } from 'animejs'
 import type { AppStatus, Deadline, Stats, StudyPlan } from '@shared/types'
 import { useStatus } from '../hooks/useStatus'
+import { useWindowAwake } from '../hooks/useWindowAwake'
 import { Pet } from '../pet/Pet'
 import { Icon } from '../lib/Icon'
 import { ShaderMetal } from '@/components/ui/shader-metal'
@@ -33,27 +34,6 @@ function BandSticker({ score }: { score: number | null }): JSX.Element {
       {scoreBand(score)}
     </span>
   )
-}
-
-/**
- * The window hides on blur, and a hidden Electron window doesn't always report itself hidden,
- * so the chrome stops drawing whenever the panel loses focus or visibility.
- */
-function usePanelAwake(): boolean {
-  const [awake, setAwake] = useState(() => document.visibilityState !== 'hidden')
-  useEffect(() => {
-    const wake = (): void => setAwake(document.visibilityState !== 'hidden')
-    const sleep = (): void => setAwake(false)
-    document.addEventListener('visibilitychange', wake)
-    window.addEventListener('focus', wake)
-    window.addEventListener('blur', sleep)
-    return () => {
-      document.removeEventListener('visibilitychange', wake)
-      window.removeEventListener('focus', wake)
-      window.removeEventListener('blur', sleep)
-    }
-  }, [])
-  return awake
 }
 
 /** Score ring: number counts up and the arc tweens together, driven by one anime.js tween. */
@@ -481,7 +461,9 @@ export function Panel(): JSX.Element {
   const [statsError, setStatsError] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
   const phase = status?.phase ?? 'idle'
-  const awake = usePanelAwake()
+  // The panel hides on blur, so the chrome only draws while it's visible and focused.
+  const { visible, focused } = useWindowAwake()
+  const awake = visible && focused
 
   useEntrance(rootRef, ':scope > .enter', status != null)
 

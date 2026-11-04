@@ -14,11 +14,13 @@
 /* Hero: the chrome ribbons run full-bleed behind a big black score disc (the Ditto move:
    one huge visual, oversized display type over it, a compact pill underneath).
    The chrome is the one sanctioned exception to "no gradients": it's a lit 3D material.
-   Everything that sits on it is opaque black or white, so it always reads. */
+   Everything that sits on it is opaque black or white, so it always reads.
+   The hero is solid black: the background smoke stops at its hairline, so it never muddies the chrome. */
 .hero {
   --ring-size: 272px;
   position: relative;
   isolation: isolate;
+  background: var(--ink);
   margin: calc(-1 * var(--s3)) calc(-1 * var(--s3)) 0;
   padding: var(--s3) var(--s3) var(--s4);
   display: flex;

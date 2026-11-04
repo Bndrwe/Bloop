@@ -113,6 +113,20 @@ html.route-panel body {
   overflow-x: hidden;
 }
 
+/* Background smoke (ShaderSmoke, mounted in App): pinned to the window behind every view.
+   The second sanctioned exception to "no gradients" — achromatic and barely there.
+   Unlayered, so it wins over the component's Tailwind `absolute`. */
+.app-smoke {
+  position: fixed;
+  z-index: 0;
+}
+.panel,
+.settings,
+.onb {
+  position: relative;
+  z-index: 1;
+}
+
 h1,
 h2,
 h3,
@@ -245,10 +259,11 @@ textarea {
   color: var(--text);
 }
 
-/* Flat card: black on black, held by a hairline. */
+/* Flat card: near-black, held by a hairline. 88% ink lets the background smoke show
+   through as the faintest tone (≤ 2% grey), so text contrast is unchanged in practice. */
 .card {
   position: relative;
-  background: var(--ink);
+  background: rgb(0 0 0 / 0.88);
   border: 1px solid var(--hairline);
   border-radius: var(--r-lg);
 }

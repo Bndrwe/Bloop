@@ -97,7 +97,21 @@ On first run on macOS, Bloop checks its permissions and shows a short guide with
 | **Automation** (Privacy & Security → Automation → Bloop → your browser) | Lets Bloop ask Chrome / Arc / Safari for the current tab URL via AppleScript | Browsers count as *neutral*, so YouTube and Google Docs can't be told apart |
 | **Notifications** | Distraction notifications and study reminders | The pet still talks in its speech bubble |
 
-After you grant Screen Recording, macOS may ask you to quit and reopen the app.
+After you grant Screen Recording, click **Restart Bloop** on the welcome screen. macOS only re-reads that permission when the app launches.
+
+### Permission still says "not granted"?
+
+No script can grant these permissions; macOS only lets you tick the box yourself. What you can do from the terminal is clear stale entries and get walked through the panes:
+
+```bash
+npm run perms
+```
+
+It resets Bloop's Screen Recording and Automation entries (`tccutil reset`), then opens each System Settings pane in turn. Common causes:
+
+- **You're running `npm run dev`.** macOS gives the permission to the app that launched Bloop, so turn on **Terminal** (or iTerm / VS Code) in Screen Recording, not Bloop. Use `npm run perms -- --dev` to also reset the "Electron" entry.
+- **You rebuilt the app.** Each new unsigned build counts as a different app to macOS, so old grants stop matching. Run `npm run perms`, then grant again.
+- **You didn't restart.** Screen Recording only takes effect after Bloop relaunches.
 
 ## How scoring works
 
@@ -125,7 +139,7 @@ The defaults (all editable in Settings):
 
 ## Design
 
-Bloop is strictly black and white. The canvas is pure black (`#000`), the ink is pure white (`#fff`), and a few neutral greys handle secondary text and hairlines. There are no gradients, glows, frosted glass or textures, with one exception: the chrome hero described below. Cards are flat black with a 1px grey hairline. Primary buttons are solid white with black text; secondary buttons are black with a white hairline. The only ornament is a fine grey zigzag rule. All colours are CSS custom properties on `:root` in `src/renderer/src/styles/base.css` (`--ink`, `--paper`, `--g1` … `--g5`).
+Bloop is strictly black and white. The canvas is pure black (`#000`), the ink is pure white (`#fff`), and a few neutral greys handle secondary text and hairlines. There are no gradients, glows, frosted glass or textures, with two exceptions: the chrome hero and the background smoke, both described below. Cards are flat black (88% opaque, so the smoke shows through only as the faintest tone) with a 1px grey hairline. Primary buttons are solid white with black text; secondary buttons are black with a white hairline. The only ornament is a fine grey zigzag rule. All colours are CSS custom properties on `:root` in `src/renderer/src/styles/base.css` (`--ink`, `--paper`, `--g1` … `--g5`).
 
 Without colour, state is shown by **fill, outline, dashes, weight and words**:
 
@@ -143,6 +157,7 @@ Without colour, state is shown by **fill, outline, dashes, weight and words**:
 The pet is black-and-white line art: a white body with a crisp black ink outline, black eyes with white highlights, and hatch-mark blush. Around the drawing is a flat white "sticker cut" edge (an SVG morphology filter, not a blur). On light wallpapers you see the black line; on dark wallpapers you see the white edge. Speech bubbles are white balloons with black ink, like a comic.
 
 - **Chrome hero**: the top of the panel is a full-bleed hero. Liquid-chrome ribbons (`ShaderMetal`, a WebGL shader in `src/renderer/src/components/ui/shader-metal.tsx`, run with `iridescence={0}` and a CSS `grayscale(1)` so it stays achromatic) flow behind a large flat black score disc. The score is a giant Instrument Serif italic numeral on that disc; the phase, time left and pomodoros sit in a black pill underneath. Everything on top of the chrome is opaque black or white, so it reads whatever the ribbons are doing. The key light follows the pointer. The shader is a lit 3D material, the one place the flat rule bends. It holds a still frame under *reduce motion* and stops drawing entirely while the panel is hidden or unfocused. It is used nowhere else (and never in the transparent pet window).
+- **Background smoke**: behind the panel, settings and onboarding windows, slow grey smoke folds over the black (`ShaderSmoke`, a WebGL shader in `src/renderer/src/components/ui/shader-smoke.tsx`: domain-warped noise lit like silk). It is the second sanctioned exception to "no gradients". It is strictly achromatic and barely there: it peaks below about 7% grey, so even tertiary text keeps AA contrast. The pointer stirs it slightly. It renders at half resolution and at most 30 fps. It stops while a window is hidden (and in the panel, when the panel is unfocused), and it holds a still frame under *reduce motion*. It never appears in the pet window, and it stops at the panel hero so it doesn't dull the chrome. See [background-motion.gif](docs/screenshots/background-motion.gif).
 - **Components**: Tailwind CSS v4 (utilities and theme only, no preflight) with a shadcn-style layout: `@/` points at `src/renderer/src`, `cn()` lives in `@/lib/utils`, and components live in `src/renderer/src/components/ui`. Add more with `npx shadcn add <name>`. Tailwind only scans `components/`; the views keep their hand-written, namespaced CSS.
 - **Typography**: Geist, Geist Mono and Instrument Serif. The fonts are bundled locally through `@fontsource`, so the app makes no network font requests.
 - **Animation**: all motion runs on [anime.js](https://animejs.com) v4: the pet's mood choreography, the speech-bubble pop-in, the score ring and stat count-ups, chart bars growing in, staggered entrances for panels and settings chips, toasts, and the loading pulse. CSS transitions are only used for hover and focus feedback. With *reduce motion* turned on, everything settles into still poses or short fades.
