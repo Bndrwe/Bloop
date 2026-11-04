@@ -37,18 +37,32 @@ export function smokeUniforms(intensity: number, speed: number): SmokeUniforms {
 }
 
 export interface BackgroundTokens {
-  /** Card background opacity: ~0.97 at low intensity, ~0.90 at high. */
+  /** Card background opacity: ~0.60 at low intensity, ~0.45 at high, so the smoke reads through. */
   cardAlpha: number
-  /** Tertiary text grey (hex), lifted at high intensity so it keeps AA contrast over the smoke. */
+  /** Tertiary text grey (hex), lifted as more smoke shows through so it keeps AA contrast. */
   tertiary: string
 }
 
+/** WCAG relative luminance of an sRGB grey (0–1). */
+function lum(v: number): number {
+  return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)
+}
+
+/** WCAG contrast ratio between two sRGB greys (0–1). */
+export function greyContrast(a: number, b: number): number {
+  const [hi, lo] = lum(a) > lum(b) ? [lum(a), lum(b)] : [lum(b), lum(a)]
+  return (hi + 0.05) / (lo + 0.05)
+}
+
 export function backgroundTokens(intensity: number, enabled = true): BackgroundTokens {
-  if (!enabled) return { cardAlpha: 0.97, tertiary: '#7d7d7d' }
-  const t = clampPercent(intensity, DEFAULT_BACKGROUND_INTENSITY) / 100
-  const cardAlpha = Math.round((0.97 - 0.07 * t) * 1000) / 1000
-  // #7d (125) at rest, #9a (154) by the top; the dimmest the text may be is still 4.5:1.
-  const v = Math.round(125 + 29 * Math.pow(t, 1.5))
+  if (!enabled) return { cardAlpha: 0.6, tertiary: '#7d7d7d' }
+  const i = clampPercent(intensity, DEFAULT_BACKGROUND_INTENSITY)
+  const t = i / 100
+  const cardAlpha = Math.round((0.6 - 0.15 * t) * 1000) / 1000
+  // Worst case: the brightest crest seen through the card, behind the text (cards also blur it).
+  const behind = smokeUniforms(i, DEFAULT_BACKGROUND_SPEED).gain * (1 - cardAlpha)
+  let v = 125 // #7d at rest
+  while (v < 255 && greyContrast(v / 255, behind) < 4.6) v++
   const h = v.toString(16).padStart(2, '0')
   return { cardAlpha, tertiary: `#${h}${h}${h}` }
 }

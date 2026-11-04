@@ -259,11 +259,14 @@ textarea {
   color: var(--text);
 }
 
-/* Flat card: near-black, held by a hairline. --card-alpha (0.97 → 0.90) follows the
-   smoke intensity, set from Settings → Background; --g4 is lifted with it to keep AA contrast. */
+/* Smoked-glass card: translucent black over the background smoke, softly blurred and held by a
+   hairline. --card-alpha (0.60 → 0.45) follows the smoke intensity (Settings → Background);
+   --g4 is lifted with it so tertiary text keeps AA contrast. */
 .card {
   position: relative;
-  background: rgb(0 0 0 / var(--card-alpha, 0.95));
+  background: rgb(0 0 0 / var(--card-alpha, 0.55));
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
   border: 1px solid var(--hairline);
   border-radius: var(--r-lg);
 }

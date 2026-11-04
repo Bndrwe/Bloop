@@ -35,10 +35,10 @@ describe('smokeUniforms', () => {
 })
 
 describe('backgroundTokens', () => {
-  it('card opacity falls from ~0.97 to ~0.90 as intensity rises', () => {
-    expect(backgroundTokens(0).cardAlpha).toBeCloseTo(0.97)
-    expect(backgroundTokens(100).cardAlpha).toBeCloseTo(0.9)
-    expect(backgroundTokens(100, false).cardAlpha).toBeCloseTo(0.97)
+  it('card opacity falls from ~0.60 to ~0.45 as intensity rises', () => {
+    expect(backgroundTokens(0).cardAlpha).toBeCloseTo(0.6)
+    expect(backgroundTokens(100).cardAlpha).toBeCloseTo(0.45)
+    expect(backgroundTokens(100, false).cardAlpha).toBeCloseTo(0.6)
   })
   it('tertiary text keeps AA contrast under the brightest smoke seen through a card', () => {
     for (let i = 0; i <= 100; i += 5) {
