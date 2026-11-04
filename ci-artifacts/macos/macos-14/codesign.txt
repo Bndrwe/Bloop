@@ -7,36 +7,32 @@ VersionPlatform=1
 VersionMin=786432
 VersionSDK=1703936
 Hash type=sha256 size=32
-CandidateCDHash sha256=af647642c4698f836a7bd5dbdc9db2310e2f4059
-CandidateCDHashFull sha256=af647642c4698f836a7bd5dbdc9db2310e2f405994a03654910ba280026fb288
+CandidateCDHash sha256=66e2638b62fc5c475a95500a32d653d0387c6131
+CandidateCDHashFull sha256=66e2638b62fc5c475a95500a32d653d0387c61319dff8ac594bda8b7ad466b71
 Hash choices=sha256
-CMSDigest=af647642c4698f836a7bd5dbdc9db2310e2f405994a03654910ba280026fb288
+CMSDigest=66e2638b62fc5c475a95500a32d653d0387c61319dff8ac594bda8b7ad466b71
 CMSDigestType=2
 Executable Segment base=0
 Executable Segment limit=16384
 Executable Segment flags=0x1
 Page size=4096
-CDHash=af647642c4698f836a7bd5dbdc9db2310e2f4059
+CDHash=66e2638b62fc5c475a95500a32d653d0387c6131
 Signature=adhoc
 Info.plist entries=33
 TeamIdentifier=not set
 Runtime Version=26.0.0
-Sealed Resources version=2 rules=13 files=25
+Sealed Resources version=2 rules=13 files=41
 Internal requirements count=0 size=12
 == designated requirement
 Executable=/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/MacOS/Bloop
-# designated => cdhash H"af647642c4698f836a7bd5dbdc9db2310e2f4059"
+# designated => cdhash H"66e2638b62fc5c475a95500a32d653d0387c6131"
 == codesign --verify --deep --strict
 --prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper (Plugin).app
 --validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper (Plugin).app
---prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Electron Framework.framework/Versions/Current/.
---prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Electron Framework.framework/Versions/Current/Helpers/chrome_crashpad_handler
---validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Electron Framework.framework/Versions/Current/Helpers/chrome_crashpad_handler
---validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Electron Framework.framework/Versions/Current/.
---prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Squirrel.framework/Versions/Current/.
 --prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/ReactiveObjC.framework/Versions/Current/.
---validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Squirrel.framework/Versions/Current/.
 --validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/ReactiveObjC.framework/Versions/Current/.
+--prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Squirrel.framework/Versions/Current/.
+--validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Squirrel.framework/Versions/Current/.
 --prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper (GPU).app
 --validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper (GPU).app
 --prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper.app
@@ -45,6 +41,10 @@ Executable=/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Content
 --validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Mantle.framework/Versions/Current/.
 --prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper (Renderer).app
 --validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper (Renderer).app
+--prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Electron Framework.framework/Versions/Current/.
+--prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Electron Framework.framework/Versions/Current/Helpers/chrome_crashpad_handler
+--validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Electron Framework.framework/Versions/Current/Helpers/chrome_crashpad_handler
+--validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Electron Framework.framework/Versions/Current/.
 dist/mac-arm64/Bloop.app: valid on disk
 dist/mac-arm64/Bloop.app: satisfies its Designated Requirement
 exit=0

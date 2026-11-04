@@ -3,59 +3,56 @@
 [bloop] trace raw: app="Safari" titleLen=8 url=- nativeUrl=no
 [bloop] sample app="Safari" category=neutral score=100
 [bloop] mood happy -> idle
-[bloop] trace raw: app="Safari" titleLen=23 url=https://www.youtube.com/ nativeUrl=no
+[bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=96
-[bloop] permissions(refresh): screen=granted automation=granted onboarding=false
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=93
+[bloop] permissions(refresh): screen=granted automation=granted onboarding=false
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=89
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=86
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
-[bloop] sample app="Safari" domain=youtube.com category=distract score=83
-[bloop] permissions(refresh): screen=granted automation=granted onboarding=false
+[bloop] sample app="Safari" domain=youtube.com category=distract score=84
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=81
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=78
-[bloop] nudge (distracted 7s)
-[bloop] mood idle -> worried
-[bloop] pet says: "hey, we were doing so well!"
+[bloop] permissions(refresh): screen=granted automation=granted onboarding=false
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=76
+[bloop] nudge (distracted 7s)
+[bloop] mood idle -> worried
+[bloop] pet says: "ooh, shiny… but our work misses us!"
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=74
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=72
-[bloop] permissions(refresh): screen=granted automation=granted onboarding=false
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=70
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=68
+[bloop] permissions(refresh): screen=granted automation=granted onboarding=false
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=66
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=64
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=63
-[bloop] permissions(refresh): screen=granted automation=granted onboarding=false
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=61
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=60
+[bloop] permissions(refresh): screen=granted automation=granted onboarding=false
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=58
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=57
+[bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
+[bloop] sample app="Safari" domain=youtube.com category=distract score=56
 [bloop] nudge (distracted 19s)
-[bloop] pet says: "future you will say thanks. let's go!"
+[bloop] pet says: "psst… is this homework? 👀"
 [bloop] nudge notification
 [bloop] notification: Bloop misses you 🐾 — You've been off task for 19 seconds. Let's get back to it together!
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
-[bloop] sample app="Safari" domain=youtube.com category=distract score=56
-[bloop] permissions(refresh): screen=granted automation=granted onboarding=false
-[bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=54
-[bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
-[bloop] sample app="Safari" domain=youtube.com category=distract score=53
