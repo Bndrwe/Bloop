@@ -1,13 +1,32 @@
 [bloop] starting (platform=darwin, fast=true, fake=no)
-[bloop] trace: userData=/Users/runner/Library/Application Support/bloop exe=/Users/runner/work/StudyPet/StudyPet/dist/mac/Bloop.app/Contents/MacOS/Bloop pid=23105
-[bloop] permissions: screen=denied automation=unknown onboarding=true
+[bloop] trace: userData=/Users/runner/Library/Application Support/bloop exe=/Users/runner/work/StudyPet/StudyPet/dist/mac/Bloop.app/Contents/MacOS/Bloop pid=23859
 [bloop] session start
 [bloop] phase -> focus (400s)
 [bloop] mood idle -> happy
 [bloop] pet says: "let's do this! I'll keep you company 📚"
-[bloop] trace raw: app="Bloop" titleLen=0 url=- nativeUrl=no
-[bloop] sample app="Bloop" category=neutral score=null
+[bloop] sample app="Unknown" category=neutral score=null
 [bloop] mood happy -> idle
+[bloop] permissions: screen=denied automation=unknown onboarding=true
+[bloop] trace raw: app="Bloop" titleLen=0 url=- nativeUrl=no
+[bloop] sample app="Bloop" category=neutral score=null
+[bloop] trace raw: app="Bloop" titleLen=0 url=- nativeUrl=no
+[bloop] sample app="Bloop" category=neutral score=null
+[bloop] trace raw: app="Bloop" titleLen=0 url=- nativeUrl=no
+[bloop] sample app="Bloop" category=neutral score=null
+[bloop] trace raw: app="Bloop" titleLen=0 url=- nativeUrl=no
+[bloop] sample app="Bloop" category=neutral score=null
+[bloop] permissions(refresh): screen=denied automation=unknown onboarding=true
+[bloop] trace raw: app="Bloop" titleLen=0 url=- nativeUrl=no
+[bloop] sample app="Bloop" category=neutral score=null
+[bloop] trace raw: app="Bloop" titleLen=0 url=- nativeUrl=no
+[bloop] sample app="Bloop" category=neutral score=null
+[bloop] trace raw: app="Bloop" titleLen=0 url=- nativeUrl=no
+[bloop] sample app="Bloop" category=neutral score=null
+[bloop] trace raw: app="Bloop" titleLen=0 url=- nativeUrl=no
+[bloop] sample app="Bloop" category=neutral score=null
+[bloop] permissions(refresh): screen=denied automation=unknown onboarding=true
+[bloop] trace raw: app="Bloop" titleLen=0 url=- nativeUrl=no
+[bloop] sample app="Bloop" category=neutral score=null
 [bloop] trace raw: app="Bloop" titleLen=0 url=- nativeUrl=no
 [bloop] sample app="Bloop" category=neutral score=null
 [bloop] trace raw: app="Bloop" titleLen=0 url=- nativeUrl=no
@@ -30,37 +49,6 @@
 [bloop] permissions(refresh): screen=denied automation=unknown onboarding=true
 [bloop] trace raw: app="Bloop" titleLen=0 url=- nativeUrl=no
 [bloop] sample app="Bloop" category=neutral score=null
-[bloop] trace raw: app="Bloop" titleLen=0 url=- nativeUrl=no
-[bloop] sample app="Bloop" category=neutral score=null
-[bloop] trace raw: app="Bloop" titleLen=0 url=- nativeUrl=no
-[bloop] sample app="Bloop" category=neutral score=null
-[bloop] trace raw: app="Bloop" titleLen=0 url=- nativeUrl=no
-[bloop] sample app="Bloop" category=neutral score=null
-[bloop] permissions(refresh): screen=denied automation=unknown onboarding=true
-[bloop] trace raw: app="Bloop" titleLen=0 url=- nativeUrl=no
-[bloop] sample app="Bloop" category=neutral score=null
-[bloop] trace raw: app="Bloop" titleLen=0 url=- nativeUrl=no
-[bloop] sample app="Bloop" category=neutral score=null
-[bloop] trace raw: app="Bloop" titleLen=0 url=- nativeUrl=no
-[bloop] sample app="Bloop" category=neutral score=null
-[bloop] trace raw: app="Bloop" titleLen=0 url=- nativeUrl=no
-[bloop] sample app="Bloop" category=neutral score=null
-[bloop] trace raw: app="Bloop" titleLen=0 url=- nativeUrl=no
-[bloop] sample app="Bloop" category=neutral score=null
-[bloop] trace raw: app="Bloop" titleLen=0 url=- nativeUrl=no
-[bloop] sample app="Bloop" category=neutral score=null
-[bloop] trace raw: app="Bloop" titleLen=0 url=- nativeUrl=no
-[bloop] sample app="Bloop" category=neutral score=null
-[bloop] permissions(refresh): screen=denied automation=unknown onboarding=true
-[bloop] trace raw: app="Bloop" titleLen=0 url=- nativeUrl=no
-[bloop] sample app="Bloop" category=neutral score=null
-[bloop] trace raw: app="Bloop" titleLen=0 url=- nativeUrl=no
-[bloop] sample app="Bloop" category=neutral score=null
-[bloop] trace raw: app="Bloop" titleLen=0 url=- nativeUrl=no
-[bloop] sample app="Bloop" category=neutral score=null
-[bloop] trace raw: app="Bloop" titleLen=0 url=- nativeUrl=no
-[bloop] sample app="Bloop" category=neutral score=null
-[bloop] permissions(refresh): screen=denied automation=unknown onboarding=true
 [bloop] trace raw: app="Bloop" titleLen=0 url=- nativeUrl=no
 [bloop] sample app="Bloop" category=neutral score=null
 [bloop] trace raw: app="Bloop" titleLen=0 url=- nativeUrl=no
@@ -84,15 +72,16 @@
 [bloop] sample app="Unknown" category=neutral score=null
 [bloop] automation permission -> granted
 [bloop] permissions(refresh): screen=denied automation=granted onboarding=true
+[bloop] trace raw: app="Safari" titleLen=0 url=- nativeUrl=no
+[bloop] sample app="Safari" category=neutral score=null
 [bloop] permissions(refresh): screen=denied automation=granted onboarding=true
-[bloop] sample app="Unknown" category=neutral score=null
-[bloop] sample app="Unknown" category=neutral score=null
-[bloop] sample app="Unknown" category=neutral score=null
 [bloop] trace raw: app="Safari" titleLen=0 url=- nativeUrl=no
 [bloop] sample app="Safari" category=neutral score=null
 [bloop] trace raw: app="Safari" titleLen=0 url=- nativeUrl=no
 [bloop] sample app="Safari" category=neutral score=null
 [bloop] permissions(refresh): screen=denied automation=granted onboarding=true
+[bloop] trace raw: app="Safari" titleLen=0 url=- nativeUrl=no
+[bloop] sample app="Safari" category=neutral score=null
 [bloop] trace raw: app="Safari" titleLen=0 url=https://en.wikipedia.org/wiki/Study_skills nativeUrl=no
 [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=100
 [bloop] mood idle -> happy
@@ -125,6 +114,6 @@
 [bloop] permissions(refresh): screen=denied automation=granted onboarding=true
 [bloop] trace raw: app="Safari" titleLen=0 url=https://en.wikipedia.org/wiki/Study_skills nativeUrl=no
 [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=100
-[bloop] session stop: 59s, score=100, pomodoros=0, completed=false
+[bloop] session stop: 55s, score=100, pomodoros=0, completed=false
 [bloop] mood happy -> idle
 [bloop] pet says: "session saved — every bit counts!"
