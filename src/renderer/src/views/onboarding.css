@@ -1,0 +1,75 @@
+.onb {
+  min-height: 100vh;
+  padding: 18px 26px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background:
+    radial-gradient(circle at 15% 0%, var(--accent-soft), transparent 45%),
+    radial-gradient(circle at 90% 10%, var(--lilac), transparent 40%),
+    var(--bg);
+}
+.onb-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.onb-hero h1 {
+  margin: 4px 0 2px;
+  font-size: 20px;
+}
+.onb-hero p {
+  margin: 0;
+  max-width: 400px;
+  line-height: 1.4;
+}
+.onb-perm {
+  padding: 12px 14px;
+}
+.onb-perm p {
+  margin: 4px 0 8px;
+  line-height: 1.4;
+}
+.onb-perm-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.onb-perm-head h2 {
+  margin: 0;
+  font-size: 14px;
+}
+.onb-state {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.onb-state--ok {
+  color: var(--good);
+}
+.onb-state--warn {
+  color: var(--ok);
+}
+.onb .row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.onb-note {
+  margin: 2px 0 0;
+  text-align: center;
+  font-size: 12px;
+}
+.onb-error {
+  color: var(--bad);
+  margin: 0;
+  text-align: center;
+}
+.onb-actions {
+  margin-top: auto;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

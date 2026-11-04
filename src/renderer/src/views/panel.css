@@ -1,0 +1,283 @@
+.panel {
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.panel h3 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.small {
+  font-size: 11.5px;
+}
+.error {
+  color: var(--bad);
+  margin: 4px 0;
+}
+.ok {
+  color: var(--good);
+  margin: 4px 0;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 14px;
+}
+.icon-btn {
+  border: none;
+  background: var(--card-2);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.icon-btn:hover {
+  color: var(--text);
+}
+
+.hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  overflow: hidden;
+}
+.hero-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.timer {
+  font-size: 30px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.timer--idle {
+  font-size: 22px;
+}
+.phase {
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--chip-neutral);
+  color: var(--chip-neutral-ink);
+}
+.phase--focus {
+  background: var(--chip-focus);
+  color: var(--chip-focus-ink);
+}
+.phase--break {
+  background: var(--lilac);
+}
+.phase--paused {
+  background: var(--peach);
+}
+.progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  background: var(--card-2);
+}
+.progress span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width 1s linear;
+}
+
+.ring {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  flex: none;
+}
+.ring-track {
+  fill: none;
+  stroke: var(--card-2);
+  stroke-width: 8;
+}
+.ring-arc {
+  fill: none;
+  stroke: var(--level);
+  stroke-width: 8;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.6s ease;
+}
+.ring-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.ring-label strong {
+  font-size: 26px;
+  line-height: 1;
+  color: var(--level);
+}
+.ring-label span {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.controls {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.panel > .controls .btn {
+  flex: 1;
+}
+
+.now {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px;
+  min-width: 0;
+}
+.now-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.stats div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 0;
+  border-radius: 12px;
+  background: var(--card-2);
+}
+.stats strong {
+  font-size: 17px;
+}
+.stats strong[class^='level-'] {
+  color: var(--level);
+}
+.stats strong.level-none {
+  color: var(--text);
+}
+.stats span {
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
+.week {
+  display: block;
+}
+.week-hit {
+  fill: transparent;
+}
+.week-bar {
+  fill: var(--level);
+  opacity: 0.55;
+}
+.week-bar.level-none {
+  fill: var(--none);
+}
+.week-today .week-bar {
+  opacity: 1;
+}
+.week-label {
+  font-size: 10px;
+  fill: var(--muted);
+}
+.week-today .week-label {
+  fill: var(--text);
+  font-weight: 700;
+}
+
+.deadlines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.deadlines li {
+  display: flex;
+  flex-direction: column;
+}
+.dl-main {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.dl-title {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.plan-summary {
+  margin: 0 0 8px;
+  line-height: 1.4;
+}
+.plan-blocks {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.plan-blocks li {
+  display: flex;
+  gap: 6px;
+  font-size: 12px;
+  align-items: baseline;
+}
+.plan-when {
+  font-weight: 700;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.plan-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.panel-foot {
+  display: flex;
+  justify-content: center;
+}
