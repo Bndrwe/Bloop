@@ -196,10 +196,22 @@ describe('Ollama', () => {
       model: 'qwen3.5:0.8b',
       messages: [{ role: 'user', content: 'hello' }],
       stream: false,
+      think: false,
       format: schema,
       options: { num_predict: 300 }
     })
     expect(() => parseChat({ error: 'boom' })).toThrow('boom')
+  })
+
+  it('retries without think when the server rejects it', async () => {
+    const f = vi
+      .fn()
+      .mockResolvedValueOnce(Response.json({ error: 'invalid field: think' }, { status: 400 }))
+      .mockResolvedValueOnce(Response.json({ message: { content: 'ok' } }))
+    vi.stubGlobal('fetch', f)
+    expect(await ollamaChat('http://h:1', 'llama3.2:1b', 'hi')).toBe('ok')
+    expect(JSON.parse(String((f.mock.calls[0] as unknown as [string, RequestInit])[1].body)).think).toBe(false)
+    expect('think' in JSON.parse(String((f.mock.calls[1] as unknown as [string, RequestInit])[1].body))).toBe(false)
   })
 
   it('maps a 404 to "model not found" and a refused connection to "open Ollama"', async () => {

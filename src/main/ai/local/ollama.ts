@@ -159,22 +159,38 @@ export function parseChat(json: unknown): string {
   return content
 }
 
-/** POST /api/chat with stream:false. `format` = the JSON schema when given. */
+/**
+ * POST /api/chat with stream:false. `format` = the JSON schema when given.
+ * `think: false` turns off reasoning mode for thinking models such as qwen3.5, which would
+ * otherwise reason at length before a short JSON answer. If a server or model rejects the
+ * field, we retry once without it.
+ */
 export async function ollamaChat(url: string, model: string, prompt: string, opts: CompleteOptions = {}): Promise<string> {
   const signals = [opts.signal, AbortSignal.timeout(opts.timeoutMs ?? 180_000)].filter((s): s is AbortSignal => s != null)
   const body: Record<string, unknown> = {
     model,
     messages: [{ role: 'user', content: prompt }],
     stream: false,
+    think: false,
     ...(opts.jsonSchema ? { format: opts.jsonSchema } : {}),
     ...(opts.maxTokens ? { options: { num_predict: opts.maxTokens } } : {})
   }
-  const res = await fetch(`${base(url)}/api/chat`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
-    signal: AbortSignal.any(signals)
-  })
+  const post = (b: Record<string, unknown>): Promise<Response> =>
+    fetch(`${base(url)}/api/chat`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(b),
+      signal: AbortSignal.any(signals)
+    })
+  let res = await post(body)
+  if (!res.ok && res.status === 400) {
+    const text = await res.clone().text().catch(() => '')
+    if (/think/i.test(text)) {
+      const { think: _drop, ...rest } = body
+      void _drop
+      res = await post(rest)
+    }
+  }
   if (!res.ok) throw await errorFromResponse(res, model)
   return parseChat(await res.json())
 }
