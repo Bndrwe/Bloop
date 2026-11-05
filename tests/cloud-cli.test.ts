@@ -119,20 +119,20 @@ describe('PATH resolution', () => {
     listDir: (p) => (p === '/Users/me/.nvm/versions/node' ? ['v18.0.0', 'v22.3.0', 'v20.1.0'] : []),
     ...over
   })
-  it('fallback dir list covers the required locations (nvm newest first)', () => {
+  it.skipIf(process.platform === 'win32')('fallback dir list covers the required locations (nvm newest first)', () => {
     const d = fallbackDirs(mk({}))
     for (const p of ['/opt/homebrew/bin', '/usr/local/bin', '/Users/me/.local/bin', '/Users/me/.npm-global/bin', '/Users/me/.bun/bin', '/Users/me/.volta/bin']) expect(d).toContain(p)
     expect(d.indexOf('/Users/me/.nvm/versions/node/v22.3.0/bin')).toBeLessThan(d.indexOf('/Users/me/.nvm/versions/node/v18.0.0/bin'))
   })
-  it('uses the login shell answer first, ignoring rc noise and aliases', async () => {
+  it.skipIf(process.platform === 'win32')('uses the login shell answer first, ignoring rc noise and aliases', async () => {
     const deps = mk({ shellOut: 'Welcome!\nalias claude=foo\n/opt/homebrew/bin/claude\n', files: ['/opt/homebrew/bin/claude'] })
     expect(await detectBinary('claude', deps)).toBe('/opt/homebrew/bin/claude')
   })
-  it('falls back to the dir list when the shell fails', async () => {
+  it.skipIf(process.platform === 'win32')('falls back to the dir list when the shell fails', async () => {
     const deps = mk({ shellOut: new Error('timeout'), files: ['/Users/me/.bun/bin/codex'] })
     expect(await detectBinary('codex', deps)).toBe('/Users/me/.bun/bin/codex')
   })
-  it('finds nvm installs and returns null when nothing exists', async () => {
+  it.skipIf(process.platform === 'win32')('finds nvm installs and returns null when nothing exists', async () => {
     expect(await detectBinary('gemini', mk({ shellOut: '', files: ['/Users/me/.nvm/versions/node/v22.3.0/bin/gemini'] }))).toBe('/Users/me/.nvm/versions/node/v22.3.0/bin/gemini')
     expect(await detectBinary('gemini', mk({ shellOut: '' }))).toBeNull()
   })

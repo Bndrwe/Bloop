@@ -1,0 +1,5 @@
+# Keep LF line endings on every OS (Windows CI checkouts otherwise get CRLF)
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.gguf binary

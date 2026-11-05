@@ -29,7 +29,7 @@ const catalog = (over: Partial<BloopCatalogEntry> = {}): BloopCatalogEntry => ({
   id: 'bloop-qwen3.5-0.8b',
   label: 'Bloop',
   url: 'https://example.test/bloop.gguf',
-  sha256: '',
+  sha256: createHash('sha256').update(DATA).digest('hex'),
   bytes: DATA.length,
   file: 'bloop.gguf',
   ...over
@@ -353,8 +353,9 @@ describe('bundled Bloop model', () => {
   })
 
   it('builds the packaged and dev directories', () => {
-    expect(bundledModelDirs('/repo', '/App/Contents/Resources')).toEqual(['/App/Contents/Resources/resources/models', '/repo/resources/models'])
-    expect(bundledModelDirs('/repo', undefined)).toEqual(['/repo/resources/models'])
+    // path.join uses the platform's separator, so build the expectations the same way (Windows CI)
+    expect(bundledModelDirs('/repo', '/App/Contents/Resources')).toEqual([join('/App/Contents/Resources', 'resources', 'models'), join('/repo', 'resources', 'models')])
+    expect(bundledModelDirs('/repo', undefined)).toEqual([join('/repo', 'resources', 'models')])
   })
 
   it('detects a model at the packaged path', () => {
