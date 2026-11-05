@@ -1,19 +1,16 @@
-[bloop] trace raw: app="Safari" titleLen=48 url=https://en.wikipedia.org/wiki/Pomodoro_Technique nativeUrl=no
-[bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=46
-[bloop] mood worried -> happy
-[bloop] pet says: "that's the spirit! 💪"
-[bloop] permissions(refresh): screen=granted automation=granted onboarding=false
 [bloop] trace raw: app="Safari" titleLen=30 url=https://en.wikipedia.org/wiki/Pomodoro_Technique nativeUrl=no
 [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=47
+[bloop] mood worried -> happy
+[bloop] pet says: "woohoo, focus mode on!"
 [bloop] trace raw: app="Safari" titleLen=30 url=https://en.wikipedia.org/wiki/Pomodoro_Technique nativeUrl=no
 [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=48
 [bloop] trace raw: app="Safari" titleLen=30 url=https://en.wikipedia.org/wiki/Pomodoro_Technique nativeUrl=no
 [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=49
 [bloop] trace raw: app="Safari" titleLen=30 url=https://en.wikipedia.org/wiki/Pomodoro_Technique nativeUrl=no
 [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=51
+[bloop] permissions(refresh): screen=granted automation=granted onboarding=false
 [bloop] trace raw: app="Safari" titleLen=30 url=https://en.wikipedia.org/wiki/Pomodoro_Technique nativeUrl=no
 [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=52
-[bloop] permissions(refresh): screen=granted automation=granted onboarding=false
 [bloop] trace raw: app="Safari" titleLen=30 url=https://en.wikipedia.org/wiki/Pomodoro_Technique nativeUrl=no
 [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=53
 [bloop] trace raw: app="Safari" titleLen=30 url=https://en.wikipedia.org/wiki/Pomodoro_Technique nativeUrl=no
@@ -22,8 +19,6 @@
 [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=55
 [bloop] trace raw: app="Safari" titleLen=30 url=https://en.wikipedia.org/wiki/Pomodoro_Technique nativeUrl=no
 [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=56
-[bloop] trace raw: app="Safari" titleLen=30 url=https://en.wikipedia.org/wiki/Pomodoro_Technique nativeUrl=no
-[bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=57
 [bloop] permissions(refresh): screen=granted automation=granted onboarding=false
 [bloop] trace raw: app="Safari" titleLen=30 url=https://en.wikipedia.org/wiki/Pomodoro_Technique nativeUrl=no
 [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=57
@@ -32,11 +27,13 @@
 [bloop] trace raw: app="Safari" titleLen=30 url=https://en.wikipedia.org/wiki/Pomodoro_Technique nativeUrl=no
 [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=59
 [bloop] trace raw: app="Safari" titleLen=30 url=https://en.wikipedia.org/wiki/Pomodoro_Technique nativeUrl=no
-[bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=60
+[bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=59
 [bloop] trace raw: app="Safari" titleLen=30 url=https://en.wikipedia.org/wiki/Pomodoro_Technique nativeUrl=no
-[bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=61
+[bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=60
 [bloop] permissions(refresh): screen=granted automation=granted onboarding=false
 [bloop] trace raw: app="Safari" titleLen=30 url=https://en.wikipedia.org/wiki/Pomodoro_Technique nativeUrl=no
 [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=61
+[bloop] trace raw: app="Safari" titleLen=30 url=https://en.wikipedia.org/wiki/Pomodoro_Technique nativeUrl=no
+[bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=62
 [bloop] trace raw: app="Safari" titleLen=30 url=https://en.wikipedia.org/wiki/Pomodoro_Technique nativeUrl=no
 [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=62
