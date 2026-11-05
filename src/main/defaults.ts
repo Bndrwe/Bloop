@@ -1,5 +1,9 @@
 import type { Reminder, Settings } from '@shared/types'
+import { allowLocalBrightspace, cleanBrightspaceHost } from './brightspace'
 import { clampPercent, DEFAULT_BACKGROUND_INTENSITY, DEFAULT_BACKGROUND_SPEED } from '@shared/background'
+
+/** Longest stored URL / host string in Settings. */
+export const MAX_URL_LENGTH = 2048
 
 export const DEFAULT_SETTINGS: Settings = {
   focusApps: [
@@ -58,10 +62,13 @@ export const DEFAULT_SETTINGS: Settings = {
   reminders: [],
   launchAtLogin: false,
   icalUrl: '',
+  brightspaceHost: '',
   backgroundEnabled: true,
   backgroundIntensity: DEFAULT_BACKGROUND_INTENSITY,
   backgroundSpeed: DEFAULT_BACKGROUND_SPEED,
-  backgroundInteractive: true
+  backgroundInteractive: true,
+  showPet: true,
+  showPetForNudges: true
 }
 
 const MAX_LIST_LENGTH = 500
@@ -102,7 +109,7 @@ function cleanReminders(v: unknown): Reminder[] {
       id,
       days,
       time,
-      label: typeof o.label === 'string' ? o.label : '',
+      label: typeof o.label === 'string' ? o.label.slice(0, 200) : '',
       enabled: typeof o.enabled === 'boolean' ? o.enabled : true
     })
   }
@@ -111,12 +118,20 @@ function cleanReminders(v: unknown): Reminder[] {
 
 /** Merge a (possibly partial / stale) stored settings object with defaults. Always returns fresh arrays. */
 export function mergeSettings(stored: Partial<Settings> | undefined | null): Settings {
-  const s = { ...DEFAULT_SETTINGS, ...(stored ?? {}) }
+  // Only known keys survive (a stale or hostile settings file / IPC patch can't add others).
+  const s = { ...DEFAULT_SETTINGS }
+  if (stored && typeof stored === 'object') {
+    const src = stored as Record<string, unknown>
+    for (const k of Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[]) {
+      if (Object.prototype.hasOwnProperty.call(src, k) && src[k] !== undefined) (s as Record<string, unknown>)[k] = src[k]
+    }
+  }
   for (const k of ['focusApps', 'distractApps', 'focusDomains', 'distractDomains'] as const) {
     s[k] = cleanList(s[k], DEFAULT_SETTINGS[k])
   }
   s.reminders = cleanReminders(s.reminders)
-  s.icalUrl = typeof s.icalUrl === 'string' ? s.icalUrl : ''
+  s.icalUrl = typeof s.icalUrl === 'string' ? s.icalUrl.slice(0, MAX_URL_LENGTH) : ''
+  s.brightspaceHost = cleanBrightspaceHost(typeof s.brightspaceHost === 'string' ? s.brightspaceHost.slice(0, MAX_URL_LENGTH) : '', { allowLocal: allowLocalBrightspace() })
   if (typeof s.launchAtLogin !== 'boolean') s.launchAtLogin = DEFAULT_SETTINGS.launchAtLogin
   for (const k of [
     'nudgeAfterSec',
@@ -129,7 +144,7 @@ export function mergeSettings(stored: Partial<Settings> | undefined | null): Set
     const v = Number(s[k])
     s[k] = Number.isFinite(v) && v > 0 ? v : DEFAULT_SETTINGS[k]
   }
-  for (const k of ['backgroundEnabled', 'backgroundInteractive'] as const) {
+  for (const k of ['backgroundEnabled', 'backgroundInteractive', 'showPet', 'showPetForNudges'] as const) {
     if (typeof s[k] !== 'boolean') s[k] = DEFAULT_SETTINGS[k]
   }
   s.backgroundIntensity = clampPercent(s.backgroundIntensity, DEFAULT_SETTINGS.backgroundIntensity)

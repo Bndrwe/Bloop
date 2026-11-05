@@ -169,7 +169,7 @@ export async function ollamaChat(url: string, model: string, prompt: string, opt
   const signals = [opts.signal, AbortSignal.timeout(opts.timeoutMs ?? 180_000)].filter((s): s is AbortSignal => s != null)
   const body: Record<string, unknown> = {
     model,
-    messages: [{ role: 'user', content: prompt }],
+    messages: [...(opts.system?.trim() ? [{ role: 'system', content: opts.system }] : []), { role: 'user', content: prompt }],
     stream: false,
     think: false,
     ...(opts.jsonSchema ? { format: opts.jsonSchema } : {}),

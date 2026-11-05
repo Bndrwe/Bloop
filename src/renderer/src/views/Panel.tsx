@@ -4,9 +4,12 @@ import type { AppStatus, Deadline, Stats, StudyPlan } from '@shared/types'
 import { useStatus } from '../hooks/useStatus'
 import { useWindowAwake } from '../hooks/useWindowAwake'
 import { useAi } from '../hooks/useAi'
+import { useBrightspace } from '../hooks/useBrightspace'
 import { BloopConfirm } from './ai/BloopConfirm'
+import { ChatGlyph } from './Chat'
 import { Pet } from '../pet/Pet'
 import { Icon } from '../lib/Icon'
+import { PetToggleButton } from './PetToggleButton'
 import { ShaderMetal } from '@/components/ui/shader-metal'
 import { prefersReducedMotion, useBreathe, useCountUp, useEntrance, usePopIn, useReveal, useStaggerIn } from '../lib/motion'
 import {
@@ -51,7 +54,7 @@ function ScoreRing({ score }: { score: number | null }): JSX.Element {
     const target = score == null ? 0 : Math.max(0, Math.min(100, score))
     const paint = (): void => {
       const v = shown.current.v
-      num.textContent = score == null ? '—' : String(Math.round(v))
+      num.textContent = score == null ? '–' : String(Math.round(v))
       arc.style.strokeDashoffset = String(RING_C * (1 - v / 100))
     }
     if (prefersReducedMotion() || Math.abs(target - shown.current.v) < 0.5) {
@@ -158,7 +161,7 @@ function Stat({ value, format }: { value: number | null | undefined; format?: (n
   const ref = useRef<HTMLSpanElement>(null)
   useCountUp(ref, value, format)
   // Starts at zero; useCountUp tweens it (or jumps straight there under reduced motion).
-  return <span ref={ref}>{value == null ? '—' : format ? format(0) : '0'}</span>
+  return <span ref={ref}>{value == null ? '–' : format ? format(0) : '0'}</span>
 }
 
 function WeekChart({ stats }: { stats: Stats }): JSX.Element {
@@ -238,7 +241,10 @@ function Deadlines({ refreshKey }: { refreshKey: string }): JSX.Element | null {
   const [items, setItems] = useState<Deadline[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [hasUrl, setHasUrl] = useState(false)
+  const { status: bs } = useBrightspace()
   const ref = useRef<HTMLElement>(null)
+  // reload when a Brightspace sync (or calendar refresh) finishes
+  const syncKey = `${bs?.lastSync ?? ''}|${bs?.itemCount ?? ''}|${bs?.connected ?? ''}|${bs?.busy ?? ''}`
 
   useEffect(() => {
     let alive = true
@@ -251,7 +257,7 @@ function Deadlines({ refreshKey }: { refreshKey: string }): JSX.Element | null {
           const now = Date.now()
           setItems(
             res.value
-              .filter((d) => d.start >= now - 60 * 60 * 1000)
+              .filter((d) => (d.end ?? d.start) >= now - 60 * 60 * 1000)
               .sort((a, b) => a.start - b.start)
               .slice(0, 5)
           )
@@ -269,9 +275,12 @@ function Deadlines({ refreshKey }: { refreshKey: string }): JSX.Element | null {
     return () => {
       alive = false
     }
-  }, [refreshKey])
+  }, [refreshKey, syncKey])
 
-  const visible = items != null && !(items.length === 0 && !hasUrl && !error)
+  const connected = !!bs?.connected
+  const expired = !connected && !!bs?.expired
+  const setUp = hasUrl || connected || expired
+  const visible = items != null
   useReveal(ref, visible)
   if (!visible || items == null) return null
 
@@ -281,23 +290,44 @@ function Deadlines({ refreshKey }: { refreshKey: string }): JSX.Element | null {
         <Icon name="calendar" size={14} />
         Upcoming deadlines
       </h2>
+      {expired && (
+        <p className="note note--error">
+          <Icon name="alert" size={13} />
+          <span>
+            Brightspace login expired.{' '}
+            <button className="link-btn" onClick={() => void window.studyPet.openSettings()}>
+              Log in again in Settings
+            </button>
+          </span>
+        </p>
+      )}
       {error && (
         <p className="note note--error">
           <Icon name="alert" size={13} />
           Couldn’t load your calendar. Check the iCal link in Settings. <span className="faint">({error})</span>
         </p>
       )}
-      {!error && items.length === 0 && <p className="note">Nothing due soon. Enjoy the calm.</p>}
+      {!setUp && items.length === 0 && (
+        <p className="note">
+          <span>
+            See what’s due next.{' '}
+            <button className="link-btn" onClick={() => void window.studyPet.openSettings()}>
+              Connect Brightspace in Settings
+            </button>
+          </span>
+        </p>
+      )}
+      {setUp && !error && items.length === 0 && <p className="note">Nothing due soon. Enjoy the calm.</p>}
       {items.length > 0 && (
         <ul className="deadlines">
           {items.map((d) => (
             <li key={d.uid}>
-              <span className="dl-title" title={d.summary}>
+              <span className="dl-title" title={`${d.summary}${d.source === 'brightspace' ? ' · from Brightspace' : ' · from your calendar'}`}>
                 {d.summary}
               </span>
               <span className="dl-meta">
                 {d.isExam && <span className="tag dl-exam">exam</span>}
-                <span className="faint">{relativeDate(d.start)}</span>
+                <span className="faint">{d.allDay ? relativeDay(d.start) : relativeDate(d.start)}</span>
               </span>
             </li>
           ))}
@@ -305,6 +335,11 @@ function Deadlines({ refreshKey }: { refreshKey: string }): JSX.Element | null {
       )}
     </section>
   )
+}
+
+/** "today", "tomorrow", "Thu · in 3d" for all-day items (no clock time). */
+function relativeDay(ms: number): string {
+  return relativeDate(ms).replace(/\s\d{1,2}:\d{2}(\s?[AP]M)?/i, '')
 }
 
 function AiPlan(): JSX.Element | null {
@@ -569,6 +604,7 @@ export function Panel(): JSX.Element {
             <h1 className="serif">Bloop</h1>
           </div>
           <div className="hero-actions">
+            <PetToggleButton />
             <button className="icon-btn icon-btn--pill" aria-label="Settings" onClick={() => void window.studyPet.openSettings()}>
               <Icon name="gear" size={15} />
             </button>
@@ -656,6 +692,10 @@ export function Panel(): JSX.Element {
 
       <Deadlines refreshKey={phase} />
       <AiPlan />
+      <button className="btn panel-chat enter" onClick={() => void window.studyPet.chat.open()}>
+        <ChatGlyph size={14} />
+        Chat with Bloop
+      </button>
     </div>
   )
 }

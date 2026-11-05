@@ -4,16 +4,23 @@
 // cmd.exe, whose parsing is injectable).
 //
 // Invocations (verified against each tool's docs, see README "Cloud AI"):
-//   claude -p --output-format json --no-session-persistence --tools "" [--model X]      (prompt on stdin)
+//   claude -p --output-format json --no-session-persistence --tools "" [--model X]
+//          [--append-system-prompt-file bloop-system.txt]                                 (prompt on stdin)
 //   codex exec --skip-git-repo-check --sandbox read-only --ephemeral [-m X] -            (prompt on stdin)
 //   gemini --output-format json [-m X] -p "Follow the instructions in the input."      (prompt on stdin)
+//
+// System prompt: Claude Code reads it from a file (--append-system-prompt-file, see
+// code.claude.com/docs/en/cli-reference) written into the private per-call cwd, so argv only holds the
+// fixed relative name "bloop-system.txt", never the text (also on Windows .cmd shims). Codex and
+// Gemini get a delimited "System instructions" block in front of the prompt on stdin.
 import { execFile } from 'node:child_process'
 import { existsSync } from 'node:fs'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { CloudProviderId } from '@shared/ai'
 import type { AiProvider, CompleteOptions } from '../types'
+import { prependSystem } from '../prompts'
 import { childPath, resolveBinary } from './cli-detect'
 import { redact } from './redact'
 
@@ -81,9 +88,13 @@ const GEMINI_STDIN_INSTRUCTION = 'Follow the instructions in the input.'
 
 // ---------------------------------------------------------------- arg builders (pure)
 
-export function buildClaudeArgs(model?: string): string[] {
+/** Fixed, relative file name for the Claude CLI system prompt (written into the private per-call cwd). */
+export const CLAUDE_SYSTEM_FILE = 'bloop-system.txt'
+
+export function buildClaudeArgs(model?: string, systemFile?: string): string[] {
   const args = ['-p', '--output-format', 'json', '--no-session-persistence', '--tools', '']
   if (model) args.push('--model', model)
+  if (systemFile) args.push('--append-system-prompt-file', systemFile)
   return args
 }
 
@@ -108,12 +119,41 @@ export function buildGeminiArgs(model: string | undefined, prompt: string, force
   return { args }
 }
 
-export function buildCliInvocation(id: CliId, prompt: string, model?: string, forceStdin = false): { args: string[]; stdin?: string } {
+export interface CliInvocation {
+  args: string[]
+  stdin?: string
+  /** Files to write into the private per-call cwd before the run (name -> content). */
+  files?: Record<string, string>
+}
+
+/**
+ * `system` (the system prompt): claude reads it from CLAUDE_SYSTEM_FILE unless `systemOnStdin`
+ * (fallback for CLIs without --append-system-prompt-file); codex and gemini always get it prepended
+ * to the stdin prompt. It is never put in argv.
+ */
+export function buildCliInvocation(
+  id: CliId,
+  prompt: string,
+  model?: string,
+  forceStdin = false,
+  system?: string,
+  systemOnStdin = false
+): CliInvocation {
   if (model && !isSafeModelId(model)) throw new Error('That model name has unsupported characters.')
   const m = model || undefined
-  if (id === 'claude-cli') return { args: buildClaudeArgs(m), stdin: prompt }
-  if (id === 'codex-cli') return { args: buildCodexArgs(m), stdin: prompt }
-  return buildGeminiArgs(m, prompt, forceStdin)
+  const sys = system?.trim() || undefined
+  if (id === 'claude-cli') {
+    if (sys && !systemOnStdin) return { args: buildClaudeArgs(m, CLAUDE_SYSTEM_FILE), stdin: prompt, files: { [CLAUDE_SYSTEM_FILE]: sys } }
+    return { args: buildClaudeArgs(m), stdin: prependSystem(prompt, sys) }
+  }
+  if (id === 'codex-cli') return { args: buildCodexArgs(m), stdin: prependSystem(prompt, sys) }
+  // A system block always goes over stdin, so it forces gemini's stdin mode.
+  return buildGeminiArgs(m, prependSystem(prompt, sys), forceStdin || Boolean(sys))
+}
+
+/** An older Claude CLI that doesn't know --append-system-prompt-file. */
+export function isUnknownSystemFileFlag(detail: string): boolean {
+  return /(unknown|unrecogni[sz]ed|invalid)\s+(option|argument|flag)[^\n]*append-system-prompt-file/i.test(detail)
 }
 
 /** Append the schema as plain-text instructions (CLIs have no structured-output flag we can rely on). */
@@ -321,6 +361,8 @@ export function isWinShim(file: string, platform: NodeJS.Platform = process.plat
 // ---------------------------------------------------------------- running
 
 export interface RunOptions {
+  /** Written (0600) into the private per-call cwd before the CLI starts; plain names only. */
+  files?: Record<string, string>
   timeoutMs?: number
   signal?: AbortSignal
   /** For tests. */
@@ -346,6 +388,10 @@ export async function runCli(file: string, args: string[], stdin: string | undef
   // user's projects or anything another user planted in a shared temp dir.
   const cwd = await mkdtemp(join(privateTempBase(env, platform), 'bloop-cli-'))
   try {
+    for (const [name, content] of Object.entries(opts.files ?? {})) {
+      if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(name)) throw new Error('bad file name')
+      await writeFile(join(cwd, name), content, { mode: 0o600 })
+    }
     return await new Promise<RunResult>((resolve) => {
       const child = execFile(
         cmdFile,
@@ -388,8 +434,16 @@ export function createCliProvider(id: CliId, binPath: string, model?: string): A
     kind: 'cloud',
     async complete(prompt: string, opts: CompleteOptions = {}): Promise<string> {
       // forceStdin: the prompt never goes in argv (gemini included).
-      const { args, stdin } = buildCliInvocation(id, withSchema(prompt, opts.jsonSchema), model, true)
-      const r = await runCli(binPath, args, stdin, { timeoutMs: opts.timeoutMs ?? CLI_TIMEOUT_MS, signal: opts.signal })
+      const full = withSchema(prompt, opts.jsonSchema)
+      const run = (systemOnStdin: boolean): Promise<RunResult> => {
+        const { args, stdin, files } = buildCliInvocation(id, full, model, true, opts.system, systemOnStdin)
+        return runCli(binPath, args, stdin, { timeoutMs: opts.timeoutMs ?? CLI_TIMEOUT_MS, signal: opts.signal, ...(files ? { files } : {}) })
+      }
+      let r = await run(false)
+      // Claude CLI too old for --append-system-prompt-file: once more with the instructions on stdin.
+      if (id === 'claude-cli' && opts.system?.trim() && r.code !== 0 && !r.aborted && !r.timedOut && isUnknownSystemFileFlag(`${r.stderr}\n${r.stdout}`)) {
+        r = await run(true)
+      }
       if (r.aborted) throw new Error('Cancelled.')
       if (r.timedOut) throw new Error(mapCliError(id, 'timed out'))
       if (r.spawnError) throw new Error(mapCliError(id, 'enoent') || `Couldn't start ${spec.label}.`)

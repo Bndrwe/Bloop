@@ -6,7 +6,10 @@ import { Icon } from '../lib/Icon'
 import { previewSettings } from '../hooks/useSettings'
 import { useEntrance, usePopIn, useStaggerIn } from '../lib/motion'
 import { DAY_LETTERS, DAY_SHORT, errMsg } from '../lib/format'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { AiSection } from './ai/AiSection'
+import { BrightspaceSection } from './BrightspaceSection'
+import { PetVisibilityRows } from './PetVisibilityRows'
 import './settings.css'
 
 type ListKey = 'focusApps' | 'distractApps' | 'focusDomains' | 'distractDomains'
@@ -251,6 +254,7 @@ export function SettingsView(): JSX.Element {
   const [toast, setToast] = useState<{ text: string; ok: boolean; id: number } | null>(null)
   const [deadlineNote, setDeadlineNote] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [resetOpen, setResetOpen] = useState(false)
   const pending = useRef<Partial<Settings>>({})
   const timer = useRef<number | null>(null)
   const toastTimer = useRef<number | null>(null)
@@ -290,6 +294,16 @@ export function SettingsView(): JSX.Element {
       showToast(`Couldn’t save: ${errMsg(e)}`, false)
     }
   }, [showToast])
+
+  // The pet can be hidden / shown from the tray, the panel, its menu or the shortcut: keep the toggle in step.
+  useEffect(
+    () =>
+      window.studyPet.onSettingsChanged((s) => {
+        if ('showPet' in pending.current) return
+        setSettings((prev) => (prev && prev.showPet !== s.showPet ? { ...prev, showPet: s.showPet } : prev))
+      }),
+    []
+  )
 
   useEffect(() => {
     const onUnload = (): void => void flush()
@@ -366,7 +380,7 @@ export function SettingsView(): JSX.Element {
   }
 
   const reset = async (): Promise<void> => {
-    if (!confirm('Reset all Bloop data? This deletes your session history and restores default settings.')) return
+    setResetOpen(false)
     try {
       if (timer.current) window.clearTimeout(timer.current)
       pending.current = {}
@@ -498,6 +512,7 @@ export function SettingsView(): JSX.Element {
               <span />
             </span>
           </label>
+          <PetVisibilityRows settings={settings} update={update} />
         </section>
       </div>
 
@@ -574,6 +589,11 @@ export function SettingsView(): JSX.Element {
 
       <section className="card enter">
         <h2>Deadlines</h2>
+        <p className="section-sub muted">Upcoming assignments, quizzes and exams show in the panel, and your pet reminds you before exams.</p>
+        <BrightspaceSection />
+        <div className="or-divider" role="separator">
+          <span>or paste a calendar link</span>
+        </div>
         <label className="field field--wide">
           <span className="field-label">Brightspace calendar link (iCal)</span>
           <input
@@ -583,12 +603,14 @@ export function SettingsView(): JSX.Element {
             placeholder="https://…/calendar/feed/….ics"
             onChange={(e) => update({ icalUrl: e.target.value.trim() })}
           />
-          <span className="faint field-help">Paste your calendar subscription link to see upcoming due dates in the panel.</span>
+          <span className="faint field-help">
+            In Brightspace: Calendar → Subscribe, then copy the link. Works even if your school blocks app access. You can use both.
+          </span>
         </label>
         <div className="row">
-          <button className="btn btn--small" disabled={refreshing} onClick={() => void refreshDeadlines()}>
+          <button className="btn btn--small" disabled={refreshing || !settings.icalUrl} onClick={() => void refreshDeadlines()}>
             <Icon name="refresh" size={13} />
-            {refreshing ? 'Refreshing…' : 'Refresh deadlines'}
+            {refreshing ? 'Refreshing…' : 'Refresh calendar'}
           </button>
           {deadlineNote && <span className="muted">{deadlineNote}</span>}
         </div>
@@ -597,11 +619,21 @@ export function SettingsView(): JSX.Element {
       <section className="card danger-zone enter">
         <div>
           <h2>Reset data</h2>
-          <p className="muted">Deletes your session history and restores default settings.</p>
+          <p className="muted">Deletes session history, chats, API keys, custom instructions and logs, logs you out of Brightspace and restores defaults. A downloaded AI model is kept.</p>
         </div>
-        <button className="btn btn--danger" onClick={() => void reset()}>
+        <button className="btn btn--danger" onClick={() => setResetOpen(true)}>
           Reset everything…
         </button>
+        <ConfirmDialog
+          open={resetOpen}
+          title="Reset all Bloop data?"
+          confirmLabel="Reset everything"
+          initialFocus="cancel"
+          onConfirm={() => void reset()}
+          onCancel={() => setResetOpen(false)}
+        >
+          <p>This deletes your session history, chats, saved API keys, custom instructions and logs, logs you out of Brightspace and restores default settings. A downloaded AI model is kept.</p>
+        </ConfirmDialog>
       </section>
 
       {toast && <Toast key={toast.id} text={toast.text} ok={toast.ok} />}

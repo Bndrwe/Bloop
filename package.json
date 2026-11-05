@@ -28,6 +28,7 @@
     "perms": "bash scripts/mac-permissions.sh",
     "model:train": "bash ml/run_mac.sh",
     "model:bundle": "node scripts/bundle-model.mjs",
+    "model:check": "vite-node --config scripts/model-check/vite.config.mjs scripts/model-check/run.ts --",
     "model:publish": "bash ml/publish.sh"
   },
   "build": {

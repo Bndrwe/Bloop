@@ -1,7 +1,8 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import { IPC } from '../shared/ipc'
-import type { AppStatus, Settings, StudyPetApi } from '../shared/types'
-import type { AiApi, AiStatus } from '../shared/ai'
+import type { AppStatus, BrightspaceStatus, Settings, StudyPetApi } from '../shared/types'
+import { SYSTEM_PROMPT_MAX, TRY_PROMPT_MAX, type AiApi, type AiStatus, type ModelCheckProgress } from '../shared/ai'
+import { CHAT_INPUT_MAX, CHAT_TITLE_MAX, type ChatApi, type ChatThinking } from '../shared/chat'
 
 // The renderer only gets these named functions, never ipcRenderer itself or a generic invoke.
 // Arguments are coerced to their declared types here as a first filter; main still validates every
@@ -29,7 +30,34 @@ const ai: AiApi = {
   dismissBloopOffer: () => inv(IPC.aiDismissBloopOffer),
   pullOllamaModel: (model, confirmed) => inv(IPC.aiPullOllama, str(model, 200), confirmed === true),
   setApiKey: (provider, key) => inv(IPC.aiSetApiKey, str(provider, 40), typeof key === 'string' ? key : null),
-  test: (choice) => inv(IPC.aiTest, choice)
+  test: (choice) => inv(IPC.aiTest, choice),
+  setSystemPrompt: (text) => inv(IPC.aiSetSystemPrompt, typeof text === 'string' ? text.slice(0, SYSTEM_PROMPT_MAX + 1) : null),
+  runCheck: (choice) => inv(IPC.aiCheck, choice),
+  cancelCheck: () => inv(IPC.aiCheckCancel),
+  onCheckProgress: (cb) => {
+    const l = (_e: IpcRendererEvent, p: ModelCheckProgress): void => cb(p)
+    ipcRenderer.on(IPC.aiCheckProgress, l)
+    return () => ipcRenderer.removeListener(IPC.aiCheckProgress, l)
+  },
+  tryPrompt: (text, useSystemPrompt, choice) => inv(IPC.aiTry, str(text, TRY_PROMPT_MAX + 1), useSystemPrompt !== false, choice)
+}
+
+const chat: ChatApi = {
+  list: () => inv(IPC.chatList),
+  get: (id) => inv(IPC.chatGet, str(id, 64)),
+  create: () => inv(IPC.chatCreate),
+  send: (id, text, opts) =>
+    inv(IPC.chatSend, str(id, 64), str(text, CHAT_INPUT_MAX + 1), { shareStats: opts?.shareStats === true, retry: opts?.retry === true }),
+  cancel: (id) => inv(IPC.chatCancel, str(id, 64)),
+  rename: (id, title) => inv(IPC.chatRename, str(id, 64), str(title, CHAT_TITLE_MAX * 2)),
+  delete: (id) => inv(IPC.chatDelete, str(id, 64)),
+  clear: () => inv(IPC.chatClear),
+  open: () => inv(IPC.chatOpen),
+  onThinking: (cb) => {
+    const l = (_e: IpcRendererEvent, t: ChatThinking): void => cb(t)
+    ipcRenderer.on(IPC.chatThinking, l)
+    return () => ipcRenderer.removeListener(IPC.chatThinking, l)
+  }
 }
 
 const api: StudyPetApi = {
@@ -70,6 +98,9 @@ const api: StudyPetApi = {
   dragStart: () => inv(IPC.dragStart),
   dragEnd: () => inv(IPC.dragEnd),
   setIgnoreMouse: (ignore) => inv(IPC.setIgnoreMouse, ignore === true),
+  togglePet: () => inv(IPC.togglePet),
+  petContextMenu: (point) =>
+    inv(IPC.petContextMenu, point && typeof point === 'object' ? { x: Number(point.x), y: Number(point.y) } : undefined),
 
   getPermissions: () => inv(IPC.getPermissions),
   openPermissionSettings: (kind) => inv(IPC.openPermissionSettings, kind === 'automation' ? 'automation' : 'screenRecording'),
@@ -83,8 +114,19 @@ const api: StudyPetApi = {
   generatePlan: () => inv(IPC.generatePlan),
   addPlanReminders: () => inv(IPC.addPlanReminders),
 
+  brightspaceStatus: () => inv(IPC.brightspaceStatus),
+  brightspaceLogin: (host) => inv(IPC.brightspaceLogin, str(host, 300)),
+  brightspaceLogout: () => inv(IPC.brightspaceLogout),
+  brightspaceRefresh: () => inv(IPC.brightspaceRefresh),
+  onBrightspaceStatus: (cb) => {
+    const l = (_e: IpcRendererEvent, s: BrightspaceStatus): void => cb(s)
+    ipcRenderer.on(IPC.brightspaceStatusPush, l)
+    return () => ipcRenderer.removeListener(IPC.brightspaceStatusPush, l)
+  },
+
   openExternal: (url) => inv(IPC.openExternal, str(url, 2048)),
-  ai
+  ai,
+  chat
 }
 
 contextBridge.exposeInMainWorld('studyPet', api)

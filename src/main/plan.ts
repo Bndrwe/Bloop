@@ -5,6 +5,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import dotenv from 'dotenv'
 import type { Deadline, PlanBlock, Reminder, Result, Settings, Stats, StudyPlan } from '@shared/types'
+import { DEFAULT_SYSTEM_PROMPT } from '@shared/ai'
 import type { CompleteOptions } from './ai/types'
 
 export interface EnvDirsInput {
@@ -152,7 +153,8 @@ export const PLAN_JSON_SCHEMA: Record<string, unknown> = {
     summary: { type: 'string' },
     blocks: {
       type: 'array',
-      minItems: 1,
+      // The prompt asks for 3-10 blocks; the grammar enforces it (Qwen3.5-0.8B otherwise stops after one).
+      minItems: 3,
       maxItems: 10,
       items: {
         type: 'object',
@@ -178,15 +180,28 @@ async function defaultGenerateText(prompt: string, opts?: CompleteOptions): Prom
   return generateText(prompt, opts)
 }
 
+/** The user's instructions (Settings → AI → Advanced), or the default if they can't be read. */
+async function defaultSystemPrompt(): Promise<string> {
+  try {
+    const [{ effectiveSystemPrompt }, store] = await Promise.all([import('./ai/prompts'), import('./store')])
+    return effectiveSystemPrompt(store.getAiSettings())
+  } catch {
+    return DEFAULT_SYSTEM_PROMPT
+  }
+}
+
 export async function generatePlan(
   deadlines: Deadline[],
   stats: Stats,
   settings: Settings,
-  generate: GenerateText = defaultGenerateText
+  generate: GenerateText = defaultGenerateText,
+  /** The system prompt; default: the one saved in AiSettings (or DEFAULT_SYSTEM_PROMPT). */
+  system?: string
 ): Promise<Result<StudyPlan>> {
   let text: string
   try {
     text = await generate(buildPrompt(deadlines, stats, settings, new Date()), {
+      system: system ?? (await defaultSystemPrompt()),
       jsonSchema: PLAN_JSON_SCHEMA,
       maxTokens: 2048,
       timeoutMs: 180_000

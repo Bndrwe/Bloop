@@ -1,7 +1,7 @@
 # Bloop SFT dataset
 
 `ml/data/train.jsonl` (240 rows) and `ml/data/eval.jsonl` (30 rows). One JSON object per line:
-`{"messages":[{"role":"user","content":...},{"role":"assistant","content":...}]}`. No system prompt (the app sends none).
+`{"messages":[{"role":"user","content":...},{"role":"assistant","content":...}]}`. No system prompt in the data.
 `ml/data/READY` is written by `validate.py` only when everything passes; `ml/run_mac.sh` checks for it.
 
 ## Task mix
@@ -52,6 +52,15 @@ None contains "study plan", so `scoring.is_plan_prompt` classifies them as nudge
 Assistant message: a single lowercase-casual line, <= 60 chars, at most one emoji. The hand-written pool is in `ml/data/nudge_lines.py`
 (171 distinct lines: drift 32 generic + 18 site/app specific, welcome 32, break 29, back 30, done 30). The last 3 lines of each generic pool are
 held out for eval only, so no eval target appears in train. Each line is used at most once per split.
+
+## System prompt (TODO)
+
+The app now sends a short system message with every request (`DEFAULT_SYSTEM_PROMPT` in `src/shared/ai.ts`, editable in Settings → AI). The rows here
+were built without one, so a tuned model sees a system message at inference that it never saw in training (before this, node-llama-cpp added its own
+generic default system prompt, so there was a mismatch either way). TODO for the next data build: add
+`{"role":"system","content": DEFAULT_SYSTEM_PROMPT}` as the first message of every row (or of a share of rows, so the model also works without it),
+read the text from `src/shared/ai.ts` the same way `render_prompts.cjs` reads `buildPrompt`, and re-run `validate.py`. Don't hand-edit the jsonl files.
+Settings → AI → Check model (and `npm run model:check -- --gguf <file>`) scores a build with and without it (`--no-system`).
 
 ## Regenerate / validate
 

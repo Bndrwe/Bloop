@@ -1,6 +1,7 @@
 // Shared contract between the main process, preload bridge and renderer.
 // Keep this file free of runtime imports from electron/node so both sides can use it.
 import type { AiApi } from './ai'
+import type { ChatApi } from './chat'
 
 export type Category = 'focus' | 'distract' | 'neutral'
 
@@ -53,6 +54,8 @@ export interface Settings {
   launchAtLogin: boolean
   /** Brightspace (or any) iCal subscription URL. */
   icalUrl: string
+  /** Your school's Brightspace origin for "Log in to Brightspace", e.g. https://purdue.brightspace.com ('' = not set). */
+  brightspaceHost: string
   /** Show the background smoke in the panel, settings and onboarding windows. */
   backgroundEnabled: boolean
   /** Smoke brightness, 0–100. */
@@ -61,6 +64,10 @@ export interface Settings {
   backgroundSpeed: number
   /** The pointer stirs the smoke. */
   backgroundInteractive: boolean
+  /** Show the pet on screen. Off = the pet window is hidden; tracking and nudges keep running. */
+  showPet: boolean
+  /** While the pet is hidden, a nudge shows it for a few seconds (else notifications only). */
+  showPetForNudges: boolean
 }
 
 export interface NamedDuration {
@@ -146,6 +153,33 @@ export interface Deadline {
   start: number
   isExam: boolean
   location?: string
+  /** Where it came from (absent on caches written before Brightspace login existed = calendar). */
+  source?: 'brightspace' | 'calendar'
+  /** Brightspace item type. */
+  kind?: 'assignment' | 'quiz' | 'event'
+  /** All-day item: it stays upcoming until `end` (the end of its last day). */
+  allDay?: boolean
+  /** epoch ms the item is over; defaults to `start`. */
+  end?: number
+}
+
+/** Brightspace login state for Settings and the panel. Never contains cookies or tokens. */
+export interface BrightspaceStatus {
+  /** Normalized origin, e.g. https://purdue.brightspace.com ('' = not set). */
+  host: string
+  connected: boolean
+  /** The session ended: show "Log in again". */
+  expired?: boolean
+  /** A login window is open or a sync is running. */
+  busy?: boolean
+  /** Display name from whoami. */
+  user?: string
+  courseCount?: number
+  /** epoch ms of the last successful sync. */
+  lastSync?: number
+  /** Number of upcoming Brightspace items in the cache. */
+  itemCount?: number
+  error?: string
 }
 
 export interface PlanBlock {
@@ -203,6 +237,10 @@ export interface StudyPetApi {
   dragEnd(): Promise<{ moved: boolean }>
   /** Pet window toggles click-through for transparent areas. */
   setIgnoreMouse(ignore: boolean): Promise<void>
+  /** Hide or show the pet (the "Show pet" setting). Resolves to the new state: true = shown. */
+  togglePet(): Promise<boolean>
+  /** Pet window only: open its right-click menu (Hide pet / Open panel / Settings… / Quit). */
+  petContextMenu(point?: { x: number; y: number }): Promise<void>
 
   // permissions
   getPermissions(): Promise<PermissionStatus>
@@ -219,9 +257,20 @@ export interface StudyPetApi {
   generatePlan(): Promise<Result<StudyPlan>>
   addPlanReminders(): Promise<Result<number>>
 
+  // Brightspace login (Settings → Deadlines)
+  brightspaceStatus(): Promise<BrightspaceStatus>
+  /** Opens your school's sign-in page in a separate window; resolves when it closes. */
+  brightspaceLogin(host: string): Promise<Result<BrightspaceStatus>>
+  brightspaceLogout(): Promise<BrightspaceStatus>
+  brightspaceRefresh(): Promise<Result<BrightspaceStatus>>
+  /** Fires in every window when the Brightspace status (or its deadlines) change. */
+  onBrightspaceStatus(cb: (status: BrightspaceStatus) => void): () => void
+
   /** Open an https link in the system browser (help/install/key pages). */
   openExternal(url: string): Promise<void>
 
   /** AI providers: Use Local (Bloop model, Ollama) and Cloud. See src/shared/ai.ts. */
   ai: AiApi
+  /** Chat with Bloop: conversations stored in userData/chats. See src/shared/chat.ts. */
+  chat: ChatApi
 }

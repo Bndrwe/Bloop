@@ -135,7 +135,7 @@ describe('BloopRuntime (mocked node-llama-cpp)', () => {
   it('loads lazily with a 4096 context, uses a JSON-schema grammar and reuses the model', async () => {
     const prompt = vi.fn(async (_p: string, _o: Record<string, unknown>) => '{"ok":true}')
     const createGrammarForJsonSchema = vi.fn(async () => ({ grammar: true }))
-    const createContext = vi.fn(async () => ({ getSequence: () => ({}), dispose: async () => undefined }))
+    const createContext = vi.fn(async () => ({ getSequence: () => ({ clearHistory: async () => undefined }), dispose: async () => undefined }))
     const loadModel = vi.fn(async () => ({ createContext, dispose: async () => undefined }))
     const getLlama = vi.fn(async () => ({ loadModel, createGrammarForJsonSchema, dispose: async () => undefined }))
     class LlamaChatSession {
@@ -154,6 +154,87 @@ describe('BloopRuntime (mocked node-llama-cpp)', () => {
     expect(prompt.mock.calls[0]![1]).toMatchObject({ grammar: { grammar: true }, maxTokens: 50 })
     await rt.unload()
     expect(rt.isLoaded()).toBe(false)
+  })
+
+  // Regression: a context has ONE sequence. Taking a new one per prompt (and disposing it) made the
+  // second prompt throw "No sequences left" until the model unloaded.
+  function oneSequenceNlc() {
+    const sessions: { opts: Record<string, unknown>; disposed: unknown }[] = []
+    const clearHistory = vi.fn(async () => undefined)
+    const sequence = { clearHistory }
+    let handedOut = 0
+    const getSequence = vi.fn(() => {
+      if (handedOut++ > 0) throw new Error('No sequences left')
+      return sequence
+    })
+    const createContext = vi.fn(async () => ({ getSequence, dispose: async () => undefined }))
+    const loadModel = vi.fn(async () => ({ createContext, dispose: async () => undefined }))
+    const getLlama = vi.fn(async () => ({ loadModel, createGrammarForJsonSchema: async () => ({}), dispose: async () => undefined }))
+    class LlamaChatSession {
+      constructor(readonly opts: Record<string, unknown>) {
+        sessions.push({ opts, disposed: undefined })
+      }
+      prompt = vi.fn(async (p: string) => `reply to ${p}`)
+      dispose = (o: unknown): void => {
+        sessions[sessions.length - 1]!.disposed = o
+      }
+    }
+    const load = vi.fn(async () => ({ getLlama, LlamaChatSession, LlamaLogLevel: { warn: 'warn' } }) as never)
+    return { load, sessions, sequence, getSequence, clearHistory }
+  }
+
+  it('reuses the single context sequence: consecutive prompts all succeed and the history is cleared', async () => {
+    const m = oneSequenceNlc()
+    const rt = new BloopRuntime({ load: m.load, idleMs: 60_000 })
+    expect(await rt.complete('/m.gguf', 'one')).toBe('reply to one')
+    expect(await rt.complete('/m.gguf', 'two')).toBe('reply to two')
+    expect(await rt.complete('/m.gguf', 'three')).toBe('reply to three')
+    expect(m.getSequence).toHaveBeenCalledTimes(1)
+    expect(m.clearHistory).toHaveBeenCalledTimes(3)
+    for (const s of m.sessions) {
+      expect(s.opts['contextSequence']).toBe(m.sequence)
+      expect(s.opts['autoDisposeSequence']).toBe(false)
+      expect(s.disposed).toEqual({ disposeSequence: false })
+    }
+    await rt.unload()
+  })
+
+  it('passes the system prompt as LlamaChatSession systemPrompt, per call (empty = none, not the library default)', async () => {
+    const m = oneSequenceNlc()
+    const rt = new BloopRuntime({ load: m.load, idleMs: 60_000 })
+    await rt.complete('/m.gguf', 'a', { system: 'You are Bloop.' })
+    await rt.complete('/m.gguf', 'b', { system: 'Changed.' })
+    await rt.complete('/m.gguf', 'c')
+    expect(m.sessions.map((s) => s.opts['systemPrompt'])).toEqual(['You are Bloop.', 'Changed.', ''])
+    await rt.unload()
+  })
+
+  // Regression: with the stock Qwen wrapper + thoughtTokens:0 + a JSON grammar, real Qwen3.5 output lost
+  // its opening `{`. The runtime now swaps in QwenChatWrapper with thoughts: 'discourage'.
+  it("uses QwenChatWrapper with thoughts 'discourage' for Qwen models, 'auto' otherwise", async () => {
+    class QwenChatWrapper {
+      variation: string
+      thoughts: string
+      constructor(o: { variation?: string; thoughts?: string } = {}) {
+        this.variation = o.variation ?? '3'
+        this.thoughts = o.thoughts ?? 'auto'
+      }
+    }
+    for (const qwen of [true, false]) {
+      const m = oneSequenceNlc()
+      const base = (await m.load()) as Record<string, unknown>
+      const resolveChatWrapper = vi.fn(() => (qwen ? new QwenChatWrapper({ variation: '3.5' }) : { other: true }))
+      const rt = new BloopRuntime({ load: async () => ({ ...base, QwenChatWrapper, resolveChatWrapper }) as never, idleMs: 60_000 })
+      await rt.complete('/m.gguf', 'x', { jsonSchema: { type: 'object' } })
+      const w = m.sessions[0]!.opts['chatWrapper']
+      if (qwen) {
+        expect(w).toBeInstanceOf(QwenChatWrapper)
+        expect(w).toMatchObject({ variation: '3.5', thoughts: 'discourage' })
+      } else {
+        expect(w).toBe('auto')
+      }
+      await rt.unload()
+    }
   })
 })
 

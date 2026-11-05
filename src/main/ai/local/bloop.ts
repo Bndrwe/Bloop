@@ -168,6 +168,28 @@ async function sha256File(path: string, signal: AbortSignal): Promise<string> {
   return h.digest('hex')
 }
 
+/**
+ * fetch that follows redirects itself (at most 5 hops) and requires https for the first URL and
+ * every Location, so an http hop is never requested.
+ */
+export async function fetchHttpsOnly(doFetch: typeof fetch, url: string, init: RequestInit = {}): Promise<Response> {
+  let cur = url
+  for (let hop = 0; hop <= 5; hop++) {
+    if (!/^https:\/\//i.test(cur)) throw new Error('The download was redirected to a non-https address, so it was stopped.')
+    const res = await doFetch(cur, { ...init, redirect: 'manual' })
+    if (![301, 302, 303, 307, 308].includes(res.status)) return res
+    const loc = res.headers.get('location')
+    try {
+      await res.body?.cancel()
+    } catch {
+      /* ignore */
+    }
+    if (!loc) throw new Error(`Download failed (HTTP ${res.status}).`)
+    cur = new URL(loc, cur).toString()
+  }
+  throw new Error('The download was redirected too many times, so it was stopped.')
+}
+
 // ------------------------------------------------------------------ download manager
 
 export class BloopManager {
@@ -342,12 +364,12 @@ export class BloopManager {
         throw new Error(`Not enough disk space: the Bloop model needs about ${formatMB(c.bytes - have + DISK_HEADROOM)} free, and ${formatMB(free)} is available.`)
       }
 
-      let res = await doFetch(c.url, { headers: have > 0 ? { Range: `bytes=${have}-` } : {}, signal: ac.signal, redirect: 'follow' })
+      let res = await fetchHttpsOnly(doFetch, c.url, { headers: have > 0 ? { Range: `bytes=${have}-` } : {}, signal: ac.signal })
       if (res.status === 416) {
         // The partial file is bigger than the remote one: start over.
         await rm(part, { force: true })
         have = 0
-        res = await doFetch(c.url, { signal: ac.signal, redirect: 'follow' })
+        res = await fetchHttpsOnly(doFetch, c.url, { signal: ac.signal })
       }
       if (!res.ok || !res.body) throw new Error(`Download failed (HTTP ${res.status}).`)
       // Redirects (Hugging Face → its CDN) must stay on https.
@@ -491,6 +513,29 @@ interface Loaded {
   llama: Llama
   model: LlamaModel
   context: LlamaContext
+  /** The context's one sequence, reused by every prompt (cleared after each). */
+  sequence: ReturnType<LlamaContext['getSequence']>
+  /** Chat wrapper for every session (see pickChatWrapper). */
+  chatWrapper: 'auto' | InstanceType<Nlc['ChatWrapper']>
+}
+
+/**
+ * Qwen3.5 thinks by default. With node-llama-cpp's stock Qwen wrapper, a `thoughtTokens: 0` budget plus
+ * a JSON grammar dropped the opening `{` of every plan, and a grammar without the budget returned
+ * nothing (the thinking used up the tokens). The wrapper's `thoughts: 'discourage'` mode closes the
+ * think block in the prompt itself, which gives clean JSON with and without the grammar (tested on
+ * the real Qwen3.5-0.8B Q4_K_M). Other model families keep node-llama-cpp's automatic choice.
+ */
+export function pickChatWrapper(nlc: Nlc, model: LlamaModel): Loaded['chatWrapper'] {
+  try {
+    const auto = nlc.resolveChatWrapper?.(model)
+    if (nlc.QwenChatWrapper && auto instanceof nlc.QwenChatWrapper) {
+      return new nlc.QwenChatWrapper({ variation: auto.variation, thoughts: 'discourage' })
+    }
+  } catch {
+    // fall through to node-llama-cpp's own resolution
+  }
+  return 'auto'
 }
 
 /**
@@ -523,7 +568,10 @@ export class BloopRuntime {
         })
         const model = await llama.loadModel({ modelPath: path })
         const context = await model.createContext({ contextSize: this.opts.contextSize ?? BLOOP_CONTEXT_SIZE })
-        return { path, nlc, llama, model, context }
+        // One sequence per context: a disposed sequence isn't handed out again, so a second
+        // getSequence() would throw "No sequences left". It is reused and cleared per prompt instead.
+        const sequence = context.getSequence()
+        return { path, nlc, llama, model, context, sequence, chatWrapper: pickChatWrapper(nlc, model) }
       })()
     }
     try {
@@ -555,7 +603,15 @@ export class BloopRuntime {
     const run = async (): Promise<string> => {
       if (this.idleTimer) clearTimeout(this.idleTimer)
       const l = await this.ensure(path)
-      const session = new l.nlc.LlamaChatSession({ contextSequence: l.context.getSequence() })
+      // A fresh session per prompt on the shared (cleared) sequence, so a changed system prompt always
+      // takes effect. Without one, node-llama-cpp would add its own generic default, so an empty
+      // string is passed instead.
+      const session = new l.nlc.LlamaChatSession({
+        contextSequence: l.sequence,
+        autoDisposeSequence: false,
+        chatWrapper: l.chatWrapper,
+        systemPrompt: opts.system?.trim() ?? ''
+      })
       try {
         const grammar = opts.jsonSchema ? await l.llama.createGrammarForJsonSchema(opts.jsonSchema as never) : undefined
         const signals = [opts.signal, opts.timeoutMs ? AbortSignal.timeout(opts.timeoutMs) : undefined].filter(
@@ -569,7 +625,8 @@ export class BloopRuntime {
           ...(signals.length ? { signal: AbortSignal.any(signals) } : {})
         })
       } finally {
-        session.dispose({ disposeSequence: true })
+        session.dispose({ disposeSequence: false })
+        await l.sequence.clearHistory().catch(() => undefined)
         this.armIdle()
       }
     }

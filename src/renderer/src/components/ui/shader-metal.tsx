@@ -43,10 +43,10 @@ export type ShaderMetalInstance = {
 
 /** Base reflectance per metal, as sRGB hex. */
 export const METALS: Record<ShaderMetalMetal, string> = {
-  chrome: "#F2F3F5",
-  gold: "#FFD38A",
-  copper: "#F7AE92",
-  graphite: "#8E9096",
+  chrome: "#f2f2f2",
+  gold: "#d9d9d9",
+  copper: "#bfbfbf",
+  graphite: "#8c8c8c",
 }
 
 export const DEFAULT_METAL: ShaderMetalMetal = "chrome"

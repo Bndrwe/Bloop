@@ -9,6 +9,11 @@ export interface CompleteOptions {
   signal?: AbortSignal
   /** Overall timeout in ms. */
   timeoutMs?: number
+  /**
+   * Instructions (system prompt), sent as a system message where the provider has one, else as a
+   * delimited block before the prompt (always over stdin for CLIs). Omitted = no system message.
+   */
+  system?: string
 }
 
 export interface AiProvider {

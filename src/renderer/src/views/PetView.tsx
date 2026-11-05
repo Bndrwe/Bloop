@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { PointerEvent as ReactPointerEvent } from 'react'
+import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react'
 import { animate } from 'animejs'
 import { Pet } from '../pet/Pet'
 import { prefersReducedMotion } from '../lib/motion'
@@ -104,6 +104,12 @@ export function PetView(): JSX.Element {
       })
   }
 
+  // Right-click: Hide pet / Open panel / Settings… / Quit Bloop (a native menu built in main).
+  const onContextMenu = (e: ReactMouseEvent<HTMLDivElement>): void => {
+    e.preventDefault()
+    void window.studyPet?.petContextMenu({ x: e.clientX, y: e.clientY }).catch(() => undefined)
+  }
+
   const mood = status?.pet.mood ?? 'idle'
   const message = status?.pet.message ?? null
   const phase = status?.phase ?? 'idle'
@@ -121,6 +127,7 @@ export function PetView(): JSX.Element {
         onPointerDown={onPointerDown}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
+        onContextMenu={onContextMenu}
       >
         <Pet mood={mood} size={PET_SIZE} outlined />
         {status && (status.phase !== 'idle' || status.score != null) && (

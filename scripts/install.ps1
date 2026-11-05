@@ -10,6 +10,11 @@
   Re-running it updates Bloop: it pulls the latest code (when the checkout is clean), rebuilds and
   replaces the installed copy. Your settings and history in %APPDATA%\bloop are kept.
 
+  It also downloads the on-device Bloop model (about 532 MB, checked against its sha256) to
+  %APPDATA%\bloop\models while the app builds, so there is no wait later. The model stays OFF until
+  you choose "Use Bloop model" in Settings > AI. Pass -NoModel to skip it. A failed download never
+  fails the install; re-running resumes it.
+
   Run it with:
     powershell -ExecutionPolicy Bypass -File scripts\install.ps1
   or, from the source folder:
@@ -21,6 +26,8 @@
 .PARAMETER NoPull             Don't `git pull` the latest code first.
 .PARAMETER KeepBuild          Keep the build output in dist\ (deleted after installing by default).
 .PARAMETER NoDesktopShortcut  Don't create a Desktop shortcut.
+.PARAMETER NoModel            Don't download the on-device Bloop model (532 MB; do it later in Settings > AI).
+.PARAMETER ModelOnly          Only download and verify the Bloop model, then stop (no build, no install).
 #>
 [CmdletBinding()]
 param(
@@ -29,7 +36,9 @@ param(
   [switch]$Clean,
   [switch]$NoPull,
   [switch]$KeepBuild,
-  [switch]$NoDesktopShortcut
+  [switch]$NoDesktopShortcut,
+  [switch]$NoModel,
+  [switch]$ModelOnly
 )
 
 Set-StrictMode -Version 2.0
@@ -42,6 +51,8 @@ $Root = Split-Path -Parent $PSScriptRoot
 $InstallDir = Join-Path $env:LOCALAPPDATA 'Programs\Bloop'
 $UninstallKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\BloopFromSource'
 $script:StepNo = 0
+$script:ModelProc = $null
+$script:ModelCtx = $null
 # The switches this run was started with, to pass on if the script re-launches itself after a pull.
 $ScriptSwitches = @($PSBoundParameters.GetEnumerator() | Where-Object { $_.Key -ne 'NoPull' -and $_.Value } | ForEach-Object { "-$($_.Key)" })
 
@@ -442,6 +453,160 @@ function Remove-BuildOutput {
   if ((Test-Path $dist) -and -not (Get-ChildItem -LiteralPath $dist -Force)) { Remove-Item -LiteralPath $dist -Force }
 }
 
+# ------------------------------------------------------------------ Bloop model
+
+# The on-device Bloop model. URL, sha256, size and file name come from src\main\ai\local\bloop.ts
+# (through scripts\model-info.mjs), so there is one source of truth. It goes where the app looks for a
+# downloaded model: %APPDATA%\bloop\models\<file>. The app lists it as "downloaded" but keeps it OFF
+# until the user turns it on. Nothing here ever fails the install.
+#
+# TEST ONLY: BLOOP_MODEL_URL_OVERRIDE / BLOOP_MODEL_SHA256_OVERRIDE / BLOOP_MODEL_BYTES_OVERRIDE
+# (read by model-info.mjs) point this at a local server and a small fake file. Never set them normally.
+
+function Get-FileSha256([string]$Path) {
+  return (Get-FileHash -Algorithm SHA256 -LiteralPath $Path).Hash.ToLowerInvariant()
+}
+
+function Get-FreeBytes([string]$Path) {
+  try {
+    $drive = New-Object System.IO.DriveInfo (Split-Path -Qualifier $Path)
+    return [int64]$drive.AvailableFreeSpace
+  } catch { return $null }
+}
+
+# Does the checks, then starts curl.exe in the background (resumable) so the download runs while the
+# app builds. Falls back to a download in Complete-ModelDownload when curl.exe is missing.
+function Start-ModelDownload {
+  Write-Step 'Bloop model'
+  if ($NoModel) {
+    Write-Info 'Skipping the on-device Bloop model (-NoModel). You can download it later in Settings > AI.'
+    return
+  }
+  try {
+    $json = Get-NativeOutput 'node' @((Join-Path $PSScriptRoot 'model-info.mjs'))
+    if (-not $json) { Write-Warn "Couldn't read the Bloop model info, so skipping the model. Bloop works without it."; return }
+    $info = $json | ConvertFrom-Json
+    $url = [string]$info.url; $sha = ([string]$info.sha256).ToLowerInvariant(); $bytes = [int64]$info.bytes; $file = [string]$info.file
+    if (-not $url -or $sha -notmatch '^[0-9a-f]{64}$' -or $bytes -le 0 -or -not $file -or $file -match '[\\/]') {
+      Write-Warn "The Bloop model isn't configured for download, so skipping it."; return
+    }
+    # Only https (plain http is allowed solely for the local test server, BLOOP_TEST_MODE=1).
+    if ($url -notmatch '^https://' -and $env:BLOOP_TEST_MODE -ne '1') {
+      Write-Warn "The Bloop model URL isn't https, so skipping it."; return
+    }
+    $mb = [int][math]::Floor($bytes / 1000000)  # decimal MB, matching the app (532 MB)
+    Write-Info "Downloading the Bloop model ($mb MB, runs on your computer; turn it on in Settings > AI)... use -NoModel to skip"
+
+    $dir = Join-Path $env:APPDATA 'bloop\models'
+    $dest = Join-Path $dir $file
+    $part = "$dest.part"
+    if (Test-Path -LiteralPath "$dest.imported") { Write-Ok 'a Bloop model you imported is already in place; leaving it alone'; return }
+    if (Test-Path -LiteralPath $dest) {
+      if ((Get-Item -LiteralPath $dest).Length -eq $bytes -and (Get-FileSha256 $dest) -eq $sha) {
+        Write-Ok "Bloop model already downloaded and verified ($dest); not downloading again"
+        return
+      }
+      Write-Warn 'The Bloop model file on disk has the wrong size or checksum; downloading it again.'
+    }
+
+    $curl = Get-Command 'curl.exe' -ErrorAction SilentlyContinue
+    # Offline (or the server is unreachable): skip.
+    $reachable = $false
+    if ($curl) {
+      & $curl.Source -fsIL --max-time 15 -o NUL $url 2>$null
+      $reachable = ($LASTEXITCODE -eq 0)
+    } else {
+      try { Invoke-WebRequest -Uri $url -Method Head -UseBasicParsing -TimeoutSec 15 | Out-Null; $reachable = $true } catch { }
+    }
+    if (-not $reachable) {
+      Write-Warn "Can't reach the model download server (offline?), so skipping the Bloop model."
+      Write-Warn 'Bloop still works; download it later in Settings > AI, or re-run this installer.'
+      return
+    }
+
+    New-Item -ItemType Directory -Force -Path $dir | Out-Null
+    $have = 0
+    if (Test-Path -LiteralPath $part) { $have = (Get-Item -LiteralPath $part).Length }
+    if ($have -gt $bytes) { Remove-Item -LiteralPath $part -Force; $have = 0 }
+    $needBytes = ($bytes - $have) + 200MB
+    $free = Get-FreeBytes $dir
+    if ($null -ne $free -and $free -lt $needBytes) {
+      Write-Warn ("Not enough free disk space for the Bloop model (needs about {0} MB, {1} MB free), so skipping it." -f [int]($needBytes / 1MB), [int]($free / 1MB))
+      return
+    }
+    if ($have -gt 0) { Write-Info ("resuming the Bloop model download from {0} MB" -f [int]($have / 1000000)) }
+
+    $script:ModelCtx = @{ Url = $url; Sha = $sha; Bytes = $bytes; Dest = $dest; Part = $part; Mb = $mb; Err = (Join-Path $env:TEMP 'bloop-model-curl.err') }
+    if ($curl -and $have -lt $bytes) {
+      $curlArgs = @('-fL', '--retry', '3', '--retry-delay', '2', '--connect-timeout', '20', '-C', '-', '-sS', '-o', "`"$part`"", "`"$url`"")
+      $script:ModelProc = Start-Process -FilePath $curl.Source -ArgumentList $curlArgs -NoNewWindow -PassThru -RedirectStandardError $script:ModelCtx.Err
+      Write-Info '(downloading in the background while Bloop builds)'
+    }
+  } catch {
+    Write-Warn "Couldn't start the Bloop model download ($($_.Exception.Message)). Bloop works without it."
+    $script:ModelProc = $null; $script:ModelCtx = $null
+  }
+}
+
+# Waits for the background download (showing progress), verifies the sha256, and moves it into place.
+function Complete-ModelDownload {
+  $c = $script:ModelCtx
+  if (-not $c) { return }
+  try {
+    $proc = $script:ModelProc
+    if ($proc -and -not $proc.HasExited) {
+      Write-Step 'Finishing the Bloop model download'
+      while (-not $proc.HasExited) {
+        $cur = 0
+        if (Test-Path -LiteralPath $c.Part) { $cur = (Get-Item -LiteralPath $c.Part).Length }
+        Write-Host ("`r    {0} / {1} MB ({2}%)   " -f [int]($cur / 1000000), [int]($c.Bytes / 1000000), [int](100 * $cur / $c.Bytes)) -NoNewline
+        Start-Sleep -Seconds 1
+      }
+      Write-Host ''
+    }
+    if ($proc) {
+      $proc.WaitForExit()
+      if ($proc.ExitCode -ne 0) {
+        $err = ''
+        if (Test-Path -LiteralPath $c.Err) { $err = (Get-Content -LiteralPath $c.Err -Raw -ErrorAction SilentlyContinue) }
+        Write-Warn "The Bloop model download didn't finish (curl exit code $($proc.ExitCode)$(if ($err) { ': ' + $err.Trim() })). Bloop works without it."
+        Write-Warn 'Re-run this installer to resume, or download it in Settings > AI.'
+        # 33 / 22: the server can't resume (or rejected the range). Don't resume that .part next time.
+        if (($proc.ExitCode -eq 33 -or $proc.ExitCode -eq 22) -and (Test-Path -LiteralPath $c.Part)) { Remove-Item -LiteralPath $c.Part -Force -ErrorAction SilentlyContinue }
+        return
+      }
+    } elseif (-not (Test-Path -LiteralPath $c.Part) -or (Get-Item -LiteralPath $c.Part).Length -lt $c.Bytes) {
+      # No curl.exe: BITS (resumes by itself), else a plain download.
+      Write-Info 'downloading (curl.exe not found)...'
+      if (Get-Command Start-BitsTransfer -ErrorAction SilentlyContinue) {
+        $pp = $ProgressPreference; $ProgressPreference = 'Continue'
+        try { Start-BitsTransfer -Source $c.Url -Destination $c.Part -DisplayName 'Bloop model' } finally { $ProgressPreference = $pp }
+      } else {
+        Invoke-WebRequest -Uri $c.Url -OutFile $c.Part -UseBasicParsing
+      }
+    }
+    if (-not (Test-Path -LiteralPath $c.Part)) { Write-Warn 'The Bloop model download produced no file. Bloop works without it.'; return }
+    $size = (Get-Item -LiteralPath $c.Part).Length
+    if ($size -ne $c.Bytes) {
+      Write-Warn "The Bloop model download has the wrong size ($size of $($c.Bytes) bytes); deleting it. Download it later in Settings > AI."
+      Remove-Item -LiteralPath $c.Part -Force; return
+    }
+    Write-Info 'verifying checksum...'
+    if ((Get-FileSha256 $c.Part) -ne $c.Sha) {
+      Write-Warn 'The Bloop model failed its checksum, so I deleted it. Bloop works without it; download it later in Settings > AI.'
+      Remove-Item -LiteralPath $c.Part -Force; return
+    }
+    Move-Item -LiteralPath $c.Part -Destination $c.Dest -Force
+    Write-Ok "Bloop model downloaded and verified ($($c.Mb) MB): $($c.Dest)"
+    Write-Info 'It is OFF until you choose "Use Bloop model" in Settings > AI.'
+  } catch {
+    Write-Warn "The Bloop model download failed ($($_.Exception.Message)). Bloop works without it; download it later in Settings > AI."
+  } finally {
+    Remove-Item -LiteralPath $c.Err -Force -ErrorAction SilentlyContinue
+    $script:ModelProc = $null; $script:ModelCtx = $null
+  }
+}
+
 # ------------------------------------------------------------------ main
 
 if (-not (Test-Path (Join-Path $Root 'package.json')) -or -not (Test-Path (Join-Path $Root 'electron.vite.config.ts'))) {
@@ -450,6 +615,14 @@ if (-not (Test-Path (Join-Path $Root 'package.json')) -or -not (Test-Path (Join-
 Write-Host "Bloop installer" -ForegroundColor White -NoNewline
 Write-Host "  ($Root, PowerShell $($PSVersionTable.PSVersion))" -ForegroundColor DarkGray
 $started = Get-Date
+
+if ($ModelOnly) {
+  if ($NoModel) { Stop-Install "-ModelOnly and -NoModel don't go together." }
+  if (-not (Test-Command 'node')) { Stop-Install 'Node.js is needed to read the model info.' }
+  Start-ModelDownload
+  Complete-ModelDownload
+  exit 0
+}
 
 Test-Tools
 Update-Source
@@ -461,10 +634,17 @@ if ($Clean) {
   }
   Write-Ok 'removed dist, out, node_modules'
 }
-Install-Dependencies
-Build-App
-Install-Bloop
-Remove-BuildOutput
+Start-ModelDownload
+try {
+  Install-Dependencies
+  Build-App
+  Install-Bloop
+  Remove-BuildOutput
+} finally {
+  # If the install stopped early, leave the .part file; the next run resumes it.
+  if ($script:ModelProc -and -not $script:ModelProc.HasExited) { Stop-Process -Id $script:ModelProc.Id -Force -ErrorAction SilentlyContinue }
+}
+Complete-ModelDownload
 
 if (-not $NoLaunch) {
   Write-Step 'Starting Bloop'

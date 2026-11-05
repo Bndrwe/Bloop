@@ -3,7 +3,7 @@
 import { ShaderMetal } from "@/components/ui/shader-metal"
 
 const settings = {
-  color: "#F2F3F5",
+  color: "#f2f2f2",
   ribbons: 3,
   speed: 0.3,
   iridescence: 0.2,

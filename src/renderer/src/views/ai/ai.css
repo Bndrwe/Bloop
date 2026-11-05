@@ -307,3 +307,253 @@
   margin: 0 0 var(--s3);
   font-size: 12px;
 }
+
+/* Check model + Try a prompt + Instructions. Pass/fail is shape, never colour:
+   pass = solid dot, fail = empty ring with a cross, no answer = dashed ring. */
+.ck-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  margin-top: var(--s4);
+  padding-top: var(--s4);
+  border-top: 1px solid var(--hairline);
+}
+.ck {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+.ck h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+}
+.ck-testing {
+  margin: 0;
+  color: var(--text-2);
+}
+.ck-testing strong {
+  color: var(--paper);
+  font-weight: 500;
+}
+.ck-cloud {
+  border: 1px dashed var(--g3);
+  border-radius: var(--r-sm);
+  padding: 6px 10px;
+}
+.ck-run {
+  align-items: center;
+}
+.ck-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  font-size: 12px;
+  min-width: 0;
+}
+.ck-bar {
+  width: 120px;
+}
+.ck-verdict {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: var(--s1, 4px) 0 0;
+}
+.ck-verdict strong {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.ck-table-wrap {
+  overflow-x: auto;
+}
+.ck-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.ck-table th,
+.ck-table td {
+  text-align: left;
+  vertical-align: top;
+  padding: 7px var(--s2) 7px 0;
+  border-top: 1px solid var(--hairline);
+}
+.ck-table thead th {
+  border-top: 0;
+  color: var(--text-3);
+  font-weight: 500;
+  font-size: 11px;
+}
+.ck-case {
+  font-weight: 400;
+  min-width: 190px;
+}
+.ck-case-title {
+  color: var(--paper);
+  display: block;
+}
+.ck-raw summary {
+  cursor: pointer;
+  color: var(--text-2);
+  font-size: 11.5px;
+  width: max-content;
+  margin-top: 2px;
+}
+.ck-raw summary:hover {
+  color: var(--paper);
+}
+.ck-pre {
+  margin: 6px 0;
+  padding: 8px 10px;
+  max-height: 220px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--mono);
+  font-size: 11px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-sm);
+  background: var(--ink);
+  color: var(--paper);
+}
+.ck-err {
+  margin: 6px 0;
+  border: 1px dashed var(--paper);
+  border-radius: var(--r-sm);
+  padding: 6px 10px;
+}
+.ck-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+.ck-word {
+  display: inline-block;
+  min-width: 3.2em;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.ck-word--fail {
+  text-decoration: underline dashed;
+}
+.ck-marks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: inline-flex;
+  gap: 4px;
+  vertical-align: middle;
+}
+.ck-mark {
+  display: inline-flex;
+  vertical-align: middle;
+}
+.ck-dot {
+  position: relative;
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 1.5px solid var(--paper);
+}
+.ck-mark--pass .ck-dot {
+  background: var(--paper);
+}
+.ck-mark--fail .ck-dot::before,
+.ck-mark--fail .ck-dot::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 7px;
+  height: 1.5px;
+  background: var(--paper);
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.ck-mark--fail .ck-dot::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+.ck-mark--none .ck-dot {
+  border-style: dashed;
+  border-color: var(--g4);
+}
+.ck-count {
+  margin-left: 6px;
+  font-size: 11px;
+}
+.ck-legend {
+  margin: 6px 0 0;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.ck-try {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  margin-top: var(--s2);
+}
+.ck-textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 64px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  box-sizing: border-box;
+}
+.ck-sys-text {
+  font-family: var(--mono);
+  font-size: 11.5px;
+}
+.ck-try-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+.ck-try-row .btn:last-child {
+  margin-left: auto;
+}
+.ck-spacer {
+  flex: 1;
+}
+.ck-spacer + .btn {
+  margin-left: 0;
+}
+.ck-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.ck-check input {
+  accent-color: var(--paper);
+}
+.ck-reply {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11.5px;
+}
+.ck-sys-help {
+  margin: 0 0 var(--s2);
+  font-size: 12px;
+}
+.ck-table td.num,
+.ck-table thead th {
+  white-space: nowrap;
+}
+.ck-table td:nth-child(2) {
+  white-space: nowrap;
+}

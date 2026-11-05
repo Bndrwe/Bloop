@@ -144,8 +144,11 @@ main() {
 
   printf '\nYour Bloop data (settings, session history, logs):\n'
   for d in "${existing[@]}"; do info "$d  ($(size_of "$d"))"; done
-  if [[ -d "$MODEL_DIR" ]]; then
-    info "This includes the downloaded AI model in $MODEL_DIR ($(size_of "$MODEL_DIR"))."
+  local has_model=0 g
+  for g in "$MODEL_DIR"/*.gguf; do [[ -e "$g" ]] && has_model=1; done
+  if (( has_model )); then
+    info "This includes the Bloop AI model in $MODEL_DIR ($(size_of "$MODEL_DIR")), which the installer downloaded."
+    info "Deleting your data deletes the model too (re-installing downloads it again, ~532 MB). --keep-data keeps it."
   fi
 
   local wipe=0

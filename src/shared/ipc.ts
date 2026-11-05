@@ -25,6 +25,8 @@ export const IPC = {
   dragStart: 'win:drag-start',
   dragEnd: 'win:drag-end',
   setIgnoreMouse: 'win:ignore-mouse',
+  togglePet: 'pet:toggle',
+  petContextMenu: 'pet:context-menu',
 
   getPermissions: 'perm:get',
   openPermissionSettings: 'perm:open',
@@ -37,6 +39,12 @@ export const IPC = {
   getPlan: 'plan:get',
   generatePlan: 'plan:generate',
   addPlanReminders: 'plan:add-reminders',
+
+  brightspaceStatus: 'brightspace:status',
+  brightspaceStatusPush: 'brightspace:status-push',
+  brightspaceLogin: 'brightspace:login',
+  brightspaceLogout: 'brightspace:logout',
+  brightspaceRefresh: 'brightspace:refresh',
 
   // AI (window.studyPet.ai) — handlers live in src/main/ai/ipc.ts
   aiGetStatus: 'ai:get-status',
@@ -55,5 +63,22 @@ export const IPC = {
   aiPullOllama: 'ai:ollama-pull',
   aiSetApiKey: 'ai:set-api-key',
   aiTest: 'ai:test',
-  openExternal: 'app:open-external'
+  aiSetSystemPrompt: 'ai:set-system-prompt',
+  aiCheck: 'ai:check',
+  aiCheckCancel: 'ai:check-cancel',
+  aiCheckProgress: 'ai:check-progress',
+  aiTry: 'ai:try',
+  openExternal: 'app:open-external',
+
+  // Chat with Bloop (window.studyPet.chat) — handlers live in src/main/chat.ts
+  chatList: 'chat:list',
+  chatGet: 'chat:get',
+  chatCreate: 'chat:create',
+  chatSend: 'chat:send',
+  chatCancel: 'chat:cancel',
+  chatRename: 'chat:rename',
+  chatDelete: 'chat:delete',
+  chatClear: 'chat:clear',
+  chatOpen: 'chat:open',
+  chatThinking: 'chat:thinking'
 } as const

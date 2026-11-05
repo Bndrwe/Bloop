@@ -60,6 +60,7 @@ export function createAnthropicProvider(apiKey: string, model: string = ANTHROPI
             // server-side refusal fallback (routes declined requests to another model automatically)
             betas: ['server-side-fallback-2026-07-01'],
             fallbacks: 'default',
+            ...(opts.system?.trim() ? { system: opts.system } : {}),
             messages: [{ role: 'user', content: withSchema(prompt, opts.jsonSchema) }]
           },
           { signal: opts.signal, timeout: opts.timeoutMs }
@@ -156,7 +157,10 @@ export function buildOpenRouterBody(model: string, prompt: string, opts: Complet
   const body: Record<string, unknown> = {
     model,
     max_tokens: opts.maxTokens ?? 8000,
-    messages: [{ role: 'user', content: opts.jsonSchema && !structured ? withSchema(prompt, opts.jsonSchema) : prompt }]
+    messages: [
+      ...(opts.system?.trim() ? [{ role: 'system', content: opts.system }] : []),
+      { role: 'user', content: opts.jsonSchema && !structured ? withSchema(prompt, opts.jsonSchema) : prompt }
+    ]
   }
   if (opts.jsonSchema && structured) {
     body['response_format'] = { type: 'json_schema', json_schema: { name: 'bloop_response', strict: true, schema: opts.jsonSchema } }

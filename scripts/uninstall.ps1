@@ -91,8 +91,9 @@ Write-Host ''
 Write-Host 'Your Bloop data (settings, session history, logs):'
 Write-Info "$DataDir  ($(Get-FolderSize $DataDir))"
 $models = Join-Path $DataDir 'models'
-if (Test-Path -LiteralPath $models) {
-  Write-Info "This includes the downloaded AI model in $models ($(Get-FolderSize $models))."
+if ((Test-Path -LiteralPath $models) -and @(Get-ChildItem -LiteralPath $models -Filter '*.gguf' -File -ErrorAction SilentlyContinue).Count -gt 0) {
+  Write-Info "This includes the Bloop AI model in $models ($(Get-FolderSize $models)), which the installer downloaded."
+  Write-Info 'Deleting your data deletes the model too (re-installing downloads it again, ~532 MB). -KeepData keeps it.'
 }
 
 $wipe = $false

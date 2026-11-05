@@ -69,7 +69,7 @@ The installer prints numbered steps as it goes:
 
 1. Checks git, Node.js and npm (and offers to install Node.js if it's missing).
 2. Pulls the latest code, if your copy has no local changes.
-3. Installs the build tools (`npm ci`). This is the slow part the first time; it is skipped on later runs if nothing changed.
+3. Installs the build tools (`npm ci`). This is the slow part the first time; it is skipped on later runs if nothing changed. Meanwhile it downloads the on-device **Bloop model** (532 MB) in the background (see below).
 4. Type-checks and bundles the app.
 5. Packages it with electron-builder for your system.
 6. Installs it, replacing an older copy (it quits a running Bloop first), and deletes the build output to free space.
@@ -80,6 +80,15 @@ The installer prints numbered steps as it goes:
 | macOS | `/Applications/Bloop.app` (or `~/Applications/Bloop.app` if your account can't write to `/Applications`) | Launchpad / Spotlight |
 | Windows | `%LOCALAPPDATA%\Programs\Bloop` (`C:\Users\<you>\AppData\Local\Programs\Bloop`) | Start menu and Desktop; listed in **Settings → Apps → Installed apps** |
 | Linux | `~/.local/opt/bloop/Bloop.AppImage` | the `bloop` command (`~/.local/bin/bloop`) and **Bloop** in your app menu |
+
+**The Bloop model.** The installer also downloads the on-device Bloop model (532 MB, it needs about 200 MB more free disk space while downloading), checks its sha256 and puts it in your data folder:
+
+| macOS | `~/Library/Application Support/bloop/models/` |
+|---|---|
+| Windows | `%APPDATA%\bloop\models\` |
+| Linux | `~/.config/bloop/models/` (or `$XDG_CONFIG_HOME/bloop/models/`) |
+
+Bloop then shows the model as downloaded, but it stays **off** until you choose **Use Bloop model** in **Settings → AI**. If you're offline, short on disk space or the checksum fails, the install still finishes and the app offers the download later. Re-running the installer resumes an interrupted download and does nothing if the verified file is already there. Use `--no-model` (`-NoModel` on Windows) to skip it.
 
 Because you built Bloop on your own computer, the "unidentified developer" warnings that downloaded apps get don't apply: macOS Gatekeeper opens it normally and Windows SmartScreen doesn't step in. Windows Defender may scan it the first time it starts, which can take a few seconds.
 
@@ -92,6 +101,8 @@ Because you built Bloop on your own computer, the "unidentified developer" warni
 | `--clean` | `-Clean` | Delete `node_modules`, `out` and `dist` first. Try this if a build fails strangely |
 | `--no-pull` | `-NoPull` | Don't fetch the latest code; build what you have |
 | `--keep-build` | `-KeepBuild` | Keep the build output in `dist/` |
+| `--no-model` | `-NoModel` | Don't download the 532 MB Bloop model (you can still download it in Settings → AI) |
+| `--model-only` | `-ModelOnly` | Only download and check the Bloop model, then stop (no build, no install) |
 | | `-NoDesktopShortcut` | Don't create a Desktop shortcut |
 
 Example: `./scripts/install.sh --fast`, or on Windows `powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Fast`. With npm, put them after `--`: `npm run install-app -- --fast`.
@@ -107,7 +118,7 @@ Bloop has **no Dock icon and no regular window**. Look for:
 - the little Bloop **icon in the menu bar** at the top of your screen (it shows a countdown during a session), and
 - the **pet** in the top-right corner of your screen.
 
-Click the menu bar icon for Start session, Pause, Show panel, Settings, About, Open logs folder and Quit.
+Click the menu bar icon to open the menu. From top to bottom it has the Focus score, **Start session** (or **Pause** / **Resume** and **Stop session** during a session), **Show panel**, **Hide pet** / **Show pet**, **Settings…**, **Chat with Bloop**, **About Bloop**, **Open logs folder** and **Quit Bloop**.
 
 ### Permissions walkthrough
 
@@ -154,7 +165,7 @@ The pet appears in the top-right of your screen, just above the taskbar. Bloop a
 
 Or go to **Settings → Personalization → Taskbar → Other system tray icons** and switch **Bloop** on.
 
-Click the tray icon to show or hide the panel. Right-click it for Start session, Pause, Settings, Open logs folder and Quit.
+Click the tray icon to show or hide the panel. Right-click it for the same menu as on a Mac: Start session (or Pause, Resume and Stop session), Show panel, Hide pet / Show pet, Settings…, Chat with Bloop, About Bloop, Open logs folder and Quit Bloop.
 
 ### Notifications and Focus Assist
 
@@ -199,13 +210,17 @@ Bloop's tray icon depends on your desktop environment; some (like stock GNOME) n
 
 1. **Find the pet.** It appears in the **top-right corner** of your screen (above the taskbar on Windows). Drag it anywhere; Bloop remembers where you left it. Hover over it to see your score and timer, and click it to open the panel.
 2. **Start a session.** Click the pet to open the panel and start a session, or use the tray / menu bar icon → **Start session**. The default is 25 minutes of focus and 5 minutes of break, and you can change this in **Settings**. While a session runs, Bloop checks the front app about every 5 seconds, keeps a live focus score, and gets worried (then sends a notification) if you stay on a distracting app or site.
-3. **Make it yours.** In **Settings** you can edit the lists of focus and distracting apps and websites, nudge timing, study reminders, and a Brightspace calendar link for deadlines.
+3. **Make it yours.** In **Settings** you can edit the lists of focus and distracting apps and websites, nudge timing and study reminders.
+4. **Optional: your deadlines.** In **Settings → Deadlines**, type your school's Brightspace address (e.g. `purdue.brightspace.com`) and press **Log in to Brightspace**. Sign in on your school's page in the window that opens; it closes by itself when you're in, and the panel starts listing what's due. The window gives up after 10 minutes. Bloop never sees your password. If your school blocks this, paste your Brightspace calendar (iCal) link in the same card instead. If Brightspace later stops accepting the saved login (this can happen after a restart), Settings shows **login expired** and a **Log in again** button.
+5. **Optional: chat.** Choose **Chat with Bloop** from the tray or menu bar menu, or the button in the panel, to ask questions about your studies. Chats are saved on this computer only, in the `chats` folder inside your data folder (see [section 7](#where-your-data-lives)). Delete them with **Delete all chats** in the chat window.
+
+**Hiding the pet.** Press **Ctrl+Shift+B** on Windows and Linux, or **⌘⇧B** on a Mac, to hide or show the pet. You can also use the eye button in the panel header, **Hide pet** in the tray or menu bar menu, or the pet's right-click menu. **Settings → Show the pet on screen** does the same. Bloop keeps tracking and sending notifications while the pet is hidden. With **Pop up for nudges while hidden** on (the default), a nudge shows the pet for about 8 seconds. Opening Bloop again always brings the pet back.
 
 ### Settings → AI (optional)
 
 The panel has an **AI study plan** card that writes a week of study blocks from your deadlines and focus history. It only works once you pick where the AI runs, under **Settings → AI**:
 
-- **Use Local → Bloop model.** A small AI model that runs entirely on your computer and works offline. It is **not** downloaded automatically. When you choose it (or press Generate with it selected), Bloop asks "Download the Bloop model?" (it says the model is 532 MB) with **Download** and **Not now**. Nothing is fetched until you press **Download**. You need about 532 MB of free disk space, and the download can resume if you cancel. If you already have a `.gguf` file, you can use **Import .gguf…** instead. Some builds ship the model inside the app; there it is off until you pick **Use Bloop model**.
+- **Use Local → Bloop model.** A small AI model that runs entirely on your computer and works offline. The installer downloads it for you (unless you used `--no-model`), but it stays off until you pick **Use Bloop model**. If it isn't on disk, nothing is fetched automatically: when you choose it (or press Generate with it selected), Bloop asks "Download the Bloop model?" (it says the model is 532 MB) with **Download** and **Not now**. Nothing is fetched until you press **Download**. You need about 532 MB of free disk space, and the download can resume if you cancel. If you already have a `.gguf` file, you can use **Import .gguf…** instead. Some builds ship the model inside the app; there it is off until you pick **Use Bloop model**.
 - **Use Local → Ollama models.** If you already use [Ollama](https://ollama.com/download), open it and pick one of its models from the list (press **Refresh** after pulling one). If Ollama is running but missing the small recommended model, Bloop offers to pull it and only does so after you confirm.
 - **Cloud.** Uses a tool or key you already have: the Claude, Codex or Gemini command-line tools, or an Anthropic or OpenRouter API key. With a cloud option, your upcoming deadline titles and focus totals are sent to that provider, and only when you click **Generate plan**.
 - **Auto** (default) uses the first option that is ready. It never downloads anything on its own. See the README's [AI study plan](../README.md#ai-study-plan) section for the exact order.
@@ -242,7 +257,7 @@ To clear your history and reset settings without uninstalling, use **Settings �
 - **macOS / Linux:** in the `StudyPet` folder, run `./scripts/uninstall.sh` (or `npm run uninstall-app`). On Linux the uninstaller is also copied to `~/.local/opt/bloop/uninstall.sh`, so it works even if you deleted the source folder. On macOS without the source folder: quit Bloop and drag it from Applications to the Trash.
 - **Windows:** **Settings → Apps → Installed apps → Bloop → Uninstall**, or `powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1` in the `StudyPet` folder.
 
-The uninstaller removes the app, its shortcuts and menu entries, and launch-at-login, then **asks** before deleting your data folder (including a downloaded AI model). Add `--keep-data` / `-KeepData` to keep it without asking, or `--purge` / `-Purge` to delete it without asking. Finally, delete the `StudyPet` source folder to free the disk space the build tools used.
+The uninstaller removes the app, its shortcuts and menu entries, and launch-at-login, then **asks** before deleting your data folder (including the 532 MB Bloop model, and it says so). Add `--keep-data` / `-KeepData` to keep it (and the model) without asking, or `--purge` / `-Purge` to delete it without asking. Finally, delete the `StudyPet` source folder to free the disk space the build tools used.
 
 ---
 
@@ -260,11 +275,19 @@ The uninstaller removes the app, its shortcuts and menu entries, and launch-at-l
 - Still stuck? Copy the last 30 lines the installer printed and send them to the Bloop team.
 
 **I can't see the pet.**
+- You may have hidden it: press **Ctrl+Shift+B** (Mac: **⌘⇧B**) or see the next question.
 - Check that Bloop is running: look for the menu bar icon (Mac) or tray icon (Windows; check under the **^** arrow).
 - Click that icon → **Show panel**. If the icon is there but the pet is not, quit Bloop and open it again.
 - The pet sits in the top-right of your **main** display. If you disconnected a monitor, restart Bloop.
 - Bloop only runs one copy at a time. If you opened it twice and nothing happened, it is probably already running.
 - Linux: if Bloop quits as soon as it starts, the installer printed its last lines (also in `~/.local/opt/bloop/launch.log`). Try `bloop --no-sandbox` from a terminal.
+
+**I hid the pet. How do I get it back?**
+- Press **Ctrl+Shift+B** (Mac: **⌘⇧B**). The same shortcut hides it again.
+- Or click the tray / menu bar icon → **Show pet**, or open the panel and click the eye button, or turn on **Settings → Show the pet on screen**.
+- Or just open Bloop again (app menu, Start menu, Spotlight, or run `bloop` on Linux): a second launch always brings the pet and the panel back.
+- Linux GNOME with no tray icon: the shortcut and opening Bloop again are the ways back. Bloop shows a notification saying so the first time you hide the pet. If another app already uses Ctrl+Shift+B, Bloop skips the shortcut and writes a line about it to `main.log`; then open Bloop again to get the pet back.
+- Bloop remembers a hidden pet across restarts. While it's hidden, sessions, tracking and notifications keep working, and nudges pop the pet up for a few seconds unless you turned that off in Settings.
 
 **macOS says Bloop "is damaged and can't be opened" or "can't be checked for malicious software".**
 This doesn't happen with a copy the installer built, because macOS only checks apps that were downloaded. If you copied Bloop from someone else or from a downloaded release, run this in Terminal, then open Bloop again:
@@ -290,7 +313,7 @@ Or just run the installer on this Mac.
 - Check your internet connection and that you have about 532 MB of free disk space; Bloop checks for space first.
 - Press **Download…** again. Downloads resume where they stopped.
 - Some school and work networks block the download site (huggingface.co). Try a different network, or download the `.gguf` file elsewhere and use **Import .gguf…**.
-- If the button instead reads "Download · Not published yet", that build has no download link. Use **Import .gguf…**, Ollama, or Cloud instead. (Normally the button reads **Download…**; the link points at the stock Qwen3.5 0.8B model, 532 MB.)
+- The button normally reads **Download…** and fetches the stock Qwen3.5 0.8B model (532 MB). Only a build with no download link shows a greyed-out **Download · Not published yet**; in that case use **Import .gguf…**, Ollama, or Cloud instead.
 - You can also skip the model and use Ollama or Cloud.
 
 **Where are the logs?**
@@ -303,12 +326,14 @@ Add `BLOOP_TRACE=1` before the command (PowerShell: `$env:BLOOP_TRACE=1` first) 
 
 ---
 
-## 9. Prebuilt installers
+## 9. Ready-made installers (not published yet)
 
-`.github/workflows/release.yml` can build ready-made installers (`.dmg`, Setup `.exe`, portable `.exe`, AppImage, `.deb`) and publish them on the repo's Releases page when GitHub Actions minutes are available, and developers can build them locally with `npm run build:mac` / `build:win` / `build:linux`. If someone hands you one of those files, it is unsigned, so the first launch shows a warning once:
+There are no downloadable installers (`.dmg`, `.exe`, AppImage or `.deb`) yet, because the repo is private. Use the install command in [section 2](#2-install) instead.
+
+`.github/workflows/release.yml` can build them and publish them as a GitHub Release when GitHub Actions minutes are available. Developers can also build them on their own machine with `npm run build:mac` / `build:win` / `build:linux`. Files built elsewhere are unsigned, so the first launch shows a warning once:
 
 - **macOS:** open the `.dmg`, drag **Bloop** into **Applications**, then **right-click Bloop → Open → Open** (or run `xattr -cr /Applications/Bloop.app`).
 - **Windows:** SmartScreen says "Windows protected your PC". Click **More info → Run anyway**.
 - **Linux:** `chmod +x Bloop-*.AppImage` and run it (add `--no-sandbox` if it quits at once on Ubuntu 23.10+), or `sudo apt install ./bloop_*_amd64.deb`.
 
-Releases include `SHA256SUMS.txt`; compare it with `shasum -a 256 <file>` (macOS/Linux) or `Get-FileHash <file>` (Windows).
+A published release would include `SHA256SUMS.txt`; compare it with `shasum -a 256 <file>` (macOS/Linux) or `Get-FileHash <file>` (Windows).

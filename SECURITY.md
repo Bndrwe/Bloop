@@ -19,7 +19,7 @@ Please give us a reasonable amount of time to fix the problem before you disclos
 
 ## Supported versions
 
-Security fixes go into the latest release. Please update to the newest release from the [Releases page](https://github.com/Bndrwe/StudyPet/releases/latest) before you report an issue.
+Security fixes go into the latest code on the main branch. Please update first (re-run the install command from the `StudyPet` folder, which pulls and rebuilds) before you report an issue.
 
 ## Scope
 

@@ -521,3 +521,18 @@
   text-overflow: ellipsis;
   min-width: 0;
 }
+
+/* inline text button ("Connect Brightspace in Settings") */
+.link-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.link-btn:hover {
+  text-decoration-thickness: 2px;
+}

@@ -334,7 +334,7 @@ Each file below is wrapped as `<!-- FILE: path sha256=… nl=… -->` followed b
 | `docs/codex-weight-space-prompt.md` | 7,387 |
 | `ml/MODEL_CARD.md` | 3,003 |
 | `ml/Modelfile` | 1,271 |
-| `ml/README-data.md` | 6,334 |
+| `ml/README-data.md` | 7,183 |
 | `ml/README.md` | 6,142 |
 | `ml/colab/train_bloop.ipynb` | 13,043 |
 | `ml/data/READY` | 163 |
@@ -361,7 +361,7 @@ Each file below is wrapped as `<!-- FILE: path sha256=… nl=… -->` followed b
 | `ml/wsp/session.ipynb` | 13,077 |
 | `ml/wsp/test_harness_pure.py` | 19,193 |
 | `ml/wsp/wsp_core.py` | 32,033 |
-| `src/main/plan.ts` | 7,891 |
+| `src/main/plan.ts` | 9,040 |
 
 ### `docs/codex-colab-prompt.md`
 
@@ -692,12 +692,12 @@ PARAMETER stop "<|im_start|>"
 
 ### `ml/README-data.md`
 
-<!-- FILE: ml/README-data.md sha256=6083d3944d16df83eddee796add2c4385cf2ab9dea5e9cc3ab20e74a59a8c53f nl=1 -->
+<!-- FILE: ml/README-data.md sha256=b831bb76d7d47e05a19e299aebfe2e9a60a6491406302d23a7879aee26806d45 nl=1 -->
 ``````markdown
 # Bloop SFT dataset
 
 `ml/data/train.jsonl` (240 rows) and `ml/data/eval.jsonl` (30 rows). One JSON object per line:
-`{"messages":[{"role":"user","content":...},{"role":"assistant","content":...}]}`. No system prompt (the app sends none).
+`{"messages":[{"role":"user","content":...},{"role":"assistant","content":...}]}`. No system prompt in the data.
 `ml/data/READY` is written by `validate.py` only when everything passes; `ml/run_mac.sh` checks for it.
 
 ## Task mix
@@ -748,6 +748,15 @@ None contains "study plan", so `scoring.is_plan_prompt` classifies them as nudge
 Assistant message: a single lowercase-casual line, <= 60 chars, at most one emoji. The hand-written pool is in `ml/data/nudge_lines.py`
 (171 distinct lines: drift 32 generic + 18 site/app specific, welcome 32, break 29, back 30, done 30). The last 3 lines of each generic pool are
 held out for eval only, so no eval target appears in train. Each line is used at most once per split.
+
+## System prompt (TODO)
+
+The app now sends a short system message with every request (`DEFAULT_SYSTEM_PROMPT` in `src/shared/ai.ts`, editable in Settings → AI). The rows here
+were built without one, so a tuned model sees a system message at inference that it never saw in training (before this, node-llama-cpp added its own
+generic default system prompt, so there was a mismatch either way). TODO for the next data build: add
+`{"role":"system","content": DEFAULT_SYSTEM_PROMPT}` as the first message of every row (or of a share of rows, so the model also works without it),
+read the text from `src/shared/ai.ts` the same way `render_prompts.cjs` reads `buildPrompt`, and re-run `validate.py`. Don't hand-edit the jsonl files.
+Settings → AI → Check model (and `npm run model:check -- --gguf <file>`) scores a build with and without it (`--no-system`).
 
 ## Regenerate / validate
 
@@ -7333,15 +7342,16 @@ def render_report(state: dict) -> str:
 
 ### `src/main/plan.ts`
 
-<!-- FILE: src/main/plan.ts sha256=84ee19ca2ac166449554f306ef6365ebfd954da91c885c08add530ee216bd605 nl=1 -->
+<!-- FILE: src/main/plan.ts sha256=a257603774f386ecccba0c65ebb87ab4c613f5c57f50acf5b5f4ba92a5a6f644 nl=1 -->
 ``````ts
 // AI study plan. Generation goes through the AI registry (src/main/ai/registry.ts), which picks
 // the user's provider: the Bloop model, an Ollama model or a cloud provider. API keys (including
 // the .env ANTHROPIC_API_KEY fallback, read by the cloud side) stay in the main process.
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import dotenv from 'dotenv'
 import type { Deadline, PlanBlock, Reminder, Result, Settings, Stats, StudyPlan } from '@shared/types'
+import { DEFAULT_SYSTEM_PROMPT } from '@shared/ai'
 import type { CompleteOptions } from './ai/types'
 
 export interface EnvDirsInput {
@@ -7377,10 +7387,14 @@ export function envSearchDirs(i: EnvDirsInput): string[] {
   return [...new Set([i.userData, besideApp])]
 }
 
+/** The only variable Bloop takes from a .env file (a .env next to the app may be untrusted). */
+const ENV_KEYS = ['ANTHROPIC_API_KEY'] as const
+
 let envLoaded = false
 /**
- * Load .env from the given directories (first match wins for each var; existing env vars are kept).
- * Only the main process reads it: the key never reaches a renderer.
+ * Read ANTHROPIC_API_KEY from the first .env (in `dirs` order) that sets it, unless it is already
+ * in the environment. Nothing else in the file is applied. Only the main process reads it: the
+ * key never reaches a renderer.
  */
 export function loadEnv(dirs: string[]): string[] {
   if (envLoaded) return []
@@ -7388,13 +7402,24 @@ export function loadEnv(dirs: string[]): string[] {
   const loaded: string[] = []
   for (const d of dirs) {
     const p = join(d, '.env')
-    if (existsSync(p)) {
-      dotenv.config({ path: p, quiet: true } as dotenv.DotenvConfigOptions)
-      loaded.push(p)
-      console.log(`[bloop] loaded env from ${p}`)
+    if (!existsSync(p)) continue
+    let parsed: Record<string, string>
+    try {
+      parsed = dotenv.parse(readFileSync(p))
+    } catch (e) {
+      console.log(`[bloop] couldn't read ${p}: ${(e as Error).message}`)
+      continue
+    }
+    for (const k of ENV_KEYS) {
+      const v = parsed[k]?.trim()
+      if (v && !process.env[k]) {
+        process.env[k] = v
+        loaded.push(p)
+        console.log(`[bloop] ${k} loaded from ${p}`)
+      }
     }
   }
-  if (!loaded.length) console.log(`[bloop] no .env found (looked in: ${dirs.join(', ')})`)
+  if (!loaded.length) console.log(`[bloop] no .env key loaded (looked in: ${dirs.join(', ')})`)
   return loaded
 }
 
@@ -7404,7 +7429,7 @@ const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frid
 export function buildPrompt(deadlines: Deadline[], stats: Stats, settings: Settings, now: Date): string {
   const dl = deadlines.length
     ? deadlines
-        .map((d) => `- ${d.summary}${d.isExam ? ' (EXAM)' : ''}: ${new Date(d.start).toString()}`)
+        .map((d) => `- ${String(d.summary).replace(/[\r\n]+/g, ' ').slice(0, 120)}${d.isExam ? ' (EXAM)' : ''}: ${new Date(d.start).toString()}`)
         .join('\n')
     : '- (no upcoming deadlines found)'
   const days = stats.last7
@@ -7500,15 +7525,28 @@ async function defaultGenerateText(prompt: string, opts?: CompleteOptions): Prom
   return generateText(prompt, opts)
 }
 
+/** The user's instructions (Settings → AI → Advanced), or the default if they can't be read. */
+async function defaultSystemPrompt(): Promise<string> {
+  try {
+    const [{ effectiveSystemPrompt }, store] = await Promise.all([import('./ai/prompts'), import('./store')])
+    return effectiveSystemPrompt(store.getAiSettings())
+  } catch {
+    return DEFAULT_SYSTEM_PROMPT
+  }
+}
+
 export async function generatePlan(
   deadlines: Deadline[],
   stats: Stats,
   settings: Settings,
-  generate: GenerateText = defaultGenerateText
+  generate: GenerateText = defaultGenerateText,
+  /** The system prompt; default: the one saved in AiSettings (or DEFAULT_SYSTEM_PROMPT). */
+  system?: string
 ): Promise<Result<StudyPlan>> {
   let text: string
   try {
     text = await generate(buildPrompt(deadlines, stats, settings, new Date()), {
+      system: system ?? (await defaultSystemPrompt()),
       jsonSchema: PLAN_JSON_SCHEMA,
       maxTokens: 2048,
       timeoutMs: 180_000

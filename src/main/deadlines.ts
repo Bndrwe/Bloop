@@ -1,8 +1,10 @@
 import ical from 'node-ical'
 import type { Deadline, Result } from '@shared/types'
 import { getDeadlinesCache, setDeadlinesCache } from './store'
+import { EXAM_RE, isUpcoming, mergeDeadlines } from './brightspace'
 
-const EXAM_RE = /\b(exam|midterm|final|quiz|test)s?\b/i
+/** Deadlines kept in the merged cache (the panel shows 5). */
+const KEEP = 10
 
 function text(v: unknown): string {
   if (typeof v === 'string') return v
@@ -100,7 +102,24 @@ export function getDeadlines(): Result<Deadline[]> {
   const c = getDeadlinesCache()
   if (!c) return { ok: true, value: [] }
   const now = Date.now()
-  return { ok: true, value: c.items.filter((d) => d.start >= now) }
+  return { ok: true, value: c.items.filter((d) => isUpcoming(d, now)) }
+}
+
+export type DeadlineSource = 'calendar' | 'brightspace'
+
+/**
+ * Replace one source's items (null = remove that source) and rebuild the merged list. Brightspace
+ * comes first so its "COURSE: title" wins over the same item from the iCal feed.
+ */
+export function setSourceDeadlines(source: DeadlineSource, items: Deadline[] | null, meta: { url?: string } = {}, now = Date.now()): Deadline[] {
+  const c = getDeadlinesCache()
+  // caches from before Brightspace login hold only calendar items
+  const sources = { ...(c?.sources ?? (c ? { calendar: c.items.map((d) => ({ ...d, source: 'calendar' as const })) } : {})) }
+  if (items) sources[source] = items.map((d) => ({ ...d, source }))
+  else delete sources[source]
+  const merged = mergeDeadlines([sources.brightspace ?? [], sources.calendar ?? []], now, KEEP)
+  setDeadlinesCache({ fetchedAt: now, url: meta.url ?? c?.url ?? '', items: merged, sources })
+  return merged
 }
 
 const MAX_ICAL_BYTES = 5 * 1024 * 1024
@@ -125,7 +144,7 @@ export async function refreshDeadlines(icalUrl: string): Promise<Result<Deadline
     if (body.length > MAX_ICAL_BYTES) return { ok: false, error: TOO_BIG }
     if (!/BEGIN:VCALENDAR/i.test(body)) return { ok: false, error: "That URL didn't return an iCal calendar." }
     const items = parseDeadlines(ical.sync.parseICS(body) as Record<string, unknown>)
-    setDeadlinesCache({ fetchedAt: Date.now(), url, items })
+    setSourceDeadlines('calendar', items, { url })
     console.log(`[bloop] deadlines refreshed: ${items.length} upcoming`)
     return { ok: true, value: items }
   } catch (e) {

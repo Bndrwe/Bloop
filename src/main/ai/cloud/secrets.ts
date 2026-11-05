@@ -23,9 +23,20 @@ function s(): Store<KeySchema> {
 const NO_ENCRYPTION =
   "Can't store the key: secure storage isn't available on this system (macOS Keychain / Windows DPAPI / a Linux keyring). Nothing was saved."
 
+let warnedBasicText = false
+
 export function canEncrypt(): boolean {
   try {
-    return safeStorage.isEncryptionAvailable()
+    const ok = safeStorage.isEncryptionAvailable()
+    // Linux without a keyring: Electron falls back to a hard-coded key ("basic_text"), which is not real protection.
+    if (ok && process.platform === 'linux' && !warnedBasicText) {
+      const be = (safeStorage as { getSelectedStorageBackend?: () => string }).getSelectedStorageBackend?.()
+      if (be === 'basic_text') {
+        warnedBasicText = true
+        console.log('[bloop] warning: no system keyring found (safeStorage backend is basic_text); stored API keys are only obfuscated. Install gnome-keyring or kwallet.')
+      }
+    }
+    return ok
   } catch {
     return false
   }

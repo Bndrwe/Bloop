@@ -46,8 +46,8 @@ describe('mergeSettings: missing / old shapes', () => {
     expect(m.focusApps).toEqual([])
     expect(m.distractDomains).toEqual([])
   })
-  it('unknown extra keys from a newer/older version survive the merge', () => {
-    expect((mergeSettings(bad({ futureThing: 1 })) as unknown as Record<string, unknown>)['futureThing']).toBe(1)
+  it('unknown extra keys are dropped by the merge (whitelist)', () => {
+    expect((mergeSettings(bad({ futureThing: 1 })) as unknown as Record<string, unknown>)['futureThing']).toBeUndefined()
   })
   it('is idempotent', () => {
     const once = mergeSettings(bad({ focusMinutes: '30', backgroundIntensity: 250 }))

@@ -64,7 +64,7 @@ Notes:
 - Builds are unsigned. Expect the Gatekeeper and SmartScreen warnings described in [docs/INSTALL.md](docs/INSTALL.md).
 - `npm run build` is a macOS-only, unpacked build (`--dir`) that is handy for a quick local test.
 
-**Releases are built by GitHub Actions**, not on your machine. `.github/workflows/release.yml` builds every installer on its own runner (macOS arm64, macOS Intel, Windows x64, Linux x64), smoke-tests each app, and publishes a GitHub Release with `SHA256SUMS.txt`. Maintainers run it from the Actions tab or push a `v*` tag. Bump `version` in `package.json` first.
+**Installers can be built by GitHub Actions** when Actions minutes are available (users normally install with `scripts/install.sh` / `scripts/install.ps1`, which build on their own machine). `.github/workflows/release.yml` builds every installer on its own runner (macOS arm64, macOS Intel, Windows x64, Linux x64), smoke-tests each app, and publishes a GitHub Release with `SHA256SUMS.txt`. Maintainers run it from the Actions tab or push a `v*` tag. Bump `version` in `package.json` first.
 
 ## Code style
 

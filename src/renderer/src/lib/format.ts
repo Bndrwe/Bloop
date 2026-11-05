@@ -30,7 +30,7 @@ export function scoreBand(score: number | null | undefined): string {
 }
 
 export function scoreText(score: number | null | undefined): string {
-  return score == null ? '—' : String(Math.round(score))
+  return score == null ? '–' : String(Math.round(score))
 }
 
 export function phaseLabel(phase: SessionPhase): string {

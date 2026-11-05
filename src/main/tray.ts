@@ -13,9 +13,15 @@ export interface TrayActions {
   stop(): void
   openSettings(): void
   togglePanel(): void
+  /** Hide or show the pet (petVisibility.ts). */
+  togglePet(): void
+  /** "Hide pet (Ctrl+Shift+B)" / "Show pet (Ctrl+Shift+B)": the label reflects the current state. */
+  petLabel(): string
   about(): void
   openLogs(): void
   quit(): void
+  /** Open (or focus) the Chat with Bloop window. */
+  openChat?(): void
 }
 
 let tray: Tray | null = null
@@ -91,6 +97,16 @@ export function clickTrayItem(label: string): boolean {
   return true
 }
 
+/** Tray icon bounds (macOS / Windows; Linux reports an empty rect). For placing the panel. */
+export function trayBounds(): Electron.Rectangle | null {
+  if (!tray || tray.isDestroyed()) return null
+  try {
+    return tray.getBounds()
+  } catch {
+    return null
+  }
+}
+
 export function updateTray(actions: TrayActions, s: AppStatus): void {
   if (!tray || tray.isDestroyed()) return
   const scoreText = s.score === null ? '—' : `${s.score}`
@@ -104,7 +120,8 @@ export function updateTray(actions: TrayActions, s: AppStatus): void {
     tray.setTitle(s.phase === 'focus' || s.phase === 'break' ? ` ${fmt(s.remainingSec)}` : s.phase === 'paused' ? ' ⏸' : '')
   }
   // rebuild the menu only when its shape changes
-  const key = `${s.phase}|${s.pausedPhase}|${scoreText}`
+  const petLabel = actions.petLabel()
+  const key = `${s.phase}|${s.pausedPhase}|${scoreText}|${petLabel}`
   if (key === lastKey) return
   lastKey = key
   const running = s.phase === 'focus' || s.phase === 'break' || s.phase === 'paused'
@@ -121,7 +138,9 @@ export function updateTray(actions: TrayActions, s: AppStatus): void {
   items.push(
     { type: 'separator' },
     { label: 'Show panel', click: () => actions.togglePanel() },
+    { label: petLabel, click: () => actions.togglePet() },
     { label: 'Settings…', click: () => actions.openSettings() },
+    ...(actions.openChat ? [{ label: 'Chat with Bloop', click: () => actions.openChat?.() }] : []),
     { type: 'separator' },
     { label: `About Bloop ${app.getVersion()}`, click: () => actions.about() },
     { label: 'Open logs folder', click: () => actions.openLogs() },

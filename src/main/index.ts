@@ -1,10 +1,19 @@
 import { mkdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { BrowserWindow, Notification, app, dialog, ipcMain, shell, type IpcMainInvokeEvent } from 'electron'
+import { BrowserWindow, Menu, Notification, app, dialog, globalShortcut, ipcMain, shell, type IpcMainInvokeEvent } from 'electron'
 import { IPC } from '@shared/ipc'
-import type { AppStatus, Settings } from '@shared/types'
+import type { AppStatus, BrightspaceStatus, Settings } from '@shared/types'
 import { getDeadlines, refreshDeadlines } from './deadlines'
+import {
+  getBrightspaceStatus,
+  hardenBrightspaceContents,
+  loginBrightspace,
+  logoutBrightspace,
+  refreshBrightspace,
+  startBrightspace,
+  stopBrightspace
+} from './brightspaceApp'
 import { guardSender } from './ai/guard'
 import { detectSessionType, isGnomeDesktop, setLinuxAutostart } from './linux'
 import { clearLogs, initFileLog, logError, logFile, logsDir } from './log'
@@ -15,8 +24,19 @@ import { ReminderScheduler } from './reminders'
 import { SessionEngine, type NotifyOptions } from './session'
 import * as store from './store'
 import { sampleActiveWindow } from './tracker'
-import { clickTrayItem, createTray, trayMenuLabels, updateTray, type TrayActions } from './tray'
+import { clickTrayItem, createTray, trayBounds, trayMenuLabels, updateTray, type TrayActions } from './tray'
+import {
+  isNudgeMood,
+  needsHiddenSafetyNet,
+  parsePetContextMenu,
+  petContextMenuTemplate,
+  petShortcut,
+  petToggleLabel,
+  PetVisibility,
+  registerPetShortcut
+} from './petVisibility'
 import * as windows from './windows'
+import { chatStore, registerChat } from './chatApp'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const FAST = process.env['BLOOP_FAST'] === '1'
@@ -127,8 +147,35 @@ const engine = new SessionEngine({
   fast: FAST
 })
 
+// ------------------------------------------------------------------ pet visibility (hide / show)
+
+let trayOk = false
+/** "Ctrl+Shift+B" / "⌘⇧B" once the global shortcut is registered; null if it was taken. */
+let petShortcutLabel: string | null = null
+
+const pet = new PetVisibility({
+  getSettings: () => store.getSettings(),
+  saveSettings: (patch) => store.saveSettings(patch),
+  setWindowVisible: (v) => windows.setPetVisible(v),
+  onChange: (s) => {
+    broadcastSettings(s)
+    updateTray(trayActions, engine.getStatus())
+  },
+  notify: (title, body) => notify(title, body),
+  log,
+  safetyNet: () => needsHiddenSafetyNet({ platform: process.platform, gnome: isGnomeDesktop(), trayOk }),
+  shortcutLabel: () => petShortcutLabel
+})
+
+let lastPetMessageId = 0
+
 let lastBroadcast = ''
 function broadcast(status: AppStatus): void {
+  // a new nudge bubble while the pet is hidden: pop it up for a few seconds (if allowed)
+  if (status.pet.messageId !== lastPetMessageId) {
+    lastPetMessageId = status.pet.messageId
+    if (status.pet.message && isNudgeMood(status.pet.mood)) pet.nudge()
+  }
   const key = JSON.stringify(status)
   if (key !== lastBroadcast) {
     lastBroadcast = key
@@ -146,6 +193,12 @@ function broadcastSettings(settings: Settings): void {
   }
 }
 
+function broadcastBrightspace(status: BrightspaceStatus): void {
+  for (const w of windows.allWindows()) {
+    if (!w.webContents.isDestroyed()) w.webContents.send(IPC.brightspaceStatusPush, status)
+  }
+}
+
 const trayActions: TrayActions = {
   start: () => engine.start(),
   pause: () => engine.pause(),
@@ -153,9 +206,12 @@ const trayActions: TrayActions = {
   stop: () => engine.stop(),
   openSettings: () => windows.openSettings(),
   togglePanel: () => windows.togglePanel(),
+  togglePet: () => pet.toggle('tray'),
+  petLabel: () => petToggleLabel(pet.wanted(), petShortcutLabel),
   about: () => void showAbout(),
   openLogs: () => void openLogsFolder(),
-  quit: () => app.quit()
+  quit: () => app.quit(),
+  openChat: () => windows.openChat()
 }
 
 async function openLogsFolder(): Promise<void> {
@@ -251,16 +307,20 @@ function registerIpc(): void {
     const before = store.getSettings()
     const next = store.saveSettings(p)
     if (before.launchAtLogin !== next.launchAtLogin) applyLoginItem(next)
+    pet.settingsChanged(before, next)
     log('settings saved')
     broadcastSettings(next)
     broadcast(engine.getStatus())
     return next
   })
-  h(IPC.resetData, () => {
+  h(IPC.resetData, async () => {
     if (engine.isRunning()) engine.stop()
+    await logoutBrightspace().catch((e: Error) => log(`brightspace logout on reset failed: ${e.message}`))
     store.resetData()
+    chatStore.clear()
     clearLogs()
     applyLoginItem(store.getSettings())
+    pet.apply() // showPet is back to its default (shown)
     log('all data reset')
     broadcastSettings(store.getSettings())
     broadcast(engine.getStatus())
@@ -278,6 +338,31 @@ function registerIpc(): void {
   h(IPC.dragStart, () => windows.dragStart())
   h(IPC.dragEnd, () => windows.dragEnd())
   h(IPC.setIgnoreMouse, (_e, ignore) => windows.setIgnoreMouse(Boolean(ignore)))
+  h(IPC.togglePet, () => {
+    pet.toggle('panel')
+    return pet.wanted()
+  })
+  // The pet's right-click menu: only the pet window may open it (guardSender already checked the origin).
+  h(IPC.petContextMenu, (e, ...args) => {
+    const petWin = windows.getPetWindow()
+    const req = parsePetContextMenu(!!petWin && BrowserWindow.fromWebContents(e.sender) === petWin, args)
+    if (!req || !petWin) {
+      log('ipc pet:context-menu rejected')
+      return
+    }
+    const menu = Menu.buildFromTemplate(
+      petContextMenuTemplate(
+        {
+          hidePet: () => pet.set(false, 'pet menu'),
+          openPanel: () => windows.showPanel(),
+          openSettings: () => windows.openSettings(),
+          quit: () => app.quit()
+        },
+        petShortcutLabel ? petShortcut(process.platform).accelerator : null
+      )
+    )
+    menu.popup({ window: petWin, ...(req.x !== undefined && req.y !== undefined ? { x: req.x, y: req.y } : {}) })
+  })
 
   h(IPC.getPermissions, () => refreshPermissions())
   h(IPC.relaunchApp, () => {
@@ -293,7 +378,19 @@ function registerIpc(): void {
   })
 
   h(IPC.getDeadlines, () => getDeadlines())
-  h(IPC.refreshDeadlines, () => refreshDeadlines(store.getSettings().icalUrl))
+  h(IPC.refreshDeadlines, async () => {
+    const r = await refreshDeadlines(store.getSettings().icalUrl)
+    broadcastBrightspace(getBrightspaceStatus()) // the panel reloads its deadlines on this push
+    return r
+  })
+
+  h(IPC.brightspaceStatus, () => getBrightspaceStatus())
+  h(IPC.brightspaceLogin, (_e, host) => {
+    if (typeof host !== 'string' || host.length > 300) return { ok: false, error: "Enter your school's Brightspace address." }
+    return loginBrightspace(host)
+  })
+  h(IPC.brightspaceLogout, () => logoutBrightspace())
+  h(IPC.brightspaceRefresh, () => refreshBrightspace())
   h(IPC.getPlan, () => store.getStudyPlan())
   h(IPC.generatePlan, async () => {
     const dl = getDeadlines()
@@ -316,8 +413,10 @@ function registerIpc(): void {
 // ------------------------------------------------------------------ lifecycle
 
 // Launching Bloop again (e.g. from the Start menu while it already runs from login) shows the panel.
+// It also always brings a hidden pet back (on GNOME without a tray that is the way back in).
 app.on('second-instance', () => {
-  log('second instance launched: showing the panel')
+  log('second instance launched: showing the pet and the panel')
+  if (!pet.wanted()) pet.set(true, 'second instance')
   windows.showPanel()
 })
 
@@ -337,9 +436,19 @@ app.on('before-quit', () => {
   try {
     if (engine.isRunning()) engine.stop() // save the in-progress session
     reminders.stop()
+    stopBrightspace()
+    pet.dispose()
     engine.dispose()
   } catch (e) {
     fatal('quit cleanup failed', e)
+  }
+})
+
+app.on('will-quit', () => {
+  try {
+    globalShortcut.unregisterAll()
+  } catch {
+    /* app not ready (early quit) */
   }
 })
 
@@ -369,10 +478,21 @@ function startApp(): void {
   log(`log file: ${logFile() ?? 'none'}; userData: ${app.getPath('userData')}`)
   if (isMac) app.dock?.hide()
   registerIpc()
-  registerAiIpc(ipcMain, { allWindows: windows.allWindows })
+  // The Brightspace login window (own session partition) gets its SSO-friendly policy; every other
+  // webContents, including all of Bloop's windows, keeps the strict global guard.
+  registerAiIpc(ipcMain, { allWindows: windows.allWindows, hardenSpecial: hardenBrightspaceContents })
+  registerChat(ipcMain, { getStatus: () => engine.getStatus(), openChat: () => windows.openChat() })
+  pet.apply() // before the pet window exists: a hidden pet stays hidden from the first frame
   windows.createPetWindow()
   windows.ensurePanelWindow()
+  // Shows / hides the pet from anywhere. If another app holds it, it is logged and skipped.
+  petShortcutLabel = registerPetShortcut(globalShortcut, process.platform, () => pet.toggle('shortcut'), log)
   const tray = createTray(trayActions, engine.getStatus())
+  trayOk = !!tray
+  windows.setTrayBoundsProvider(trayBounds)
+  if (!store.getSettings().showPet) {
+    log(`the pet is hidden (Show pet is off): ${petShortcutLabel ? `press ${petShortcutLabel}, ` : ''}use the tray, or run Bloop again to bring it back`)
+  }
   // LSUIElement (no Dock icon) + no tray would leave no way to open settings or quit:
   // fall back to a normal Dock app so the Dock menu offers Quit.
   if (!tray && isMac) void app.dock?.show()
@@ -396,6 +516,8 @@ function startApp(): void {
   // keep the deadline cache fresh (stretch)
   const icalUrl = store.getSettings().icalUrl
   if (icalUrl) void refreshDeadlines(icalUrl)
+  // Brightspace login: sync shortly after launch (only if connected) and every 2 hours
+  startBrightspace(broadcastBrightspace)
 
   // dev/demo: auto-start a session for headless verification
   if (process.env['BLOOP_AUTOSTART'] === '1') setTimeout(() => engine.start(), 1500)
@@ -418,6 +540,10 @@ function startApp(): void {
     g['__bloopTray'] = () => ({ exists: !!tray && !tray.isDestroyed(), items: trayMenuLabels() ?? [] })
     g['__bloopTrayClick'] = (label: string) => clickTrayItem(label)
     g['__bloopLogFile'] = () => logFile()
+    g['__bloopPet'] = () => ({ visible: windows.isPetVisible(), showPet: store.getSettings().showPet, shortcut: petShortcutLabel })
+    g['__bloopTogglePet'] = () => pet.toggle('e2e')
+    g['__bloopNudge'] = () => engine.say('hey, back to work?', 'worried')
+    g['__bloopSecondInstance'] = () => app.emit('second-instance')
     // Same import and getLlama options as BloopRuntime: proves the prebuilt llama.cpp binary loads
     // from app.asar.unpacked without a model or a build step.
     g['__bloopProbeLlama'] = async () => {

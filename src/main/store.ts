@@ -8,7 +8,21 @@ import { computeStats } from './stats'
 export interface DeadlinesCache {
   fetchedAt: number
   url: string
+  /** Merged, de-duplicated upcoming items from every source (read by reminders, the panel and the plan). */
   items: Deadline[]
+  /** Per-source items; `items` is rebuilt from these. Absent on caches from before Brightspace login. */
+  sources?: { calendar?: Deadline[]; brightspace?: Deadline[] }
+}
+
+/** Brightspace login state (no cookies: those stay in the persist:brightspace session). */
+export interface BrightspaceState {
+  host: string
+  connected: boolean
+  expired?: boolean
+  user?: string
+  courseCount?: number
+  lastSync?: number
+  error?: string
 }
 
 interface Schema {
@@ -20,6 +34,7 @@ interface Schema {
   lastReminderFired: Record<string, number>
   studyPlan: StudyPlan | null
   deadlines: DeadlinesCache | null
+  brightspace: BrightspaceState | null
   /** AI provider choice (Settings → AI). */
   ai: AiSettings
 }
@@ -32,6 +47,7 @@ const DEFAULTS: Schema = {
   lastReminderFired: {},
   studyPlan: null,
   deadlines: null,
+  brightspace: null,
   ai: DEFAULT_AI_SETTINGS
 }
 
@@ -106,6 +122,14 @@ export function getDeadlinesCache(): DeadlinesCache | null {
 }
 export function setDeadlinesCache(c: DeadlinesCache | null): void {
   s().set('deadlines', c)
+}
+
+export function getBrightspaceState(): BrightspaceState | null {
+  const b = s().get('brightspace')
+  return b && typeof b === 'object' && typeof b.host === 'string' ? b : null
+}
+export function setBrightspaceState(b: BrightspaceState | null): void {
+  s().set('brightspace', b)
 }
 
 export function getAiSettings(): AiSettings {

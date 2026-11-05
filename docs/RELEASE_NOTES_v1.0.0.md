@@ -7,29 +7,37 @@ Everything runs on your computer, and your activity data never leaves it.
 
 - **A pet that shows how you're doing.** Bloop changes mood as you focus, drift, take breaks and finish sessions.
 - **A live focus score.** See how you're doing in a compact panel, with a 7-day chart of your history.
+- **Hide the pet when you need the screen.** Press Ctrl+Shift+B (⌘⇧B on a Mac), or use the tray, the panel or the pet's right-click menu. Bloop keeps tracking, and a nudge can pop the pet up for a few seconds.
 - **Study sessions and reminders.** Pomodoro sessions (25 minutes focus, 5 minutes break) and recurring study reminders.
-- **Brightspace deadlines.** Paste your Brightspace calendar link and see your next deadlines. Bloop reminds you before exams.
-- **An optional AI study plan.** Make a weekly plan on your own computer, or use a cloud AI you already have.
-- **Available for Windows, macOS and Linux.** A black-and-white look with smooth animation.
+- **Brightspace deadlines.** Log in to Brightspace, or paste your calendar link, and see your next deadlines. Bloop reminds you before exams.
+- **Chat with Bloop.** Ask about your studies. Chats are saved on your computer only.
+- **An optional AI study plan.** Make a weekly plan on your own computer, or use a cloud AI you already have. You can edit Bloop's instructions, and check how well a model does before you rely on it.
+- **Available for macOS, Windows and Linux.** A black-and-white look with smooth animation.
 
-## Which file to download
+## How to install
 
-| Your device | Download this file |
-|---|---|
-| Mac with Apple chip (M1, M2, M3, M4...) | `Bloop-1.0.0-mac-arm64.dmg` |
-| Mac with Intel chip | `Bloop-1.0.0-mac-x64.dmg` |
-| Windows | `Bloop-Setup-1.0.0-win-x64.exe` (installer), or `Bloop-1.0.0-win-x64-portable.exe` (no install needed) |
-| Linux | `Bloop-1.0.0-linux-x64.AppImage`, or the `.deb` package for Ubuntu and Debian |
+There are no downloadable installers yet, because the repo is private. Instead, one command fetches Bloop's source code, builds the app on your computer and installs it like any other app (in Applications on a Mac, the Start menu on Windows, or your app menu on Linux). It takes about 3 to 6 minutes the first time and needs no administrator password.
 
-Not sure which Mac you have? Choose **Apple menu → About This Mac**. If it says "Apple M1" or a later chip, use the arm64 file.
+**Before you start:** your GitHub account needs access to the repo (ask the Bloop team to invite you), and you need git and Node.js 20 or newer. The installer checks for both and tells you how to get anything missing. Keep about 2 GB of free disk space.
 
-## First launch
+**macOS and Linux** (in Terminal):
 
-Bloop isn't signed with a developer certificate yet, so your computer will ask you to confirm it the first time.
+```bash
+gh repo clone Bndrwe/StudyPet -- -b claude/practical-davinci-ckp3nc && cd StudyPet && ./scripts/install.sh
+```
 
-- **Mac:** right-click the app, choose **Open**, then click **Open** again.
-- **Windows:** when SmartScreen appears, click **More info**, then **Run anyway**.
+**Windows** (in PowerShell):
+
+```powershell
+git clone -b claude/practical-davinci-ckp3nc https://github.com/Bndrwe/StudyPet.git; cd StudyPet; powershell -ExecutionPolicy Bypass -File scripts\install.ps1
+```
+
+No GitHub CLI? Plain `git clone` works too. See [INSTALL.md](INSTALL.md) for the full steps, the permissions Bloop asks for on a Mac, and troubleshooting.
+
+To update, run the same install command again from the `StudyPet` folder. Your settings and history are kept.
+
+Because you build Bloop on your own computer, macOS and Windows don't show their "unidentified developer" warnings for it.
 
 ## About the AI model
 
-The AI study plan can use a small model. This model is a separate 532 MB download inside the app, and only if you choose it. Bloop asks before it downloads anything. You can skip it and use Ollama or a cloud option instead, or no AI at all.
+The installer also downloads the on-device Bloop model (532 MB, the stock Qwen3.5 0.8B model, checked against its checksum) while it builds. The model stays off until you choose **Use Bloop model** in Settings → AI. To skip the download, pass `--no-model` (`-NoModel` on Windows). If you're offline or the download fails, the install still finishes and Settings → AI offers the download later. You can also use Ollama or a cloud option instead, or no AI at all.

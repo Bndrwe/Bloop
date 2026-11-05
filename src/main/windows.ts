@@ -23,6 +23,10 @@ let panelWin: BrowserWindow | null = null
 let settingsWin: BrowserWindow | null = null
 let onboardingWin: BrowserWindow | null = null
 let petRestarts = 0
+/** The pet's shown / hidden state (petVisibility.ts decides; a restarted pet window honours it). */
+let petWanted = true
+/** Where the panel opens when the pet is hidden: the tray icon's bounds (null / empty = unknown). */
+let trayBounds: () => Rectangle | null = () => null
 
 function webPreferences(): BrowserWindowConstructorOptions['webPreferences'] {
   return {
@@ -118,7 +122,9 @@ export function createPetWindow(): BrowserWindow {
   } catch {
     /* not supported on this platform */
   }
-  win.once('ready-to-show', () => win.showInactive())
+  win.once('ready-to-show', () => {
+    if (petWanted && !win.isDestroyed()) win.showInactive()
+  })
   win.on('closed', () => {
     if (petWin === win) petWin = null
     stopDrag()
@@ -136,6 +142,29 @@ export function createPetWindow(): BrowserWindow {
   loadRoute(win, 'pet')
   petWin = win
   return win
+}
+
+/** Show or hide the pet window. It is never destroyed, so its renderer and state survive. */
+export function setPetVisible(visible: boolean): void {
+  petWanted = visible
+  const win = getPetWindow()
+  if (!win) return
+  if (visible) {
+    if (!win.isVisible() && !win.webContents.isLoading()) win.showInactive()
+  } else {
+    stopDrag()
+    if (win.isVisible()) win.hide()
+  }
+}
+
+export function isPetVisible(): boolean {
+  const win = getPetWindow()
+  return !!win && win.isVisible()
+}
+
+/** index.ts hands over the tray's bounds so the panel can open by the tray while the pet is hidden. */
+export function setTrayBoundsProvider(fn: () => Rectangle | null): void {
+  trayBounds = fn
 }
 
 // ------------------------------------------------------------------ dragging
@@ -190,9 +219,28 @@ export function setIgnoreMouse(ignore: boolean): void {
 
 // ------------------------------------------------------------------ panel
 
+/** With the pet hidden: by the tray icon if we know where it is, else the top-right of the work area. */
+function hiddenPetAnchor(): Rectangle {
+  let tb: Rectangle | null = null
+  try {
+    tb = trayBounds()
+  } catch {
+    tb = null
+  }
+  // Linux reports empty bounds for tray icons; a zero-size rect means "unknown".
+  if (tb && tb.width > 0 && tb.height > 0) return tb
+  const wa = screen.getPrimaryDisplay().workArea
+  // a zero-height anchor at the top-right corner: the panel opens right below it
+  return { x: wa.x + wa.width - MARGIN, y: wa.y + MARGIN - 4, width: 0, height: 0 }
+}
+
 function positionPanel(win: BrowserWindow): void {
   const pet = getPetWindow()
-  const anchor = pet ? pet.getBounds() : { ...defaultPetPosition(), width: PET_SIZE, height: PET_SIZE }
+  const anchor = !petWanted
+    ? hiddenPetAnchor()
+    : pet
+      ? pet.getBounds()
+      : { ...defaultPetPosition(), width: PET_SIZE, height: PET_SIZE }
   const wa = screen.getDisplayMatching(anchor).workArea
   // prefer below the pet, right-aligned with it; flip above if there's no room
   let x = anchor.x + anchor.width - PANEL_W
@@ -336,4 +384,20 @@ export function openOnboarding(): void {
 
 export function closeOnboarding(): void {
   if (onboardingWin && !onboardingWin.isDestroyed()) onboardingWin.close()
+}
+
+// ------------------------------------------------------------------ chat
+
+let chatWin: BrowserWindow | null = null
+
+/** Chat with Bloop (#/chat): opens the chat window, or focuses it when it is already open. */
+export function openChat(): void {
+  closePanel()
+  if (chatWin && !chatWin.isDestroyed()) return bringToFront(chatWin)
+  chatWin = framedWindow('chat', 420, 640, 'Bloop — Chat')
+  chatWin.setMinimumSize(360, 420)
+  chatWin.on('closed', () => {
+    chatWin = null
+  })
+  if (isMac) app.focus({ steal: true })
 }

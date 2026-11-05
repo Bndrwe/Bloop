@@ -155,7 +155,7 @@ export function useCountUp(
     const el = ref.current
     if (!el) return
     if (value == null) {
-      el.textContent = '—'
+      el.textContent = '–'
       return
     }
     const paint = (): void => {

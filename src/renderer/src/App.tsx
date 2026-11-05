@@ -3,14 +3,15 @@ import { PetView } from './views/PetView'
 import { Panel } from './views/Panel'
 import { SettingsView } from './views/Settings'
 import { Onboarding } from './views/Onboarding'
+import { ChatView } from './views/Chat'
 import { ShaderSmoke } from '@/components/ui/shader-smoke'
 import { useWindowAwake } from './hooks/useWindowAwake'
 import { useSettings } from './hooks/useSettings'
 import { backgroundTokens, DEFAULT_BACKGROUND_INTENSITY, DEFAULT_BACKGROUND_SPEED } from '@shared/background'
 
-export type Route = 'pet' | 'panel' | 'settings' | 'onboarding'
+export type Route = 'pet' | 'panel' | 'settings' | 'onboarding' | 'chat'
 
-const ROUTES: readonly Route[] = ['pet', 'panel', 'settings', 'onboarding']
+const ROUTES: readonly Route[] = ['pet', 'panel', 'settings', 'onboarding', 'chat']
 
 /** Accepts "#/panel", "/panel", "panel" etc. */
 export function parseRoute(raw: string): Route {
@@ -81,7 +82,7 @@ export function App(): JSX.Element {
   return (
     <>
       <Backdrop route={route} />
-      {route === 'panel' ? <Panel /> : route === 'settings' ? <SettingsView /> : <Onboarding />}
+      {route === 'panel' ? <Panel /> : route === 'settings' ? <SettingsView /> : route === 'chat' ? <ChatView /> : <Onboarding />}
     </>
   )
 }
