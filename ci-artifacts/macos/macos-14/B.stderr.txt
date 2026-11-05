@@ -1,3 +1,2 @@
-[22995:1105/010350.966683:ERROR:electron/shell/common/platform_util_mac.mm:264] Unable to set login item: The operation couldn’t be completed. Operation not permitted
-2026-11-05 01:03:51.048 Bloop Helper[23000:34437] XPC error for connection com.apple.backupd.sandbox.xpc: Connection invalid
-[22995:1105/010517.482642:ERROR:base/process/process_mac.cc:98] task_policy_set TASK_SUPPRESSION_POLICY: (os/kern) invalid argument (4)
+[23603:1105/011105.504069:ERROR:electron/shell/common/platform_util_mac.mm:264] Unable to set login item: The operation couldn’t be completed. Operation not permitted
+2026-11-05 01:11:05.563 Bloop Helper[23611:36381] XPC error for connection com.apple.backupd.sandbox.xpc: Connection invalid

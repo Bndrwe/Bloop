@@ -1,5 +1,5 @@
 [bloop] starting (platform=darwin, fast=true, fake=no)
-[bloop] trace: userData=/Users/runner/Library/Application Support/bloop exe=/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/MacOS/Bloop pid=22995
+[bloop] trace: userData=/Users/runner/Library/Application Support/bloop exe=/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/MacOS/Bloop pid=23603
 [bloop] automation permission -> granted
 [bloop] permissions: screen=granted automation=granted onboarding=false
 [bloop] session start
@@ -64,8 +64,9 @@
 [bloop] sample app="TextEdit" category=neutral score=100
 [bloop] trace raw: app="TextEdit" titleLen=8 url=- nativeUrl=no
 [bloop] sample app="TextEdit" category=neutral score=100
-[bloop] sample app="Unknown" category=neutral score=100
-[bloop] trace raw: app="Terminal" titleLen=22 url=- nativeUrl=no
+[bloop] trace raw: app="TextEdit" titleLen=8 url=- nativeUrl=no
+[bloop] sample app="TextEdit" category=neutral score=100
+[bloop] trace raw: app="Terminal" titleLen=24 url=- nativeUrl=no
 [bloop] sample app="Terminal" category=focus score=100
 [bloop] mood idle -> happy
 [bloop] trace raw: app="Terminal" titleLen=22 url=- nativeUrl=no
@@ -107,29 +108,31 @@
 [bloop] trace raw: app="Safari" titleLen=8 url=- nativeUrl=no
 [bloop] sample app="Safari" category=neutral score=100
 [bloop] mood happy -> idle
-[bloop] trace raw: app="Safari" titleLen=23 url=https://www.youtube.com/ nativeUrl=no
+[bloop] trace raw: app="Safari" titleLen=8 url=- nativeUrl=no
+[bloop] sample app="Safari" category=neutral score=100
+[bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=96
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=93
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=89
-[bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
-[bloop] sample app="Safari" domain=youtube.com category=distract score=86
 [bloop] permissions(refresh): screen=granted automation=granted onboarding=false
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
-[bloop] sample app="Safari" domain=youtube.com category=distract score=84
+[bloop] sample app="Safari" domain=youtube.com category=distract score=86
+[bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
+[bloop] sample app="Safari" domain=youtube.com category=distract score=83
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=81
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=78
 [bloop] nudge (distracted 6s)
 [bloop] mood idle -> worried
-[bloop] pet says: "hey, we were doing so well!"
+[bloop] pet says: "just a few more minutes of focus, okay?"
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=76
+[bloop] permissions(refresh): screen=granted automation=granted onboarding=false
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=74
-[bloop] permissions(refresh): screen=granted automation=granted onboarding=false
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=72
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
@@ -138,9 +141,9 @@
 [bloop] sample app="Safari" domain=youtube.com category=distract score=68
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=66
+[bloop] permissions(refresh): screen=granted automation=granted onboarding=false
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=64
-[bloop] permissions(refresh): screen=granted automation=granted onboarding=false
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=63
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
@@ -149,9 +152,9 @@
 [bloop] sample app="Safari" domain=youtube.com category=distract score=60
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=58
+[bloop] permissions(refresh): screen=granted automation=granted onboarding=false
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=57
-[bloop] permissions(refresh): screen=granted automation=granted onboarding=false
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=56
 [bloop] nudge (distracted 19s)
@@ -162,14 +165,11 @@
 [bloop] sample app="Safari" domain=youtube.com category=distract score=54
 [bloop] trace raw: app="Safari" titleLen=7 url=https://www.youtube.com/ nativeUrl=no
 [bloop] sample app="Safari" domain=youtube.com category=distract score=53
-[bloop] trace raw: app="Safari" titleLen=8 url=- nativeUrl=no
-[bloop] sample app="Safari" category=neutral score=53
-[bloop] mood worried -> idle
 [bloop] permissions(refresh): screen=granted automation=granted onboarding=false
-[bloop] trace raw: app="Safari" titleLen=30 url=https://en.wikipedia.org/wiki/Pomodoro_Technique nativeUrl=no
+[bloop] trace raw: app="Safari" titleLen=8 url=https://en.wikipedia.org/wiki/Pomodoro_Technique nativeUrl=no
 [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=54
-[bloop] mood idle -> happy
-[bloop] pet says: "woohoo, focus mode on!"
+[bloop] mood worried -> happy
+[bloop] pet says: "yay, welcome back!"
 [bloop] trace raw: app="Safari" titleLen=30 url=https://en.wikipedia.org/wiki/Pomodoro_Technique nativeUrl=no
 [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=55
 [bloop] trace raw: app="Safari" titleLen=30 url=https://en.wikipedia.org/wiki/Pomodoro_Technique nativeUrl=no
@@ -205,6 +205,8 @@
 [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=65
 [bloop] trace raw: app="Safari" titleLen=30 url=https://en.wikipedia.org/wiki/Pomodoro_Technique nativeUrl=no
 [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=66
-[bloop] session stop: 85s, score=66, pomodoros=0, completed=false
+[bloop] trace raw: app="Safari" titleLen=30 url=https://en.wikipedia.org/wiki/Pomodoro_Technique nativeUrl=no
+[bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=66
+[bloop] session stop: 86s, score=66, pomodoros=0, completed=false
 [bloop] mood happy -> idle
 [bloop] pet says: "session saved — every bit counts!"
