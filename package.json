@@ -1,10 +1,11 @@
 {
   "name": "bloop",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "A cute desktop study companion that tracks your focus and nudges you back on task.",
   "main": "./out/main/index.js",
   "type": "module",
   "author": "Bloop team",
+  "homepage": "https://github.com/Bndrwe/StudyPet",
   "license": "MIT",
   "private": true,
   "scripts": {
@@ -15,8 +16,9 @@
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "test": "vitest run",
     "build": "npm run typecheck && node scripts/bundle-model.mjs --check && electron-vite build && electron-builder --mac --dir",
-    "build:mac": "npm run typecheck && node scripts/bundle-model.mjs --check && electron-vite build && electron-builder --mac",
-    "build:win": "npm run typecheck && node scripts/bundle-model.mjs --check && electron-vite build && electron-builder --win",
+    "build:mac": "npm run typecheck && node scripts/bundle-model.mjs --check && electron-vite build && electron-builder --mac --publish never",
+    "build:win": "npm run typecheck && node scripts/bundle-model.mjs --check && electron-vite build && electron-builder --win --x64 --publish never",
+    "build:linux": "npm run typecheck && node scripts/bundle-model.mjs --check && electron-vite build && electron-builder --linux --x64 --publish never",
     "build:vite": "electron-vite build",
     "perms": "bash scripts/mac-permissions.sh",
     "model:train": "bash ml/run_mac.sh",
@@ -33,7 +35,9 @@
     },
     "files": [
       "out/**/*",
-      "package.json"
+      "package.json",
+      "!node_modules/@node-llama-cpp/*-cuda/**",
+      "!node_modules/@node-llama-cpp/*-cuda-ext/**"
     ],
     "asarUnpack": [
       "node_modules/get-windows/**",
@@ -43,13 +47,15 @@
     "mac": {
       "category": "public.app-category.education",
       "target": [
-        "dmg"
+        "dmg",
+        "zip"
       ],
       "identity": "-",
       "extendInfo": {
         "LSUIElement": true,
         "NSAppleEventsUsageDescription": "Bloop reads the URL of your front browser tab to tell study sites from distracting ones. Nothing leaves your Mac."
-      }
+      },
+      "artifactName": "${productName}-${version}-mac-${arch}.${ext}"
     },
     "extraResources": [
       {
@@ -62,28 +68,54 @@
     ],
     "win": {
       "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
-        },
-        {
-          "target": "portable",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
-        }
+        "nsis",
+        "portable"
       ],
-      "icon": "build/icon.png",
-      "artifactName": "${productName}-${version}-${arch}.${ext}"
+      "icon": "build/icon.png"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "perMachine": false
+      "perMachine": false,
+      "artifactName": "${productName}-Setup-${version}-win-${arch}.${ext}",
+      "createStartMenuShortcut": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Bloop"
+    },
+    "dmg": {
+      "artifactName": "${productName}-${version}-mac-${arch}.${ext}"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-win-${arch}-portable.${ext}"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Education",
+      "maintainer": "Bloop team <bloop@users.noreply.github.com>",
+      "icon": "build/icon.png",
+      "synopsis": "A cute desktop study companion",
+      "artifactName": "${productName}-${version}-linux-${arch}.${ext}"
+    },
+    "appImage": {
+      "artifactName": "${productName}-${version}-linux-${arch}.${ext}"
+    },
+    "deb": {
+      "artifactName": "${name}_${version}_${arch}.${ext}",
+      "depends": [
+        "libgtk-3-0",
+        "libnotify4",
+        "libnss3",
+        "libxss1",
+        "libxtst6",
+        "xdg-utils",
+        "libatspi2.0-0",
+        "libuuid1",
+        "libsecret-1-0",
+        "x11-utils"
+      ]
     }
   },
   "devDependencies": {

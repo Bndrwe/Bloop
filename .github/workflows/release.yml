@@ -1,0 +1,296 @@
+name: Release
+
+# Builds real installers for every platform, smoke-tests each one on its own runner,
+# and publishes them as a GitHub Release. It never commits to the branch.
+#   - push a tag `v*`           -> release for that tag
+#   - Run workflow (dispatch)   -> release `v<package.json version>`
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: build (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Each runner builds its own native arch: get-windows and node-llama-cpp ship
+          # per-platform prebuilt binaries, so cross-building is unreliable.
+          - name: mac-arm64
+            os: macos-14
+            targets: --mac dmg zip --arm64
+          - name: mac-x64
+            os: macos-15-intel
+            targets: --mac dmg zip --x64
+          - name: win-x64
+            os: windows-latest
+            targets: --win nsis portable --x64
+          - name: linux-x64
+            os: ubuntu-latest
+            targets: --linux AppImage deb --x64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      # The prebuilt @node-llama-cpp/* packages cover runtime; never download or compile llama.cpp here.
+      NODE_LLAMA_CPP_SKIP_DOWNLOAD: 'true'
+      SMOKE: smoke-out
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Model check
+        run: node scripts/bundle-model.mjs --check
+
+      - name: Bundle (electron-vite)
+        run: npx electron-vite build
+
+      - name: Package (electron-builder ${{ matrix.targets }})
+        run: |
+          npx electron-builder ${{ matrix.targets }} --publish never 2>&1 | tee build-log.txt
+          test "${PIPESTATUS[0]}" -eq 0
+          ls -la dist
+
+      - name: Collect installers
+        run: |
+          mkdir -p release
+          V=$(node -p "require('./package.json').version")
+          case "${{ matrix.name }}" in
+            mac-*)   cp dist/Bloop-$V-${{ matrix.name }}.dmg dist/Bloop-$V-${{ matrix.name }}.zip release/ ;;
+            win-x64) cp dist/Bloop-Setup-$V-win-x64.exe dist/Bloop-$V-win-x64-portable.exe release/ ;;
+            linux-x64) cp dist/Bloop-$V-linux-x86_64.AppImage dist/bloop_${V}_amd64.deb release/ ;;
+          esac
+          ls -la release
+
+      # ------------------------------------------------------------ smoke tests
+      - name: Smoke test (macOS dmg)
+        if: runner.os == 'macOS'
+        run: |
+          set -u
+          mkdir -p "$SMOKE"
+          DMG=$(ls release/*.dmg)
+          MNT=$(mktemp -d)
+          for i in 1 2 3 4 5; do
+            hdiutil attach -nobrowse -readonly -mountpoint "$MNT" "$DMG" && break
+            echo "hdiutil attach failed (try $i), retrying"; sleep $((i * 3))
+          done
+          test -d "$MNT/Bloop.app"
+          APPDIR=$(mktemp -d)
+          cp -R "$MNT/Bloop.app" "$APPDIR/"
+          for i in 1 2 3 4 5; do hdiutil detach "$MNT" && break; sleep $((i * 2)); hdiutil detach -force "$MNT" && break; done
+          APP="$APPDIR/Bloop.app"
+          codesign -dv "$APP" 2>&1 | tee "$SMOKE/codesign.txt"
+          file "$APP/Contents/MacOS/Bloop" | tee -a "$SMOKE/codesign.txt"
+          LOG="$SMOKE/mac-${{ matrix.name }}.stdout.txt"
+          BLOOP_FAST=1 BLOOP_AUTOSTART=1 "$APP/Contents/MacOS/Bloop" >"$LOG" 2>"$SMOKE/mac-${{ matrix.name }}.stderr.txt" &
+          PID=$!
+          sleep 15
+          if ! kill -0 "$PID" 2>/dev/null; then
+            wait "$PID"; echo "Bloop exited early with code $?"; cat "$LOG"; tail -50 "$SMOKE"/*.stderr.txt; exit 1
+          fi
+          kill -TERM "$PID"
+          for _ in $(seq 1 15); do kill -0 "$PID" 2>/dev/null || break; sleep 1; done
+          kill -9 "$PID" 2>/dev/null || true
+          pkill -9 -x Bloop 2>/dev/null || true
+          echo "---- stdout"; cat "$LOG"
+          grep -q '\[bloop\] starting' "$LOG"
+          grep -q '\[bloop\] permissions:' "$LOG"
+          if grep -Eq 'Uncaught|A JavaScript error occurred' "$LOG" "$SMOKE"/*.stderr.txt; then echo "JS error in app output"; exit 1; fi
+          echo "macOS smoke test passed"
+
+      - name: Smoke test (Windows NSIS install)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force $env:SMOKE | Out-Null
+          $setup = (Get-ChildItem release\Bloop-Setup-*.exe).FullName
+          $dir = Join-Path $env:RUNNER_TEMP 'BloopInstall'
+          $p = Start-Process -FilePath $setup -ArgumentList '/S', "/D=$dir" -Wait -PassThru
+          "installer exit code: $($p.ExitCode)"
+          if ($p.ExitCode -ne 0) { throw "installer failed" }
+          $exe = Join-Path $dir 'Bloop.exe'
+          if (-not (Test-Path $exe)) { Get-ChildItem -Recurse $dir | Select-Object -First 40; throw "Bloop.exe not installed at $exe" }
+          Get-ChildItem $dir | Format-Table Name, Length
+          $env:BLOOP_FAST = '1'; $env:BLOOP_AUTOSTART = '1'; $env:ELECTRON_ENABLE_LOGGING = '1'
+          $out = Join-Path $env:SMOKE 'win.stdout.txt'; $err = Join-Path $env:SMOKE 'win.stderr.txt'
+          $app = Start-Process -FilePath $exe -RedirectStandardOutput $out -RedirectStandardError $err -PassThru
+          Start-Sleep -Seconds 15
+          $alive = -not $app.HasExited
+          "alive after 15s: $alive"
+          if (-not $alive) { "exit code: $($app.ExitCode)"; Get-Content $out, $err -ErrorAction SilentlyContinue; throw "Bloop exited early" }
+          Get-Process Bloop -ErrorAction SilentlyContinue | Format-Table Id, ProcessName, WorkingSet64
+          Stop-Process -Id $app.Id
+          Start-Sleep -Seconds 3
+          Get-Process Bloop -ErrorAction SilentlyContinue | Stop-Process -Force
+          '---- stdout'; Get-Content $out -ErrorAction SilentlyContinue
+          '---- stderr (tail)'; Get-Content $err -Tail 40 -ErrorAction SilentlyContinue
+          $log = (Get-Content $out -Raw -ErrorAction SilentlyContinue) + (Get-Content $err -Raw -ErrorAction SilentlyContinue)
+          if ($log -match '\[bloop\] starting') { "found [bloop] startup lines" }
+          else { "WARNING: [bloop] lines were not captured (Windows GUI app stdout); accepting the alive check" }
+          if ($log -match 'Uncaught|A JavaScript error occurred') { throw "error in app output" }
+          # Uninstall again so the runner stays clean and the uninstaller is exercised.
+          $un = Get-ChildItem $dir -Filter 'Uninstall*.exe' | Select-Object -First 1
+          if ($un) { Start-Process -FilePath $un.FullName -ArgumentList '/S' -Wait; "uninstaller ran" }
+          "Windows smoke test passed"
+
+      - name: Smoke test (Windows portable starts)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $exe = (Get-ChildItem release\Bloop-*-portable.exe).FullName
+          $env:BLOOP_FAST = '1'; $env:BLOOP_AUTOSTART = '1'
+          $p = Start-Process -FilePath $exe -PassThru
+          Start-Sleep -Seconds 20
+          $procs = Get-Process Bloop -ErrorAction SilentlyContinue
+          $procs | Format-Table Id, ProcessName, Path
+          if (-not $procs) { throw "portable exe did not start Bloop" }
+          $procs | Stop-Process -Force
+          if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue }
+          "portable smoke test passed"
+
+      - name: Smoke test (Linux AppImage + deb)
+        if: runner.os == 'Linux'
+        run: |
+          set -u
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb x11-utils >/dev/null
+          mkdir -p "$SMOKE"
+          dpkg-deb --info release/*.deb | tee "$SMOKE/deb-info.txt"
+          dpkg-deb --contents release/*.deb | grep -E 'opt/Bloop/(bloop|chrome-sandbox)$|app.asar$' | tee -a "$SMOKE/deb-info.txt"
+          AI=$(ls release/*.AppImage); chmod +x "$AI"
+          LOG="$SMOKE/linux.stdout.txt"
+          # GitHub's Ubuntu 24.04 restricts unprivileged user namespaces, so Chromium's sandbox
+          # can't start there without SUID; --no-sandbox is the documented workaround for AppImages.
+          BLOOP_FAST=1 BLOOP_AUTOSTART=1 xvfb-run -a "$AI" --appimage-extract-and-run --no-sandbox >"$LOG" 2>"$SMOKE/linux.stderr.txt" &
+          PID=$!
+          sleep 15
+          if ! kill -0 "$PID" 2>/dev/null; then
+            wait "$PID"; echo "exited early: $?"; cat "$LOG"; tail -60 "$SMOKE/linux.stderr.txt"; exit 1
+          fi
+          pkill -TERM -f 'squashfs-root/bloop' || true
+          sleep 3
+          pkill -9 -f 'squashfs-root/bloop' || true
+          kill "$PID" 2>/dev/null || true
+          echo "---- stdout"; cat "$LOG"
+          echo "---- stderr (tail)"; tail -30 "$SMOKE/linux.stderr.txt"
+          grep -q '\[bloop\] starting' "$LOG"
+          grep -q '\[bloop\] permissions:' "$LOG"
+          if grep -Eq 'Uncaught|A JavaScript error occurred' "$LOG" "$SMOKE/linux.stderr.txt"; then echo "JS error in app output"; exit 1; fi
+          echo "Linux smoke test passed"
+
+      - name: Upload smoke logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-logs-${{ matrix.name }}
+          path: |
+            smoke-out
+            build-log.txt
+          if-no-files-found: warn
+
+      - name: Upload installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: installers-${{ matrix.name }}
+          path: release/*
+          if-no-files-found: error
+          compression-level: 0
+
+  release:
+    name: publish release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve tag
+        id: tag
+        run: |
+          V=$(node -p "require('./package.json').version")
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then TAG="${GITHUB_REF_NAME}"; else TAG="v$V"; fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "Releasing $TAG (package.json version $V)"
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: installers-*
+          path: release
+          merge-multiple: true
+
+      - name: Checksums
+        run: |
+          cd release
+          sha256sum * | tee SHA256SUMS.txt
+          ls -la
+
+      - name: Release notes
+        env:
+          V: ${{ steps.tag.outputs.version }}
+        run: |
+          cat > notes.md <<EOF
+          ## Download Bloop $V
+
+          Pick the file for your computer:
+
+          | Your device | File |
+          |---|---|
+          | Mac with Apple Silicon (M1/M2/M3/M4, 2020 and newer) | \`Bloop-$V-mac-arm64.dmg\` |
+          | Mac with an Intel processor | \`Bloop-$V-mac-x64.dmg\` |
+          | Windows 10/11 (64-bit), installer (recommended) | \`Bloop-Setup-$V-win-x64.exe\` |
+          | Windows 10/11 (64-bit), portable, no install | \`Bloop-$V-win-x64-portable.exe\` |
+          | Linux (any x86_64 distro) | \`Bloop-$V-linux-x86_64.AppImage\` |
+          | Debian / Ubuntu | \`bloop_${V}_amd64.deb\` |
+
+          Not sure which Mac you have? Apple menu → **About This Mac**: "Chip: Apple M…" means Apple Silicon, "Processor: Intel…" means Intel.
+          The \`.zip\` files are the same Mac apps without the disk image. Windows on ARM can run the x64 build through emulation.
+
+          ### First launch (the builds are not code-signed)
+
+          - **macOS**: open the \`.dmg\` and drag Bloop to Applications. The first time, **right-click Bloop → Open → Open**. If macOS says the app "is damaged", run \`xattr -cr /Applications/Bloop.app\` in Terminal, then open it again. Then grant Screen Recording when Bloop asks.
+          - **Windows**: SmartScreen shows "Windows protected your PC". Click **More info → Run anyway**.
+          - **Linux**: \`chmod +x Bloop-$V-linux-x86_64.AppImage\` and run it. If it exits straight away (Ubuntu 24.04+ sandbox rules), run it with \`--no-sandbox\`. Active-window tracking needs \`xprop\` (package \`x11-utils\`) and works on X11 sessions. Or install the \`.deb\`: \`sudo apt install ./bloop_${V}_amd64.deb\`.
+
+          Verify a download with \`SHA256SUMS.txt\` (\`shasum -a 256 <file>\` on macOS, \`Get-FileHash <file>\` on Windows).
+          EOF
+          sed -i 's/^          //' notes.md
+          cat notes.md
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2.3.2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: Bloop ${{ steps.tag.outputs.version }}
+          target_commitish: ${{ github.sha }}
+          body_path: notes.md
+          draft: false
+          prerelease: false
+          make_latest: 'true'
+          fail_on_unmatched_files: true
+          files: release/*

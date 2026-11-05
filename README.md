@@ -2,6 +2,31 @@
 
 _Your little study pet._
 
+## Download
+
+**Get the app, not the source:** grab the installer for your computer from the
+**[latest release](https://github.com/Bndrwe/StudyPet/releases/latest)** (Releases page → Assets).
+No Node.js, no terminal, no `npm run dev`.
+
+| Your device | Download this file |
+|---|---|
+| Mac with Apple Silicon (M1/M2/M3/M4) | `Bloop-<version>-mac-arm64.dmg` |
+| Mac with an Intel processor | `Bloop-<version>-mac-x64.dmg` |
+| Windows 10/11, 64-bit (recommended) | `Bloop-Setup-<version>-win-x64.exe` (installer) |
+| Windows 10/11, no install (USB stick, locked-down PC) | `Bloop-<version>-win-x64-portable.exe` |
+| Linux, any x86_64 distro | `Bloop-<version>-linux-x86_64.AppImage` |
+| Debian / Ubuntu | `bloop_<version>_amd64.deb` |
+
+Which Mac do I have? Apple menu → **About This Mac**: "Chip: Apple M…" is Apple Silicon, "Processor: Intel…" is Intel. The `.zip` files in the release are the same Mac apps without the disk image. Windows on ARM PCs run the x64 build through emulation. `SHA256SUMS.txt` lists checksums for every file.
+
+**First launch.** The builds are not code-signed yet, so your OS warns you once:
+
+- **macOS**: open the `.dmg`, drag **Bloop** into **Applications**, then **right-click Bloop → Open → Open**. If macOS says the app "is damaged and can't be opened", run `xattr -cr /Applications/Bloop.app` in Terminal and open it again. Bloop then asks for Screen Recording (see [Permissions](#permissions-macos-only)).
+- **Windows**: SmartScreen says "Windows protected your PC". Click **More info → Run anyway**.
+- **Linux**: `chmod +x Bloop-*.AppImage` and run it (`sudo apt install ./bloop_*_amd64.deb` for the `.deb`). If the AppImage exits immediately on Ubuntu 24.04 or newer, start it with `--no-sandbox`. Focus tracking reads the active window with `xprop`/`xwininfo` (package `x11-utils`) and works on X11 sessions; on Wayland it can't see other apps' windows.
+
+**Private repo note.** This repository is private, so the Releases page and downloads only work for people who have access to it on GitHub. To share Bloop publicly, make the repo public, or publish the release files from a separate public "releases" repo.
+
 A small, cute desktop pet that lives in the top-right corner of your screen, watches whether you're focused, keeps a live **focus score**, and gently nudges you when you drift off task.
 
 Built as the MVP for a university AI class project. Everything runs locally: your activity data never leaves your machine. The one optional exception is the AI study plan: with the Bloop model or Ollama it also stays on your computer, and with a cloud provider it sends your upcoming deadlines and focus stats to that provider, only when you click the button.
@@ -35,43 +60,7 @@ Built as the MVP for a university AI class project. Everything runs locally: you
 - **Tray icon** with Start session / Pause / Settings / Quit. On macOS it sits in the menu bar; on Windows it sits in the system tray near the clock.
 - **Stretch features**: Brightspace deadlines via iCal, and an AI weekly study plan generated on-device (the Bloop model or Ollama) or by a cloud model.
 
-## Setup
-
-Requirements: macOS 12+ or Windows 10/11, Node.js 20+.
-
-```bash
-git clone https://github.com/Bndrwe/StudyPet.git
-cd StudyPet
-npm install
-npm run dev      # launch in development mode
-```
-
-Other scripts:
-
-| Command | What it does |
-|---|---|
-| `npm run dev` | Run the app with hot reload |
-| `npm test` | Unit tests (classifier + focus score) |
-| `npm run typecheck` | Strict TypeScript check for main and renderer |
-| `npm run build` | Typecheck, bundle, and produce an unsigned `Bloop.app` in `dist/mac*/` (macOS) |
-| `npm run build:mac` | Same, but also packages a `.dmg` (macOS) |
-| `npm run build:win` | Build an NSIS installer and a portable `.exe` into `dist/` (Windows) |
-
-### macOS
-
-Because the build is unsigned, macOS Gatekeeper will complain the first time. Right-click the app, choose **Open**, then confirm.
-
-### Windows
-
-`npm run build:win` writes an NSIS installer and a portable `.exe` to `dist/`. Run it on a Windows machine (after `npm install` there), because `get-windows` downloads its Windows native binary at install time, so a cross-build from macOS or Linux would ship without it. The build is unsigned, so SmartScreen will warn you the first time. Click **More info → Run anyway**.
-
-Windows needs no special permissions. Active window detection works out of the box.
-
-Browser tab URLs can't be read with AppleScript on Windows, so Bloop infers the site from the browser window title instead. For example, `YouTube — Google Chrome` is treated as youtube.com. This is a little less precise than on macOS, but the same site lists apply.
-
-On Windows the pet sits at the top-right of the work area, above the taskbar, and the tray icon appears near the clock.
-
-### AI study plan
+## AI study plan
 
 The panel's **AI study plan** card writes a week of study blocks from your deadlines and focus history. Pick where the AI runs in **Settings → AI**:
 
@@ -83,7 +72,7 @@ The panel card says which one it used (for example "via Bloop model (on-device)"
 
 ![Settings → AI, Use Local](docs/screenshots/settings-ai-local.png)
 
-#### Use Local: the Bloop model
+### Use Local: the Bloop model
 
 The Bloop model is [Qwen3.5-0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B) (Apache-2.0), packaged as a Q4_K_M GGUF of **532 MB**. Bloop runs it inside the app with [node-llama-cpp](https://node-llama-cpp.withcat.ai), so the prompt and the plan never leave your computer, it works offline, and you don't need Ollama. By default it's the stock model. A fine-tuned build from the kit in `ml/` can replace it (see below).
 
@@ -121,7 +110,7 @@ The `.gguf` and `bloop-model.json` are gitignored, because GitHub rejects files 
 
 **Packaging note.** `node-llama-cpp` and its prebuilt binaries (`@node-llama-cpp/*`) are listed in `build.asarUnpack` so the native libraries load from `app.asar.unpacked`. A packaged app never tries to compile llama.cpp: it uses the prebuilt binary for the platform (Metal on Apple silicon, CPU or Vulkan/CUDA elsewhere).
 
-#### Use Local: Ollama models
+### Use Local: Ollama models
 
 If you already use [Ollama](https://ollama.com/download), Bloop can use its models:
 
@@ -131,11 +120,11 @@ If you already use [Ollama](https://ollama.com/download), Bloop can use its mode
 
 If Ollama is running without `qwen3.5:0.8b`, Bloop offers **Pull qwen3.5:0.8b with Ollama?** and pulls it only after you confirm. If Ollama is installed but closed, Bloop says "Ollama is installed but not running: open Ollama". A different Ollama address can be set under **Advanced**. Requests use `/api/chat` with the plan's JSON schema as `format` and `think: false`, so Qwen3.5 answers directly instead of reasoning at length first. If the server rejects the field, the request is retried once without it.
 
-#### `.env` fallback
+### `.env` fallback
 
 `ANTHROPIC_API_KEY` in a `.env` file still works (copy `.env.example` to `.env`). It is read only in the main process, never sent to the UI, and used by the Anthropic API option when no key has been saved in Settings.
 
-#### Cloud AI
+### Cloud AI
 
 Cloud AI lets the study plan run on a model you already pay for. Open the AI settings, choose **Cloud**, and pick a row. Bloop tries local options first and then the cloud options in this order: Claude CLI, Codex CLI, Gemini CLI, Anthropic API, OpenRouter.
 
@@ -155,7 +144,7 @@ The prompt goes over stdin (Gemini uses an argument for short prompts), tools ar
 
 **Privacy.** When a cloud option is active, the plan prompt is sent to that vendor (through the CLI you signed in to, or the API). It contains your upcoming deadline titles and dates, your daily focus totals and scores for the last 7 days, and your pomodoro and break lengths. It never contains app names, site names, window titles or URLs. Nothing is sent until you click **Generate plan**.
 
-### Optional: Brightspace deadlines
+## Optional: Brightspace deadlines
 
 In Brightspace open **Calendar → Subscribe** and copy the iCal URL. Paste it into **Settings → Brightspace calendar**. The panel then lists your next 5 deadlines, and the pet reminds you 3 days and 1 day before each exam.
 
@@ -233,6 +222,53 @@ The pet is black-and-white line art: a white body with a crisp black ink outline
 - **Components**: Tailwind CSS v4 (utilities and theme only, no preflight) with a shadcn-style layout: `@/` points at `src/renderer/src`, `cn()` lives in `@/lib/utils`, and components live in `src/renderer/src/components/ui`. Add more with `npx shadcn add <name>`. Tailwind only scans `components/`; the views keep their hand-written, namespaced CSS.
 - **Typography**: Geist, Geist Mono and Instrument Serif. The fonts are bundled locally through `@fontsource`, so the app makes no network font requests.
 - **Animation**: all motion runs on [anime.js](https://animejs.com) v4: the pet's mood choreography, the speech-bubble pop-in, the score ring and stat count-ups, chart bars growing in, staggered entrances for panels and settings chips, toasts, and the loading pulse. CSS transitions are only used for hover and focus feedback. With *reduce motion* turned on, everything settles into still poses or short fades.
+
+## Develop (for developers only)
+
+You only need this to work on Bloop's code. To use the app, see [Download](#download).
+
+Requirements: macOS 12+, Windows 10/11 or Linux (x86_64), Node.js 20+.
+
+```bash
+git clone https://github.com/Bndrwe/StudyPet.git
+cd StudyPet
+npm install
+npm run dev      # launch in development mode
+```
+
+Other scripts:
+
+| Command | What it does |
+|---|---|
+| `npm run dev` | Run the app with hot reload |
+| `npm test` | Unit tests (classifier + focus score) |
+| `npm run typecheck` | Strict TypeScript check for main and renderer |
+| `npm run build` | Typecheck, bundle, and produce an unsigned `Bloop.app` in `dist/mac*/` (macOS) |
+| `npm run build:mac` | Same, but packages a `.dmg` and `.zip` for this Mac's architecture (macOS) |
+| `npm run build:win` | Build an NSIS installer and a portable `.exe` into `dist/` (Windows, x64) |
+| `npm run build:linux` | Build an AppImage and a `.deb` into `dist/` (Linux, x64) |
+
+### Building on macOS
+
+Because the build is unsigned, macOS Gatekeeper will complain the first time. Right-click the app, choose **Open**, then confirm.
+
+### Building on Windows
+
+`npm run build:win` writes an NSIS installer and a portable `.exe` to `dist/`. Run it on a Windows machine (after `npm install` there), because `get-windows` downloads its Windows native binary at install time, so a cross-build from macOS or Linux would ship without it. The build is unsigned, so SmartScreen will warn you the first time. Click **More info → Run anyway**.
+
+Windows needs no special permissions. Active window detection works out of the box.
+
+Browser tab URLs can't be read with AppleScript on Windows, so Bloop infers the site from the browser window title instead. For example, `YouTube — Google Chrome` is treated as youtube.com. This is a little less precise than on macOS, but the same site lists apply.
+
+On Windows the pet sits at the top-right of the work area, above the taskbar, and the tray icon appears near the clock.
+
+### Building on Linux
+
+`npm run build:linux` writes `Bloop-<version>-linux-x86_64.AppImage` and `bloop_<version>_amd64.deb` to `dist/`. At runtime, active-window detection on Linux shells out to `xprop` and `xwininfo` (`x11-utils`; the `.deb` depends on it) and only works on X11.
+
+### Releases
+
+`.github/workflows/release.yml` builds every installer on its own native runner (macOS arm64, macOS Intel, Windows x64, Linux x64), launches each built app as a smoke test, and publishes them with `SHA256SUMS.txt` as a GitHub Release. Run it from the Actions tab (**Release → Run workflow**, which releases `v<package.json version>`) or push a tag like `v1.0.1`. Bump `version` in `package.json` first.
 
 ## Project structure
 

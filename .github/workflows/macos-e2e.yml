@@ -7,6 +7,9 @@ on:
     paths-ignore:
       - 'docs/**'
       - 'ci-artifacts/**'
+      # Installers are built by release.yml (tag push / manual run); it never commits here.
+      - '.github/workflows/release.yml'
+      - 'README.md'
 
 permissions:
   contents: write
