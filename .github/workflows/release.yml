@@ -120,7 +120,7 @@ jobs:
           echo "---- stdout"; cat "$LOG"
           grep -q '\[bloop\] starting' "$LOG"
           grep -q '\[bloop\] permissions:' "$LOG"
-          if grep -Eq 'Uncaught|A JavaScript error occurred' "$LOG" "$SMOKE"/*.stderr.txt; then echo "JS error in app output"; exit 1; fi
+          if grep -Eq 'Uncaught|A JavaScript error occurred|failed to load file|ERR_FILE_NOT_FOUND' "$LOG" "$SMOKE"/*.stderr.txt; then echo "JS error in app output"; exit 1; fi
           echo "macOS smoke test passed"
 
       - name: Smoke test (Windows NSIS install)
@@ -153,7 +153,7 @@ jobs:
           $log = (Get-Content $out -Raw -ErrorAction SilentlyContinue) + (Get-Content $err -Raw -ErrorAction SilentlyContinue)
           if ($log -match '\[bloop\] starting') { "found [bloop] startup lines" }
           else { "WARNING: [bloop] lines were not captured (Windows GUI app stdout); accepting the alive check" }
-          if ($log -match 'Uncaught|A JavaScript error occurred') { throw "error in app output" }
+          if ($log -match 'Uncaught|A JavaScript error occurred|failed to load file|ERR_FILE_NOT_FOUND') { throw "error in app output" }
           # Uninstall again so the runner stays clean and the uninstaller is exercised.
           $un = Get-ChildItem $dir -Filter 'Uninstall*.exe' | Select-Object -First 1
           if ($un) { Start-Process -FilePath $un.FullName -ArgumentList '/S' -Wait; "uninstaller ran" }
@@ -187,9 +187,15 @@ jobs:
           LOG="$SMOKE/linux.stdout.txt"
           # GitHub's Ubuntu 24.04 restricts unprivileged user namespaces, so Chromium's sandbox
           # can't start there without SUID; --no-sandbox is the documented workaround for AppImages.
-          BLOOP_FAST=1 BLOOP_AUTOSTART=1 xvfb-run -a "$AI" --appimage-extract-and-run --no-sandbox >"$LOG" 2>"$SMOKE/linux.stderr.txt" &
+          Xvfb :99 -screen 0 1600x1000x24 >/dev/null 2>&1 &
+          export DISPLAY=:99
+          sleep 2
+          BLOOP_FAST=1 BLOOP_AUTOSTART=1 "$AI" --appimage-extract-and-run --no-sandbox >"$LOG" 2>"$SMOKE/linux.stderr.txt" &
           PID=$!
           sleep 15
+          # Window association: WM_CLASS should match StartupWMClass in the .desktop file.
+          for w in $(xwininfo -root -children | awk '/[Bb]loop/ {print $1}'); do xprop -id "$w" WM_CLASS WM_NAME; done | tee "$SMOKE/linux-wm-class.txt" || true
+          dpkg-deb --fsys-tarfile release/*.deb | tar -xO ./usr/share/applications/bloop.desktop | tee -a "$SMOKE/linux-wm-class.txt"
           if ! kill -0 "$PID" 2>/dev/null; then
             wait "$PID"; echo "exited early: $?"; cat "$LOG"; tail -60 "$SMOKE/linux.stderr.txt"; exit 1
           fi
@@ -201,7 +207,7 @@ jobs:
           echo "---- stderr (tail)"; tail -30 "$SMOKE/linux.stderr.txt"
           grep -q '\[bloop\] starting' "$LOG"
           grep -q '\[bloop\] permissions:' "$LOG"
-          if grep -Eq 'Uncaught|A JavaScript error occurred' "$LOG" "$SMOKE/linux.stderr.txt"; then echo "JS error in app output"; exit 1; fi
+          if grep -Eq 'Uncaught|A JavaScript error occurred|failed to load file|ERR_FILE_NOT_FOUND' "$LOG" "$SMOKE/linux.stderr.txt"; then echo "JS error in app output"; exit 1; fi
           echo "Linux smoke test passed"
 
       - name: Upload smoke logs

@@ -6,6 +6,7 @@
   "type": "module",
   "author": "Bloop team",
   "homepage": "https://github.com/Bndrwe/StudyPet",
+  "desktopName": "bloop.desktop",
   "license": "MIT",
   "private": true,
   "scripts": {
@@ -36,6 +37,8 @@
     "files": [
       "out/**/*",
       "package.json",
+      "!**/.env*",
+      "!**/*.{pem,p12,pfx,key}",
       "!node_modules/@node-llama-cpp/*-cuda/**",
       "!node_modules/@node-llama-cpp/*-cuda-ext/**"
     ],
@@ -93,11 +96,19 @@
         "AppImage",
         "deb"
       ],
-      "category": "Education",
+      "executableName": "bloop",
+      "category": "Education;Utility",
       "maintainer": "Bloop team <bloop@users.noreply.github.com>",
-      "icon": "build/icon.png",
-      "synopsis": "A cute desktop study companion",
-      "artifactName": "${productName}-${version}-linux-${arch}.${ext}"
+      "icon": "build/icons",
+      "synopsis": "Your little study pet",
+      "description": "A cute desktop study companion that tracks your focus and nudges you back on task.",
+      "artifactName": "${productName}-${version}-linux-${arch}.${ext}",
+      "desktop": {
+        "entry": {
+          "Keywords": "study;focus;pomodoro;timer;",
+          "StartupNotify": "false"
+        }
+      }
     },
     "appImage": {
       "artifactName": "${productName}-${version}-linux-${arch}.${ext}"
@@ -115,7 +126,21 @@
         "libuuid1",
         "libsecret-1-0",
         "x11-utils"
+      ],
+      "recommends": [
+        "libayatana-appindicator3-1 | libappindicator3-1",
+        "gnome-shell-extension-appindicator"
       ]
+    },
+    "electronFuses": {
+      "runAsNode": false,
+      "enableCookieEncryption": true,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "enableEmbeddedAsarIntegrityValidation": true,
+      "onlyLoadAppFromAsar": true,
+      "loadBrowserProcessSpecificV8Snapshot": false,
+      "grantFileProtocolExtraPrivileges": true
     }
   },
   "devDependencies": {
