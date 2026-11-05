@@ -1,9 +1,9 @@
-# Bloop macOS e2e (macOS 14.8.9, arm64, runner GitHub Actions 1000001878)
+# Bloop macOS e2e (macOS 14.8.9, arm64, runner GitHub Actions 1000001887)
 
 App: `/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app` (bundle id edu.bloop.app)
 
 ## A: launch without permissions
-  launched A via open (LaunchServices), pid(s): 21065 
+  launched A via open (LaunchServices), pid(s): 29126 
   `[bloop] permissions: screen=denied automation=unknown onboarding=true`
   last refresh: `[bloop] permissions(refresh): screen=denied automation=unknown onboarding=true`
 - PASS: A: app started and logged its permission state
@@ -52,7 +52,7 @@ App: `/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app` (bundle id 
   observation: Screen Recording still not granted in the running process (macOS caches it per process; needs relaunch)
 
 ## B: relaunch with permissions granted, drive real apps
-  launched B via open (LaunchServices), pid(s): 23164 
+  launched B via open (LaunchServices), pid(s): 31395 
   `[bloop] permissions: screen=granted automation=granted onboarding=false`
 - PASS: B: Screen Recording reported granted after relaunch
 - PASS: B: session auto-started
@@ -82,22 +82,22 @@ App: `/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app` (bundle id 
 
 ### 3-youtube
   frontmost after activating Safari: Safari
+      [bloop] sample app="Safari" domain=youtube.com category=distract score=57
       [bloop] sample app="Safari" domain=youtube.com category=distract score=56
-      [bloop] sample app="Safari" domain=youtube.com category=distract score=55
       [bloop] nudge (distracted 19s)
-      [bloop] pet says: "hey, we were doing so well!"
+      [bloop] pet says: "future you will say thanks. let's go!"
       [bloop] nudge notification
-      [bloop] sample app="Safari" domain=youtube.com category=distract score=53
+      [bloop] sample app="Safari" domain=youtube.com category=distract score=54
 - PASS: Safari on YouTube sampled as distract (URL via AppleScript)
 - PASS: pet turned worried after the nudge threshold
 - PASS: nudge fired
-  score after YouTube: 53
+  score after YouTube: 54
 - PASS: score dropped below 100 on YouTube
 
 ### 4-wikipedia
   frontmost after activating Safari: Safari
       [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=63
-      [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=63
+      [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=64
       [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=64
       [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=65
       [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=65
