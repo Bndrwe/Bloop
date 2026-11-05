@@ -193,9 +193,9 @@ jobs:
           if ! kill -0 "$PID" 2>/dev/null; then
             wait "$PID"; echo "exited early: $?"; cat "$LOG"; tail -60 "$SMOKE/linux.stderr.txt"; exit 1
           fi
-          pkill -TERM -f 'squashfs-root/bloop' || true
+          pkill -TERM -f 'appimage_extracted_.*/bloop' || true
           sleep 3
-          pkill -9 -f 'squashfs-root/bloop' || true
+          pkill -9 -f 'appimage_extracted_.*/bloop' || true
           kill "$PID" 2>/dev/null || true
           echo "---- stdout"; cat "$LOG"
           echo "---- stderr (tail)"; tail -30 "$SMOKE/linux.stderr.txt"
