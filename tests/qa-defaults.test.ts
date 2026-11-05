@@ -101,7 +101,7 @@ describe('mergeSettings: corrupted values', () => {
   // list is missing/invalid the returned object shares the SAME array instance with DEFAULT_SETTINGS
   // (and with every other caller). Any in-place mutation (push/splice on settings.focusApps) corrupts
   // the global defaults for the rest of the process, incl. resetData().
-  it.fails('BUG: mergeSettings returns fresh arrays, not DEFAULT_SETTINGS internals', () => {
+  it('BUG: mergeSettings returns fresh arrays, not DEFAULT_SETTINGS internals', () => {
     const m = mergeSettings({})
     expect(m.focusApps).not.toBe(DEFAULT_SETTINGS.focusApps)
     expect(m.distractDomains).not.toBe(DEFAULT_SETTINGS.distractDomains)
@@ -111,7 +111,7 @@ describe('mergeSettings: corrupted values', () => {
   // BUG: defaults.ts mergeSettings() only checks Array.isArray on the lists, not their elements.
   // A stored list such as [null, 5, "Code"] survives, and classify() then throws a TypeError
   // (normalizeAppName(null).trim) from SessionEngine.recordSample, so sampling dies silently.
-  it.fails('BUG: non-string entries in app/domain lists are dropped so classify() cannot throw', () => {
+  it('BUG: non-string entries in app/domain lists are dropped so classify() cannot throw', () => {
     const m = mergeSettings(bad({ focusApps: [null, 5, 'Code'], distractDomains: [undefined, {}, 'youtube.com'] }))
     expect(() => classify({ app: 'Finder' }, m)).not.toThrow()
     expect(() => classify({ app: 'Google Chrome', url: 'https://youtube.com' }, m)).not.toThrow()
@@ -120,10 +120,10 @@ describe('mergeSettings: corrupted values', () => {
   // BUG: defaults.ts mergeSettings() does not validate icalUrl / reminders contents. A non-string
   // icalUrl (e.g. 42 from a hand-edited file) is kept as is (see qa-deadlines: refreshDeadlines then
   // rejects), and reminder entries are not checked (see qa-reminders).
-  it.fails('BUG: icalUrl is coerced to a string', () => {
+  it('BUG: icalUrl is coerced to a string', () => {
     expect(typeof mergeSettings(bad({ icalUrl: 42 })).icalUrl).toBe('string')
   })
-  it.fails('BUG: malformed reminder entries are dropped', () => {
+  it('BUG: malformed reminder entries are dropped', () => {
     const m = mergeSettings(bad({ reminders: [null, { id: 'a' }, { id: 'ok', days: [1], time: '09:00', label: 'x', enabled: true }] }))
     expect(m.reminders.map((r) => r.id)).toEqual(['ok'])
   })

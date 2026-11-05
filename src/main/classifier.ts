@@ -1,4 +1,5 @@
 // Pure classification logic: no electron imports (unit-tested in tests/classifier.test.ts).
+import { domainToASCII } from 'node:url'
 import type { Category, Settings } from '@shared/types'
 import { cleanTitle, inferDomainFromTitle } from './titleDomain'
 
@@ -133,7 +134,10 @@ export function domainFromUrl(url: string | undefined | null): string | undefine
   if (!u) return undefined
   if (!/^[a-z][a-z0-9+.-]*:/i.test(u)) u = 'https://' + u
   try {
-    const host = new URL(u).hostname.toLowerCase().replace(/\.$/, '')
+    const parsed = new URL(u)
+    // Only web pages have a site; chrome://, about:, file:, extensions, data:, ... do not.
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return undefined
+    const host = parsed.hostname.toLowerCase().replace(/\.$/, '')
     if (!host) return undefined
     return host.replace(/^www\./, '')
   } catch {
@@ -155,8 +159,19 @@ function normalizePattern(p: string): { host: string; path: string } {
   let s = p.trim().toLowerCase()
   s = s.replace(/^[a-z][a-z0-9+.-]*:\/\//, '').replace(/^www\./, '').replace(/\/+$/, '')
   const slash = s.indexOf('/')
-  if (slash === -1) return { host: s, path: '' }
-  return { host: s.slice(0, slash), path: s.slice(slash) }
+  const rawHost = slash === -1 ? s : s.slice(0, slash)
+  const path = slash === -1 ? '' : s.slice(slash)
+  return { host: normalizePatternHost(rawHost), path }
+}
+
+/** Drop credentials and port, and punycode IDN hosts so they compare with URL hostnames. */
+function normalizePatternHost(h: string): string {
+  let host = h.replace(/^[^@]*@/, '')
+  if (!host.startsWith('[')) host = host.replace(/:\d*$/, '')
+  host = host.replace(/\.$/, '')
+  if (!host || /[\s*[\]]/.test(host)) return host
+  const ascii = domainToASCII(host)
+  return ascii || host
 }
 
 /**

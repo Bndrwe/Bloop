@@ -47,7 +47,7 @@ describe('domainFromUrl: tricky inputs', () => {
   // that have an authority form: chrome://newtab -> "newtab", edge://settings -> "settings",
   // chrome-extension://<id>/page.html -> "<id>". These internal pages then show up as a "site" in
   // session summaries (topFocus/topDistract) and can collide with dot-less user patterns.
-  it.fails('BUG: browser-internal URLs (chrome://newtab, edge://settings) have no site', () => {
+  it('BUG: browser-internal URLs (chrome://newtab, edge://settings) have no site', () => {
     expect(domainFromUrl('chrome://newtab')).toBeUndefined()
     expect(domainFromUrl('edge://settings/')).toBeUndefined()
   })
@@ -151,14 +151,14 @@ describe('classify: specificity, paths and ties', () => {
   // BUG: classifier.ts normalizePattern()/domainFromUrl(): URLs are punycoded by `new URL()` but user
   // patterns are only lower-cased, so an IDN pattern ("münchen.de") never matches the host
   // ("xn--mnchen-3ya.de") and the site is silently unclassified.
-  it.fails('BUG: IDN domain patterns match IDN hosts', () => {
+  it('BUG: IDN domain patterns match IDN hosts', () => {
     const l = custom({ focusDomains: ['münchen.de'] })
     expect(classify({ app: 'Arc', url: 'https://münchen.de/uni' }, l)).toBe('focus')
   })
 
   // BUG: classifier.ts normalizePattern(): a pattern typed with a port ("localhost:3000") keeps the
   // ":3000" in `host`, but the URL host never has a port, so it can never match.
-  it.fails('BUG: a pattern with a port ("localhost:3000") matches that dev server', () => {
+  it('BUG: a pattern with a port ("localhost:3000") matches that dev server', () => {
     const l = custom({ focusDomains: ['localhost:3000'] })
     expect(classify({ app: 'Arc', url: 'http://localhost:3000/' }, l)).toBe('focus')
   })

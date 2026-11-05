@@ -189,13 +189,13 @@ describe('study reminders', () => {
     mem.cache = { fetchedAt: 0, url: 'x', items: [] }
     t.at(2026, 10, 5, 9, 0)
     t.sched.check() // must not throw
-    expect(t.notify).not.toHaveBeenCalled() // the throw aborts the loop (documented, see next test)
+    expect(t.notify).toHaveBeenCalledTimes(1) // the bad entry is skipped, later ones still fire
   })
 
   // BUG: src/main/reminders.ts checkStudyReminders(): one malformed entry (e.g. null, or days not an
   // array - mergeSettings does not validate reminder contents) throws inside the for-loop; check()
   // swallows it, so every valid reminder after it AND checkDeadlines() are skipped forever.
-  it.fails('BUG: one malformed reminder entry must not suppress the valid reminders after it', () => {
+  it('BUG: one malformed reminder entry must not suppress the valid reminders after it', () => {
     const t = setup([null as never, rem()])
     t.at(2026, 10, 5, 9, 0)
     t.sched.check()

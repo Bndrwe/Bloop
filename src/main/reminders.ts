@@ -1,4 +1,4 @@
-import type { Settings } from '@shared/types'
+import type { Reminder, Settings } from '@shared/types'
 import type { NotifyOptions, SessionEngine } from './session'
 import { localDateKey } from './stats'
 import { getDeadlinesCache, markReminderFired, wasReminderFired } from './store'
@@ -42,9 +42,13 @@ export class ReminderScheduler {
   check(): void {
     try {
       this.checkStudyReminders()
-      this.checkDeadlines()
     } catch (e) {
       console.log(`[bloop] reminder check failed: ${(e as Error).message}`)
+    }
+    try {
+      this.checkDeadlines()
+    } catch (e) {
+      console.log(`[bloop] deadline check failed: ${(e as Error).message}`)
     }
   }
 
@@ -52,14 +56,27 @@ export class ReminderScheduler {
     const now = new Date(this.deps.now?.() ?? Date.now())
     const date = localDateKey(now)
     const time = hhmm(now)
-    for (const r of this.deps.getSettings().reminders) {
-      if (!r.enabled || !r.days.includes(now.getDay()) || r.time !== time) continue
+    const list = this.deps.getSettings()?.reminders
+    if (!Array.isArray(list)) return
+    for (const r of list) {
+      try {
+        this.fireReminder(r, now, date, time)
+      } catch (e) {
+        console.log(`[bloop] reminder skipped: ${(e as Error).message}`)
+      }
+    }
+  }
+
+  private fireReminder(r: Reminder | null | undefined, now: Date, date: string, time: string): void {
+    {
+      if (!r || typeof r !== 'object' || !r.enabled || !Array.isArray(r.days) || typeof r.time !== 'string') return
+      if (!r.days.includes(now.getDay()) || r.time !== time) return
       const key = `${date}|${r.id}`
-      if (wasReminderFired(key)) continue
+      if (wasReminderFired(key)) return
       markReminderFired(key)
       if (this.deps.engine.isRunning()) {
         console.log(`[bloop] reminder "${r.label}" skipped (session running)`)
-        continue
+        return
       }
       console.log(`[bloop] reminder fired: "${r.label}"`)
       this.deps.engine.say('Time to study!', 'wave')
