@@ -275,6 +275,7 @@ Paste this back to whoever is integrating the app:
 
 | Symptom | Fix |
 |---|---|
+| `ImportError: Found an incompatible version of torchao` (Colab) | `!pip uninstall -y torchao`, then re-run. Training doesn't use torchao, and Colab ships an old one that new peft rejects. |
 | `qwen3_5` / `Qwen3_5ForConditionalGeneration` not found | `pip install -U "transformers>=5.2"` (needs a recent transformers) |
 | `flash-linear-attention` / `causal-conv1d` won't install | Skip them. Training still works, just slower. |
 | CUDA out of memory on T4 | `--max-len 768`, or lower the grad-accum micro-batch. Close other notebooks. |
@@ -333,7 +334,7 @@ Each file below is wrapped as `<!-- FILE: path sha256=… nl=… -->` followed b
 | `ml/Modelfile` | 1,271 |
 | `ml/README-data.md` | 6,054 |
 | `ml/README.md` | 5,780 |
-| `ml/colab/train_bloop.ipynb` | 12,376 |
+| `ml/colab/train_bloop.ipynb` | 12,491 |
 | `ml/data/READY` | 163 |
 | `ml/data/build_dataset.py` | 33,036 |
 | `ml/data/eval.jsonl` | 53,891 |
@@ -355,7 +356,7 @@ Each file below is wrapped as `<!-- FILE: path sha256=… nl=… -->` followed b
 | `ml/wsp/apply_patch.py` | 5,341 |
 | `ml/wsp/harness.py` | 46,365 |
 | `ml/wsp/presets.py` | 12,495 |
-| `ml/wsp/session.ipynb` | 12,962 |
+| `ml/wsp/session.ipynb` | 13,077 |
 | `ml/wsp/test_harness_pure.py` | 19,193 |
 | `ml/wsp/wsp_core.py` | 32,033 |
 | `src/main/plan.ts` | 6,179 |
@@ -853,7 +854,7 @@ These times are estimates, not measurements; the timing step prints a real ETA f
 
 ### `ml/colab/train_bloop.ipynb`
 
-<!-- FILE: ml/colab/train_bloop.ipynb sha256=2b6de863727edff63ce32e048a46a5d1030a902f071c1202bffb815b2fa22e17 nl=1 -->
+<!-- FILE: ml/colab/train_bloop.ipynb sha256=88aa281215677b020d023ac18279b3ec8888d6c72e58c560faf629b8a1abca35 nl=1 -->
 ``````json
 {
  "cells": [
@@ -965,6 +966,7 @@ These times are estimates, not measurements; the timing step prints a real ETA f
    "execution_count": null,
    "outputs": [],
    "source": [
+    "!pip uninstall -y -q torchao  # Colab's old torchao (0.10) makes new peft refuse to load; we don't use it\n",
     "!grep -v '^torch' ml/train/requirements.txt > /tmp/req.txt && pip install -q -U -r /tmp/req.txt\n",
     "!pip install -q flash-linear-attention || echo \"flash-linear-attention not installed - slower fallback will be used (fine)\"\n",
     "!apt-get -qq install -y cmake > /dev/null\n",
@@ -5755,7 +5757,7 @@ def find_loop_direction(ws, layers: Optional[Sequence[int]] = None, n: int = 64,
 
 ### `ml/wsp/session.ipynb`
 
-<!-- FILE: ml/wsp/session.ipynb sha256=10c16b4ff2c740a49d26ba9e7b95f4a186dd1d94deb2d706dbf6df0efd454317 nl=1 -->
+<!-- FILE: ml/wsp/session.ipynb sha256=ef99df7abfbfb1e19f2fc9b1151acaaf179c74d9fba19cba745219e579561999 nl=1 -->
 ``````json
 {
  "cells": [
@@ -5792,6 +5794,7 @@ def find_loop_direction(ws, layers: Optional[Sequence[int]] = None, n: int = 64,
    "execution_count": null,
    "outputs": [],
    "source": [
+    "!pip uninstall -y -q torchao  # Colab's old torchao (0.10) makes new peft refuse to load; we don't use it\n",
     "import os, sys\n",
     "IN_COLAB = \"google.colab\" in sys.modules\n",
     "if IN_COLAB:\n",
