@@ -1,8 +1,9 @@
-import { mkdtempSync, readFileSync, existsSync, rmSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, readFileSync, existsSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
+  autostartContents,
   classifyTrackerError,
   createRateLimitedLog,
   detectSessionType,
@@ -23,6 +24,18 @@ afterEach(() => {
 })
 
 describe('setLinuxAutostart', () => {
+  it('uses the install script launcher when the AppImage was installed by scripts/install.sh', () => {
+    const home = mkdtempSync(join(tmpdir(), 'bloop-home-'))
+    const appimage = join(home, '.local', 'opt', 'bloop', 'Bloop.AppImage')
+    // no launcher yet: falls back to the AppImage
+    expect(autostartContents({ home, env: { APPIMAGE: appimage } })).toContain(`Exec=${quoteExecArg(appimage)}`)
+    mkdirSync(join(home, '.local', 'bin'), { recursive: true })
+    writeFileSync(join(home, '.local', 'bin', 'bloop'), '#!/bin/sh\n')
+    expect(autostartContents({ home, env: { APPIMAGE: appimage } })).toContain(`Exec=${quoteExecArg(join(home, '.local', 'bin', 'bloop'))}`)
+    // an AppImage elsewhere ignores the launcher
+    expect(autostartContents({ home, env: { APPIMAGE: '/tmp/Bloop.AppImage' } })).toContain(`Exec=${quoteExecArg('/tmp/Bloop.AppImage')}`)
+  })
+
   it('writes ~/.config/autostart/bloop.desktop with execPath and removes it', () => {
     const home = tmp()
     const f = setLinuxAutostart(true, { home, env: {}, execPath: '/opt/Bloop/bloop' })

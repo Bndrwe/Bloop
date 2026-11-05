@@ -2,30 +2,67 @@
 
 _Your little study pet._
 
-## Download
+## Install
 
-**Get the app, not the source:** grab the installer for your computer from the
-**[latest release](https://github.com/Bndrwe/StudyPet/releases/latest)** (Releases page → Assets).
-No Node.js, no terminal, no `npm run dev`.
+Bloop installs with one command that builds the app on your own computer from this repo and then installs it like a normal app (in Applications, the Start menu or your app menu). There are no downloadable installers at the moment, so this is the way to get it.
 
-| Your device | Download this file |
-|---|---|
-| Mac with Apple Silicon (M1/M2/M3/M4) | `Bloop-<version>-mac-arm64.dmg` |
-| Mac with an Intel processor | `Bloop-<version>-mac-x64.dmg` |
-| Windows 10/11, 64-bit (recommended) | `Bloop-Setup-<version>-win-x64.exe` (installer) |
-| Windows 10/11, no install (USB stick, locked-down PC) | `Bloop-<version>-win-x64-portable.exe` |
-| Linux, any x86_64 distro | `Bloop-<version>-linux-x86_64.AppImage` |
-| Debian / Ubuntu | `bloop_<version>_amd64.deb` |
+**Before you start**
 
-Which Mac do I have? Apple menu → **About This Mac**: "Chip: Apple M…" is Apple Silicon, "Processor: Intel…" is Intel. The `.zip` files in the release are the same Mac apps without the disk image. Windows on ARM PCs run the x64 build through emulation. `SHA256SUMS.txt` lists checksums for every file.
+- **Access to this repo.** It's private: your GitHub account needs to be invited (ask the Bloop team), and you sign in once on your computer (the GitHub CLI or Git asks you to).
+- **git and Node.js 20 or newer** (npm comes with Node). The installer checks for both and tells you how to get whatever is missing. On a Mac it offers `brew install node@20`; on Windows it offers `winget install`. It always asks first.
+- **About 2 GB of free disk space** while it builds. The first install takes about 3–6 minutes; later updates are quicker.
 
-**First launch.** The builds are not code-signed yet, so your OS warns you once:
+### macOS: Terminal
 
-- **macOS**: open the `.dmg`, drag **Bloop** into **Applications**, then **right-click Bloop → Open → Open**. If macOS says the app "is damaged and can't be opened", run `xattr -cr /Applications/Bloop.app` in Terminal and open it again. Bloop then asks for Screen Recording (see [Permissions](#permissions-macos-only)).
-- **Windows**: SmartScreen says "Windows protected your PC". Click **More info → Run anyway**.
-- **Linux**: `chmod +x Bloop-*.AppImage` and run it (`sudo apt install ./bloop_*_amd64.deb` for the `.deb`). If the AppImage exits immediately on Ubuntu 24.04 or newer, start it with `--no-sandbox`. Focus tracking reads the active window with `xprop`/`xwininfo` (package `x11-utils`) and works on X11 sessions; on Wayland it can't see other apps' windows.
+Recommended, with the [GitHub CLI](https://cli.github.com) (it handles the sign-in; get it with `brew install gh`, then run `gh auth login` once):
 
-**Private repo note.** This repository is private, so the Releases page and downloads only work for people who have access to it on GitHub. To share Bloop publicly, make the repo public, or publish the release files from a separate public "releases" repo.
+```bash
+gh repo clone Bndrwe/StudyPet -- -b claude/practical-davinci-ckp3nc && cd StudyPet && ./scripts/install.sh
+```
+
+### Windows: PowerShell
+
+Recommended, with [Git for Windows](https://git-scm.com/download/win) (it opens a browser window to sign in to GitHub the first time):
+
+```powershell
+git clone -b claude/practical-davinci-ckp3nc https://github.com/Bndrwe/StudyPet.git; cd StudyPet; powershell -ExecutionPolicy Bypass -File scripts\install.ps1
+```
+
+### Linux: terminal
+
+Recommended, with the [GitHub CLI](https://cli.github.com) (`gh auth login` once):
+
+```bash
+gh repo clone Bndrwe/StudyPet -- -b claude/practical-davinci-ckp3nc && cd StudyPet && ./scripts/install.sh
+```
+
+**Other ways to get the code.** Plain git works on every system if you are signed in to GitHub (Git Credential Manager, a personal access token as the password, or SSH with `git@github.com:Bndrwe/StudyPet.git`):
+
+```bash
+git clone -b claude/practical-davinci-ckp3nc https://github.com/Bndrwe/StudyPet.git && cd StudyPet && ./scripts/install.sh
+```
+
+Already have the repo? From its folder, run `npm run install-app` (macOS/Linux) or `npm run install-app:win` (Windows).
+
+**What the installer does.** It checks git and Node, pulls the latest code, runs `npm ci`, type-checks, bundles the app and packages it with electron-builder for your CPU (Apple Silicon or Intel, x64 or arm64). Then it installs it, quitting a running Bloop first, and starts it:
+
+| | App | Your data | Logs |
+|---|---|---|---|
+| macOS | `/Applications/Bloop.app` (or `~/Applications` if `/Applications` isn't writable) | `~/Library/Application Support/bloop` | `~/Library/Logs/bloop/main.log` |
+| Windows | `%LOCALAPPDATA%\Programs\Bloop`, plus Start menu and Desktop shortcuts, listed in Settings → Apps | `%APPDATA%\bloop` | `%APPDATA%\bloop\logs\main.log` |
+| Linux | `~/.local/opt/bloop/Bloop.AppImage`, the `bloop` command in `~/.local/bin` and an app-menu entry | `~/.config/bloop` | `~/.config/bloop/logs/main.log` |
+
+The tray / menu bar icon has **Open logs folder**. Because you built the app yourself, macOS Gatekeeper and Windows SmartScreen don't block it (Windows Defender may scan it on first start). On Linux, focus tracking needs `xprop` (`sudo apt install x11-utils`) and an X11 session; the installer tells you if anything is missing.
+
+Options: `--no-launch`, `--fast` (skip the type check), `--clean` (delete `node_modules`, `out` and `dist` first; fixes most odd build errors), `--no-pull`, `--keep-build`. On Windows: `-NoLaunch`, `-Fast`, `-Clean`, `-NoPull`, `-KeepBuild`, `-NoDesktopShortcut`. With npm, pass them after `--`, e.g. `npm run install-app -- --fast`.
+
+**Update.** Run the same install command again from the `StudyPet` folder (`./scripts/install.sh`, or `scripts\install.ps1` on Windows). It pulls the latest code, rebuilds, and replaces the app. Your settings and history are kept. On macOS each rebuild is a new unsigned app as far as macOS is concerned, so it may ask for Screen Recording and Automation again; if a permission says "not granted" after an update, run `npm run perms`.
+
+**Uninstall.** `./scripts/uninstall.sh` (or `npm run uninstall-app`) on macOS and Linux; on Windows, Settings → Apps → Installed apps → Bloop → Uninstall, or `powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1`. It removes the app and its shortcuts, then asks before deleting your data and any downloaded AI model.
+
+Step-by-step help, permissions and troubleshooting: [docs/INSTALL.md](docs/INSTALL.md).
+
+Prebuilt installers (`.dmg`/`.exe`/AppImage) can be produced by `.github/workflows/release.yml` when GitHub Actions minutes are available, or locally with `npm run build:mac` / `build:win` / `build:linux`.
 
 A small, cute desktop pet that lives in the top-right corner of your screen, watches whether you're focused, keeps a live **focus score**, and gently nudges you when you drift off task.
 
@@ -235,12 +272,12 @@ The pet is black-and-white line art: a white body with a crisp black ink outline
 
 ## Develop (for developers only)
 
-You only need this to work on Bloop's code. To use the app, see [Download](#download).
+You only need this to work on Bloop's code. To use the app, see [Install](#install).
 
-Requirements: macOS 12+, Windows 10/11 or Linux (x86_64), Node.js 20+.
+Requirements: macOS 12+, Windows 10/11 or Linux (x86_64 or arm64; focus tracking needs X11 and `x11-utils`), git and Node.js 20+. `npm run dev` is for working on the code; to use Bloop day to day, install it with `npm run install-app` (see [Install](#install)).
 
 ```bash
-git clone https://github.com/Bndrwe/StudyPet.git
+git clone -b claude/practical-davinci-ckp3nc https://github.com/Bndrwe/StudyPet.git
 cd StudyPet
 npm install
 npm run dev      # launch in development mode
@@ -251,7 +288,7 @@ Other scripts:
 | Command | What it does |
 |---|---|
 | `npm run dev` | Run the app with hot reload |
-| `npm test` | Unit tests (classifier + focus score) |
+| `npm test` | Unit tests (vitest): classifier, focus score, sessions, reminders, deadlines, AI providers, privacy/security guards and the Linux/Windows helpers |
 | `npm run typecheck` | Strict TypeScript check for main and renderer |
 | `npm run build` | Typecheck, bundle, and produce an unsigned `Bloop.app` in `dist/mac*/` (macOS) |
 | `npm run build:mac` | Same, but packages a `.dmg` and `.zip` for this Mac's architecture (macOS) |
@@ -260,7 +297,7 @@ Other scripts:
 
 ### Building on macOS
 
-Because the build is unsigned, macOS Gatekeeper will complain the first time. Right-click the app, choose **Open**, then confirm.
+The build is ad-hoc signed, not notarized. A `Bloop.app` built on your own Mac opens normally (`npm run install-app` copies it to Applications for you). A copy that was downloaded or AirDropped is quarantined, so macOS blocks it the first time: right-click it, choose **Open**, then confirm, or run `xattr -cr /path/to/Bloop.app`.
 
 ### Building on Windows
 
@@ -280,6 +317,8 @@ On Windows the pet sits at the top-right of the work area, above the taskbar, an
 
 `.github/workflows/release.yml` builds every installer on its own native runner (macOS arm64, macOS Intel, Windows x64, Linux x64), launches each built app as a smoke test, and publishes them with `SHA256SUMS.txt` as a GitHub Release. Run it from the Actions tab (**Release → Run workflow**, which releases `v<package.json version>`) or push a tag like `v1.0.1`. Bump `version` in `package.json` first.
 
+It needs GitHub Actions minutes, which a private repo only gets a limited number of. When they run out, nothing can be downloaded from Releases; people install with the [install scripts](#install) instead, and you can still build installers locally with `npm run build:mac` / `build:win` / `build:linux`.
+
 ## Project structure
 
 ```
@@ -294,7 +333,8 @@ src/
                 windows and tray
   renderer/     React UI: pet overlay, panel, settings, onboarding
     src/pet/    the pet component and swappable skins
-tests/          vitest unit tests for the classifier and the score
+scripts/        install/uninstall scripts, model bundling, macOS permissions helper
+tests/          vitest unit tests (scoring, sessions, AI, security, platform helpers)
 ```
 
 `contextIsolation` is on, `nodeIntegration` is off, and the renderer is sandboxed. The renderer can only talk to the main process through the typed `StudyPetApi` in `src/shared/types.ts`.
@@ -305,7 +345,7 @@ The pet is drawn by one component that takes a `mood` prop. Skins live in `src/r
 
 ## Demo / testing tips
 
-- **Unit tests**: `npm test` runs the unit tests for the classifier and the focus score.
+- **Unit tests**: `npm test` runs the whole vitest suite in `tests/`: classifier, focus score, sessions, reminders, deadlines, AI providers, privacy/security guards and the Linux/Windows helpers.
 - **Faster timings**: set `BLOOP_FAST=1` to shorten Pomodoro and nudge timings. This is handy for demos.
 - **Logs**: the installed app writes everything it prints (the `[bloop] ...` lines, errors and crashes) to `main.log`. Open it from the tray with **Open logs folder** (or **About Bloop**, which also shows the version). It lives in `~/Library/Logs/bloop/` on macOS, `%APPDATA%\bloop\logs\` on Windows and `~/.config/bloop/logs/` on Linux, and is rotated at 2 MB. It doesn't record which apps or sites you used unless you start Bloop with `BLOOP_TRACE=1`, and **Reset all data** empties it.
 - **Fake active window**: set `BLOOP_FAKE_ACTIVE=/path/to/file.json` and the tracker reads `{"app": "...", "url": "..."}` from that file instead of asking the OS. Edit the file while the app runs to simulate switching between apps and sites. This is useful for demos and automated testing.
@@ -316,7 +356,8 @@ The pet is drawn by one component that takes a `mood` prop. Skins live in `src/r
 - **Onboarding quiz**: a short quiz about your courses and habits that builds a personalized routine (session lengths, reminders, focus lists)
 - **Deeper Brightspace integration**: assignments, grades and course content, not just calendar events
 - **Study environment setup**: one click opens your study apps and tabs, turns on macOS Focus mode, and starts a session
-- Linux support, plus richer weekly insights
+- **Linux on Wayland**: focus tracking works on X11 today; Wayland hides other apps' windows
+- Richer weekly insights
 
 ## Privacy
 

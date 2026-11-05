@@ -12,6 +12,10 @@
   "scripts": {
     "dev": "electron-vite dev",
     "start": "electron-vite preview",
+    "install-app": "bash scripts/install.sh",
+    "install-app:win": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install.ps1",
+    "uninstall-app": "bash scripts/uninstall.sh",
+    "uninstall-app:win": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/uninstall.ps1",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",

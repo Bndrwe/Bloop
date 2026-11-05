@@ -1,5 +1,5 @@
 // Linux desktop helpers. No electron imports so everything here is unit-testable.
-import { accessSync, constants, mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { accessSync, constants, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { delimiter, join } from 'node:path'
 
@@ -115,8 +115,13 @@ export function autostartFilePath(opts: AutostartOptions = {}): string {
 
 export function autostartContents(opts: AutostartOptions = {}): string {
   const env = opts.env ?? process.env
-  // AppImage: the .AppImage file (process.execPath points into a temporary mount).
-  const exe = env['APPIMAGE'] || opts.execPath || process.execPath
+  // AppImage: the .AppImage file (process.execPath points into a temporary mount). When Bloop was
+  // installed by scripts/install.sh, prefer its ~/.local/bin/bloop launcher: it adds the flags this
+  // machine needs (--no-sandbox under Ubuntu's AppArmor rule, APPIMAGE_EXTRACT_AND_RUN without FUSE).
+  const home = opts.home ?? homedir()
+  const launcher = join(home, '.local', 'bin', 'bloop')
+  const installedByScript = (env['APPIMAGE'] ?? '').startsWith(join(home, '.local', 'opt', 'bloop') + '/')
+  const exe = (installedByScript && existsSync(launcher) ? launcher : '') || env['APPIMAGE'] || opts.execPath || process.execPath
   const exec = [exe, ...(opts.args ?? [])].map(quoteExecArg).join(' ')
   return [
     '[Desktop Entry]',
