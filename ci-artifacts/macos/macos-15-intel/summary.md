@@ -1,9 +1,9 @@
-# Bloop macOS e2e (macOS 15.7.9, x86_64, runner GitHub Actions 1000001898)
+# Bloop macOS e2e (macOS 15.7.9, x86_64, runner GitHub Actions 1000001901)
 
 App: `/Users/runner/work/StudyPet/StudyPet/dist/mac/Bloop.app` (bundle id edu.bloop.app)
 
 ## A: launch without permissions
-  launched A via open (LaunchServices), pid(s): 26475 
+  launched A via open (LaunchServices), pid(s): 24077 
   `[bloop] permissions: screen=denied automation=unknown onboarding=true`
   last refresh: `[bloop] permissions(refresh): screen=denied automation=unknown onboarding=true`
 - PASS: A: app started and logged its permission state
@@ -52,7 +52,7 @@ App: `/Users/runner/work/StudyPet/StudyPet/dist/mac/Bloop.app` (bundle id edu.bl
   observation: Screen Recording still not granted in the running process (macOS caches it per process; needs relaunch)
 
 ## B: relaunch with permissions granted, drive real apps
-  launched B via open (LaunchServices), pid(s): 28664 
+  launched B via open (LaunchServices), pid(s): 26296 
   `[bloop] permissions: screen=granted automation=granted onboarding=false`
 - PASS: B: Screen Recording reported granted after relaunch
 - PASS: B: session auto-started
@@ -83,11 +83,11 @@ App: `/Users/runner/work/StudyPet/StudyPet/dist/mac/Bloop.app` (bundle id edu.bl
 ### 3-youtube
   frontmost after activating Safari: Safari
       [bloop] sample app="Safari" domain=youtube.com category=distract score=51
-      [bloop] nudge (distracted 19s)
-      [bloop] pet says: "future you will say thanks. let's go!"
-      [bloop] nudge notification
       [bloop] sample app="Safari" domain=youtube.com category=distract score=49
       [bloop] sample app="Safari" domain=youtube.com category=distract score=48
+      [bloop] nudge (distracted 19s)
+      [bloop] pet says: "let's get back to it together!"
+      [bloop] nudge notification
 - PASS: Safari on YouTube sampled as distract (URL via AppleScript)
 - PASS: pet turned worried after the nudge threshold
 - PASS: nudge fired
@@ -96,15 +96,15 @@ App: `/Users/runner/work/StudyPet/StudyPet/dist/mac/Bloop.app` (bundle id edu.bl
 
 ### 4-wikipedia
   frontmost after activating Safari: Safari
+      [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=60
+      [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=61
+      [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=62
+      [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=62
       [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=63
       [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=64
-      [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=65
-      [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=65
-      [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=66
-      [bloop] sample app="Safari" domain=en.wikipedia.org category=focus score=67
 - PASS: Safari on Wikipedia sampled as focus
 - PASS: pet happy again after coming back
-  score after Wikipedia: 67
+  score after Wikipedia: 64
 - PASS: score recovered on Wikipedia
 
 ### permissions as seen by the running app (B)

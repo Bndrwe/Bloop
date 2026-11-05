@@ -1,8 +1,7 @@
 [bloop] sample app="Unknown" category=neutral score=100
 [bloop] sample app="Unknown" category=neutral score=100
+[bloop] sample app="Unknown" category=neutral score=100
 [bloop] permissions(refresh): screen=granted automation=granted onboarding=false
-[bloop] sample app="Unknown" category=neutral score=100
-[bloop] sample app="Unknown" category=neutral score=100
 [bloop] trace raw: app="Terminal" titleLen=22 url=- nativeUrl=no
 [bloop] sample app="Terminal" category=focus score=100
 [bloop] mood idle -> happy
@@ -10,13 +9,6 @@
 [bloop] sample app="Terminal" category=focus score=100
 [bloop] trace raw: app="Terminal" titleLen=22 url=- nativeUrl=no
 [bloop] sample app="Terminal" category=focus score=100
-[bloop] permissions(refresh): screen=granted automation=granted onboarding=false
-[bloop] trace raw: app="Terminal" titleLen=22 url=- nativeUrl=no
-[bloop] sample app="Terminal" category=focus score=100
-[bloop] trace raw: app="Terminal" titleLen=22 url=- nativeUrl=no
-[bloop] sample app="Terminal" category=focus score=100
-[bloop] trace raw: app="Terminal" titleLen=22 url=- nativeUrl=no
-[bloop] sample app="Terminal" category=focus score=100
 [bloop] trace raw: app="Terminal" titleLen=22 url=- nativeUrl=no
 [bloop] sample app="Terminal" category=focus score=100
 [bloop] trace raw: app="Terminal" titleLen=22 url=- nativeUrl=no
@@ -37,3 +29,10 @@
 [bloop] sample app="Terminal" category=focus score=100
 [bloop] trace raw: app="Terminal" titleLen=22 url=- nativeUrl=no
 [bloop] sample app="Terminal" category=focus score=100
+[bloop] trace raw: app="Terminal" titleLen=22 url=- nativeUrl=no
+[bloop] sample app="Terminal" category=focus score=100
+[bloop] trace raw: app="Terminal" titleLen=22 url=- nativeUrl=no
+[bloop] sample app="Terminal" category=focus score=100
+[bloop] trace raw: app="Terminal" titleLen=22 url=- nativeUrl=no
+[bloop] sample app="Terminal" category=focus score=100
+[bloop] permissions(refresh): screen=granted automation=granted onboarding=false
