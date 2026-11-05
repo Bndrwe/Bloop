@@ -40,7 +40,9 @@
       "!**/.env*",
       "!**/*.{pem,p12,pfx,key}",
       "!node_modules/@node-llama-cpp/*-cuda/**",
-      "!node_modules/@node-llama-cpp/*-cuda-ext/**"
+      "!node_modules/@node-llama-cpp/*-cuda-ext/**",
+      "!node_modules/@node-llama-cpp/linux-armv7l/**",
+      "!node_modules/@node-llama-cpp/linux-riscv64/**"
     ],
     "asarUnpack": [
       "node_modules/get-windows/**",
@@ -74,7 +76,12 @@
         "nsis",
         "portable"
       ],
-      "icon": "build/icon.png"
+      "icon": "build/icon.png",
+      "files": [
+        "out/**/*",
+        "package.json",
+        "!node_modules/@node-llama-cpp/win-arm64/**"
+      ]
     },
     "nsis": {
       "oneClick": false,
@@ -108,7 +115,12 @@
           "Keywords": "study;focus;pomodoro;timer;",
           "StartupNotify": "false"
         }
-      }
+      },
+      "files": [
+        "out/**/*",
+        "package.json",
+        "!node_modules/@node-llama-cpp/linux-arm64/**"
+      ]
     },
     "appImage": {
       "artifactName": "${productName}-${version}-linux-${arch}.${ext}"
