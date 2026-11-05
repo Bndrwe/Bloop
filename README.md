@@ -2,9 +2,9 @@
 
 _Your little study pet._
 
-![Bloop in 10 seconds: focus, drift, nudge, back on track](docs/demo/bloop-ad.gif)
+![Bloop in 15 seconds: nudge, chat, model check, hide the pet](docs/demo/bloop-ad.gif)
 
-**Watch the ad:** [16:9](docs/demo/bloop-ad.mp4) · [vertical 9:16](docs/demo/bloop-ad-vertical.mp4) (42 s, real Bloop UI with simulated activity). More stills in [`docs/demo/`](docs/demo/).
+**Watch the ad:** [16:9](docs/demo/bloop-ad.mp4) · [vertical 9:16](docs/demo/bloop-ad-vertical.mp4) (54 s) · **Demo walkthrough:** [every feature, 16:9](docs/demo/bloop-demo.mp4) (87 s). UI demo with simulated activity. More stills in [`docs/demo/`](docs/demo/).
 
 A small, cute desktop pet that lives in the top-right corner of your screen, watches whether you're focused, keeps a live **focus score**, and gently nudges you when you drift off task.
 
