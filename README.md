@@ -75,7 +75,7 @@ On Windows the pet sits at the top-right of the work area, above the taskbar, an
 
 The panel's **AI study plan** card writes a week of study blocks from your deadlines and focus history. Pick where the AI runs in **Settings → AI**:
 
-- **Auto** (default) uses the first option that is ready: the Bloop model, then an Ollama model (`qwen3.5:0.8b` if you have it, otherwise your smallest), then the cloud options below. Auto never downloads or pulls anything.
+- **Auto** (default) uses the first option that is ready: the Bloop model (only after you turn it on, see below), then an Ollama model (`qwen3.5:0.8b` if you have it, otherwise your smallest), then the cloud options below. Auto never downloads or pulls anything.
 - **Use Local** runs on your computer. It has two separate options: the **Bloop model** and **Ollama models**.
 - **Cloud** uses a CLI or API key you already have (see [Cloud AI](#cloud-ai)).
 
@@ -87,14 +87,28 @@ The panel card says which one it used (for example "via Bloop model (on-device)"
 
 The Bloop model is our own fine-tune of Qwen3.5-0.8B for writing study plans, packaged as a Q4_K_M GGUF (roughly 500 MB). Bloop runs it inside the app with [node-llama-cpp](https://node-llama-cpp.withcat.ai), so the prompt and the plan never leave your computer and it works offline.
 
-- **It downloads only when you say so.** Choosing it, or pressing Generate while it's selected, asks first: "Download the Bloop model (~X MB)? It runs on this device, nothing leaves your computer." with **Download** and **Not now**. Nothing is fetched until you press Download.
+- **It ships inside Bloop, but it is off until you choose it.** When the app was built with the model, **Settings → AI → Use Local → Bloop model** shows "included with Bloop · off" and a **Use Bloop model** button. Nothing is downloaded and nothing runs (not even for Auto) until you press it; **Turn off** switches it back and returns to Auto. A bundled model can't be deleted from the UI, since it is part of the app. The first time you turn it on, Bloop checks the file against its sha256 (a few seconds; remembered after that).
+- **Builds without the file** (for example a dev checkout) fall back to the options below: **Import .gguf…**, or a download if a URL is published.
+- **A published download is optional and only when you say so.** Choosing it, or pressing Generate while it's selected, asks first: "Download the Bloop model (~X MB)? It runs on this device, nothing leaves your computer." with **Download** and **Not now**. Nothing is fetched until you press Download.
 - The file goes to `<userData>/models/`. Downloads resume after a cancel, check free disk space first and are verified against a sha256 checksum. **Delete** removes the file.
 - **Import .gguf…** uses a GGUF file you already have (for example one you converted yourself) instead of downloading.
 - The model loads on first use with a 4096-token context and the GGUF's own chat template, is held to the plan's JSON schema with a grammar, and is unloaded after 5 idle minutes. llama.cpp works on native background threads, so the UI never stalls.
 
+![Bloop model included, off](docs/screenshots/settings-ai-bundled-off.png)
+![Bloop model on](docs/screenshots/settings-ai-bundled-on.png)
+
 ![Download confirmation](docs/screenshots/settings-ai-confirm.png)
 
-**Publishing the Bloop model.** Until the fine-tuned GGUF is published, the Download button is disabled and reads "Not published yet", but importing a file still works. After uploading the `.gguf` (for example to a Hugging Face model repo), fill in the constants at the top of `src/main/ai/local/bloop.ts`:
+**Bundling the model (default).** Train it with the kit in `ml/` (see `docs/BLOOP_MODEL_PLAYBOOK.md`), then:
+
+```bash
+npm run model:bundle   # copies the newest ml/out/bloop-*-Q4_K_M.gguf (or `-- path/to/model.gguf`) into resources/models/
+npm run build          # packages it; warns, but still succeeds, when no .gguf is there
+```
+
+`model:bundle` prints the size and sha256 and writes `resources/models/bloop-model.json` (`{file, bytes, sha256, base, builtAt}`). The `.gguf` and that json are gitignored (GitHub rejects files over 100 MB); only `resources/models/README.md` `.gitkeep` are committed. The app finds the model at `<repo>/resources/models` in dev and `<process.resourcesPath>/resources/models` when packaged (electron-builder copies `resources/**` there, and the file is not packed into the asar). Expect the app to be about **500 MB larger**.
+
+**Publishing the Bloop model (optional).** Hosting isn't needed if you bundle it. For a build with no bundled model, until the fine-tuned GGUF is published, the Download button is disabled and reads "Not published yet", but importing a file still works. After uploading the `.gguf` (for example to a Hugging Face model repo), fill in the constants at the top of `src/main/ai/local/bloop.ts`:
 
 ```ts
 export const BLOOP_MODEL_URL = 'https://huggingface.co/<org>/<repo>/resolve/main/bloop-qwen3.5-0.8b-q4_k_m.gguf'

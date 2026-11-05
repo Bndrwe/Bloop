@@ -200,7 +200,20 @@ It writes `ml/eval/REPORT.md` and fills the eval table in `ml/MODEL_CARD.md`. Ea
 ml/cache/llama.cpp/build/bin/llama-cli -m ml/out/bloop-qwen3.5-0.8b-Q4_K_M.gguf -p "give me a one-line nudge, I'm on youtube" -n 40 -no-cnv
 ```
 
-### Publish (needs YOUR Hugging Face token; agents must ask)
+### Ship it inside the app (default; no hosting, no token)
+
+Publishing is optional. By default the GGUF goes **inside Bloop**, and the app keeps it off until the user picks **Use Bloop model** in Settings → AI:
+
+```bash
+npm run model:bundle     # copies the newest ml/out/bloop-*-Q4_K_M.gguf (or the path you pass) to resources/models/
+npm run build            # electron-builder copies resources/models/ into the app
+```
+
+`model:bundle` prints the size and sha256 and writes `resources/models/bloop-model.json`, which the app uses to show info and to verify the file the first time it is turned on. Both the `.gguf` and the json are gitignored; GitHub rejects files over 100 MB, so don't commit the model. Expect the app to grow by about 500 MB. A build with no `.gguf` there still succeeds (it just warns); users of that build can use **Import .gguf…**.
+
+### Publish (optional, needs YOUR Hugging Face token; agents must ask)
+
+Only if you want an in-app **Download** button instead of (or besides) bundling:
 
 ```bash
 hf auth login                      # paste a WRITE token from https://huggingface.co/settings/tokens
@@ -215,10 +228,10 @@ BLOOP_MODEL_SHA256 = <sha256>
 BLOOP_MODEL_BYTES  = <size in bytes>
 ```
 
-These go at the top of `src/main/ai/local/bloop.ts` in the app, which switches on the in-app **Download** button.
+These go at the top of `src/main/ai/local/bloop.ts` in the app, which switches on the in-app **Download** button (used only when no model is bundled).
 
 - **Visibility:** the repo must be **public** for the app to download it without a token. Qwen3.5 is Apache-2.0, so redistribution is allowed.
-- **Not publishing?** Load the `.gguf` in Bloop via **Settings → AI → Use Local → Bloop model → Import .gguf…**
+- **Not bundling or publishing?** Load the `.gguf` in Bloop via **Settings → AI → Use Local → Bloop model → Import .gguf…**
 
 ### Ollama (optional)
 
@@ -235,7 +248,7 @@ The Modelfile template was written by hand. Compare it with `ollama show qwen3.5
 
 Paste this back to whoever is integrating the app:
 
-- **`BLOOP_MODEL_URL`**, **`BLOOP_MODEL_SHA256`**, **`BLOOP_MODEL_BYTES`** (or the local path of the `.gguf`)
+- **The local path, size and sha256 of the `.gguf`**, and confirmation that `npm run model:bundle` then `npm run build` worked (the default). Only if you published it: **`BLOOP_MODEL_URL`**, **`BLOOP_MODEL_SHA256`**, **`BLOOP_MODEL_BYTES`**
 - **Base used:** `qwen` or `mit`
 - **Training:** final train and eval loss, plus any dropped rows
 - **The `ml/eval/REPORT.md` table:** schema-valid %, rule pass %, nudge pass %, loop / token-limit %, and latency for every variant, with and without the grammar
@@ -301,10 +314,10 @@ The scoring code is `ml/train/scoring.py`. The same checks are used by the datas
 
 Bloop's **Settings → AI** has **Auto / Use Local / Cloud**.
 
-- **Use Local → Bloop model:** this GGUF, downloaded only after the user confirms, run with node-llama-cpp using the JSON-schema grammar and thinking off.
+- **Use Local → Bloop model:** this GGUF, bundled in the app (`resources/models/`) and off until the user picks **Use Bloop model** (or imported, or downloaded after a confirmation when a URL is published), run with node-llama-cpp using the JSON-schema grammar and thinking off.
 - **Use Local → Ollama models:** detected separately, with a pull offer behind a confirmation.
 - **Cloud:** Claude / Codex / Gemini CLIs, plus Anthropic / OpenRouter keys.
-- **Auto order:** Bloop model → Ollama → cloud. It never downloads anything by itself.
+- **Auto order:** Bloop model (only once the user turned it on) → Ollama → cloud. It never downloads anything by itself.
 
 ---
 
