@@ -12,12 +12,14 @@ export interface ConfirmDialogProps {
   onCancel: () => void
   /** Small label above the title, e.g. "On-device". */
   eyebrow?: string
+  /** Which button gets focus when the dialog opens. Use 'cancel' when confirming is costly (Enter then won't trigger it). */
+  initialFocus?: 'confirm' | 'cancel'
 }
 
 const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])'
 
 /**
- * Black-and-white confirmation modal. Focus moves to the confirm button and is trapped inside;
+ * Black-and-white confirmation modal. Focus moves to the confirm button (or cancel, via initialFocus) and is trapped inside;
  * Esc or a click on the backdrop cancels; focus returns to the opener on close.
  */
 export function ConfirmDialog({
@@ -28,17 +30,19 @@ export function ConfirmDialog({
   cancelLabel = 'Cancel',
   onConfirm,
   onCancel,
-  eyebrow
+  eyebrow,
+  initialFocus = 'confirm'
 }: ConfirmDialogProps): JSX.Element | null {
   const boxRef = useRef<HTMLDivElement>(null)
   const confirmRef = useRef<HTMLButtonElement>(null)
+  const cancelRef = useRef<HTMLButtonElement>(null)
   const titleId = useId()
   const bodyId = useId()
 
   useEffect(() => {
     if (!open) return
     const opener = document.activeElement as HTMLElement | null
-    confirmRef.current?.focus()
+    ;(initialFocus === 'cancel' ? cancelRef : confirmRef).current?.focus()
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') {
         e.preventDefault()
@@ -79,7 +83,7 @@ export function ConfirmDialog({
           {children}
         </div>
         <div className="cdlg-actions">
-          <button type="button" className="btn" onClick={onCancel}>
+          <button type="button" className="btn" ref={cancelRef} onClick={onCancel}>
             {cancelLabel}
           </button>
           <button type="button" className="btn btn--primary" ref={confirmRef} onClick={onConfirm}>

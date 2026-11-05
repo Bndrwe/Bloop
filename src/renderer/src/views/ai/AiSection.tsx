@@ -314,8 +314,8 @@ function OllamaGroup({
               Use models you already run with Ollama. Install it from{' '}
               <a href="https://ollama.com/download" target="_blank" rel="noreferrer">
                 ollama.com
-              </a>
-              , then run <code>ollama pull {SUGGESTED_OLLAMA}</code>.
+              </a>{' '}
+              and run <code>ollama pull {SUGGESTED_OLLAMA}</code>
             </>
           )}
         </p>

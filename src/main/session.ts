@@ -243,7 +243,7 @@ export class SessionEngine extends EventEmitter {
     this.phase = 'paused'
     this.resetStreak()
     this.d.log(`paused (${this.pausedRemainingSec}s left in ${this.pausedPhase})`)
-    this.say("paused — I'll wait right here", 'idle')
+    this.say("paused, I'll nap until you're back", 'sleeping')
   }
 
   resume(): void {

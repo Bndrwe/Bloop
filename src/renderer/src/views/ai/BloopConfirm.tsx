@@ -30,6 +30,7 @@ export function BloopConfirm({
       title="Download the Bloop model?"
       confirmLabel="Download"
       cancelLabel="Not now"
+      initialFocus="cancel"
       onConfirm={onDownload}
       onCancel={onNotNow}
     >
