@@ -101,6 +101,41 @@ Built as the MVP for a university AI class project. Everything runs locally: you
 - **Tray icon** with Start session / Pause / Settings / Quit. On macOS it sits in the menu bar; on Windows it sits in the system tray near the clock.
 - **Stretch features**: Brightspace deadlines via iCal, and an AI weekly study plan generated on-device (the Bloop model or Ollama) or by a cloud model.
 
+## Screenshots
+
+**A day with Bloop** (stills from the ad: real Bloop UI on a simulated desktop)
+
+| | |
+|:---:|:---:|
+| ![Study reminder: the pet waves, "Time to study!"](docs/demo/still-01.png) | ![Writing an essay: the pet is happy](docs/demo/still-02.png) |
+| *Study reminder: Bloop waves and offers to start a session* | *Writing an essay: focused, the pet is happy* |
+| ![Coding with the hover badge at 100](docs/demo/still-03.png) | ![Research on Khan Academy, Calculator counts as neutral](docs/demo/still-04.png) |
+| *Coding: hover the pet to see the score and timer* | *Research and neutral apps don't move the score* |
+| ![YouTube: the pet is sad and a notification says Bloop misses you](docs/demo/still-05.png) | ![Break: the pet sleeps, no nudges](docs/demo/still-06.png) |
+| *Drifting off: a nudge, then a notification* | *Breaks are guilt-free: the pet naps* |
+| ![The AI study plan in the panel](docs/demo/still-07.png) | ![Panel close-up with the score ring and 7-day chart](docs/demo/still-08.png) |
+| *A study plan for the week, written on-device* | *Today's score, focus time and the last 7 days* |
+
+![Every pet mood](docs/demo/still-10.png)
+
+**The installed app, step by step** (packaged Linux build, first run)
+
+| | | |
+|:---:|:---:|:---:|
+| ![First launch](docs/screenshots/journey/01-first-launch.png) | ![Focused on code](docs/screenshots/journey/04-focus-code.png) | ![Worried on YouTube](docs/screenshots/journey/06-worried-bubble.png) |
+| *First launch* | *Focused* | *Drifted to YouTube* |
+| ![Panel while distracted](docs/screenshots/journey/07-panel-distracted.png) | ![Back on track](docs/screenshots/journey/08-back-happy.png) | ![Stats after stopping](docs/screenshots/journey/10-stopped-stats.png) |
+| *The panel shows what you're on* | *Back on track* | *Saved to today's stats* |
+
+All 24 steps are in [`docs/screenshots/journey/`](docs/screenshots/journey/).
+
+**Settings → AI**
+
+| | |
+|:---:|:---:|
+| ![Auto order and Use in Auto switches](docs/screenshots/settings-ai-cloud-auto.png) | ![Use Local: Bloop model and Ollama](docs/screenshots/settings-ai-local.png) |
+| *Auto only uses cloud models you turn on* | *On-device: the Bloop model and Ollama* |
+
 ## AI study plan
 
 The panel's **AI study plan** card writes a week of study blocks from your deadlines and focus history. Pick where the AI runs in **Settings → AI**:
