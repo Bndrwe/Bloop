@@ -35,7 +35,7 @@ export function BloopConfirm({
     >
       <p>{bloopOfferText(bloop)}</p>
       <p className="faint">
-        A fine-tuned Qwen3.5 0.8B that writes your study plans. Saved in Bloop’s app folder; delete it any time in Settings → AI.
+        Qwen3.5 0.8B (by Qwen, Apache-2.0) from Hugging Face. It writes your study plans. Saved in Bloop’s app folder; delete it any time in Settings → AI.
       </p>
     </ConfirmDialog>
   )

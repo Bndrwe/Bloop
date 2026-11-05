@@ -85,38 +85,39 @@ The panel card says which one it used (for example "via Bloop model (on-device)"
 
 #### Use Local: the Bloop model
 
-The Bloop model is our own fine-tune of Qwen3.5-0.8B for writing study plans, packaged as a Q4_K_M GGUF (roughly 500 MB). Bloop runs it inside the app with [node-llama-cpp](https://node-llama-cpp.withcat.ai), so the prompt and the plan never leave your computer and it works offline.
+The Bloop model is [Qwen3.5-0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B) (Apache-2.0), packaged as a Q4_K_M GGUF of **532 MB**. Bloop runs it inside the app with [node-llama-cpp](https://node-llama-cpp.withcat.ai), so the prompt and the plan never leave your computer, it works offline, and you don't need Ollama. By default it's the stock model. A fine-tuned build from the kit in `ml/` can replace it (see below).
 
-- **It ships inside Bloop, but it is off until you choose it.** When the app was built with the model, **Settings → AI → Use Local → Bloop model** shows "included with Bloop · off" and a **Use Bloop model** button. Nothing is downloaded and nothing runs (not even for Auto) until you press it; **Turn off** switches it back and returns to Auto. A bundled model can't be deleted from the UI, since it is part of the app. The first time you turn it on, Bloop checks the file against its sha256 (a few seconds; remembered after that).
-- **Builds without the file** (for example a dev checkout) fall back to the options below: **Import .gguf…**, or a download if a URL is published.
-- **A published download is optional and only when you say so.** Choosing it, or pressing Generate while it's selected, asks first: "Download the Bloop model (~X MB)? It runs on this device, nothing leaves your computer." with **Download** and **Not now**. Nothing is fetched until you press Download.
-- The file goes to `<userData>/models/`. Downloads resume after a cancel, check free disk space first and are verified against a sha256 checksum. **Delete** removes the file.
-- **Import .gguf…** uses a GGUF file you already have (for example one you converted yourself) instead of downloading.
-- The model loads on first use with a 4096-token context and the GGUF's own chat template, is held to the plan's JSON schema with a grammar, and is unloaded after 5 idle minutes. llama.cpp works on native background threads, so the UI never stalls.
+- **Download from inside Bloop, only when you say so.** Go to **Settings → AI → Use Local → Bloop model → Download…**. Choosing it, or pressing Generate while it's selected, asks first: "Download the Bloop model (~532 MB)? It runs on this device, nothing leaves your computer." with **Download** and **Not now**. Nothing is fetched until you press Download.
+  - The source is [unsloth/Qwen3.5-0.8B-GGUF](https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF) (`Qwen3.5-0.8B-Q4_K_M.gguf`), pinned to a fixed revision.
+  - The file goes to `<userData>/models/`. Downloads resume after a cancel, check free disk space first, and are verified against the file's sha256. **Delete** removes it.
+- **Or bundle it into the app** (off until chosen). If the app was built with a model in `resources/models/`, **Settings → AI → Use Local → Bloop model** shows "included with Bloop · off" and a **Use Bloop model** button.
+  - Nothing runs, not even for Auto, until you press it. **Turn off** switches it back and returns to Auto.
+  - A bundled model can't be deleted from the UI, and it wins over a downloaded one. The first time you turn it on, Bloop checks its sha256 (a few seconds, remembered after that).
+- **Import .gguf…** uses a GGUF file you already have, for example a fine-tuned one, instead of downloading.
+- **How it runs:** the model loads on first use with a 4096-token context, the GGUF's own chat template, thinking turned off, and the plan's JSON schema enforced as a grammar. It unloads after 5 idle minutes, and llama.cpp works on native background threads, so the UI never stalls.
 
+![Download confirmation](docs/screenshots/settings-ai-confirm.png)
 ![Bloop model included, off](docs/screenshots/settings-ai-bundled-off.png)
 ![Bloop model on](docs/screenshots/settings-ai-bundled-on.png)
 
-![Download confirmation](docs/screenshots/settings-ai-confirm.png)
-
-**Bundling the model (default).** Train it with the kit in `ml/` (see `docs/BLOOP_MODEL_PLAYBOOK.md`), then:
-
-```bash
-npm run model:bundle   # copies the newest ml/out/bloop-*-Q4_K_M.gguf (or `-- path/to/model.gguf`) into resources/models/
-npm run build          # packages it; warns, but still succeeds, when no .gguf is there
-```
-
-`model:bundle` prints the size and sha256 and writes `resources/models/bloop-model.json` (`{file, bytes, sha256, base, builtAt}`). The `.gguf` and that json are gitignored (GitHub rejects files over 100 MB); only `resources/models/README.md` `.gitkeep` are committed. The app finds the model at `<repo>/resources/models` in dev and `<process.resourcesPath>/resources/models` when packaged (electron-builder copies `resources/**` there, and the file is not packed into the asar). Expect the app to be about **500 MB larger**.
-
-**Publishing the Bloop model (optional).** Hosting isn't needed if you bundle it. For a build with no bundled model, until the fine-tuned GGUF is published, the Download button is disabled and reads "Not published yet", but importing a file still works. After uploading the `.gguf` (for example to a Hugging Face model repo), fill in the constants at the top of `src/main/ai/local/bloop.ts`:
+**Changing the download source.** The constants at the top of `src/main/ai/local/bloop.ts` define what **Download** fetches:
 
 ```ts
-export const BLOOP_MODEL_URL = 'https://huggingface.co/<org>/<repo>/resolve/main/bloop-qwen3.5-0.8b-q4_k_m.gguf'
-export const BLOOP_MODEL_SHA256 = '<sha256sum of the file>' // shasum -a 256 file.gguf
-export const BLOOP_MODEL_BYTES = 0 // exact size: stat -f%z file.gguf (macOS) / stat -c%s file.gguf (Linux)
+export const BLOOP_MODEL_URL = 'https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF/resolve/<revision>/Qwen3.5-0.8B-Q4_K_M.gguf'
+export const BLOOP_MODEL_SHA256 = 'bd258782…dc517' // shasum -a 256 file.gguf
+export const BLOOP_MODEL_BYTES = 532_517_120       // exact size; used for "~X MB" and the disk-space check
 ```
 
-The size is used for the "~X MB" prompt and the disk-space check, and the checksum makes Bloop reject corrupted downloads.
+To ship a fine-tuned model instead, point these at your own direct-download link. That can be a public Hugging Face repo, a GitHub Release on a public repo, or any static host. Or skip hosting and bundle it.
+
+**Fine-tuning (optional).** The kit in `ml/` LoRA-tunes Qwen3.5-0.8B on Bloop's study-plan and nudge tasks. It runs on a free Colab T4 or an Apple Silicon Mac; see `docs/BLOOP_MODEL_PLAYBOOK.md`, which is one file with every script and the dataset embedded. To bundle the result:
+
+```bash
+npm run model:bundle -- path/to/bloop-qwen3.5-0.8b-Q4_K_M.gguf   # copies it into resources/models/ + writes bloop-model.json
+npm run build                                                   # packages it; warns, but still succeeds, when no .gguf is there
+```
+
+The `.gguf` and `bloop-model.json` are gitignored, because GitHub rejects files over 100 MB. A bundled model makes the app about **500 MB larger**. The app finds it at `<repo>/resources/models` in dev and at `<process.resourcesPath>/resources/models` when packaged. It is not packed into the asar.
 
 **Packaging note.** `node-llama-cpp` and its prebuilt binaries (`@node-llama-cpp/*`) are listed in `build.asarUnpack` so the native libraries load from `app.asar.unpacked`. A packaged app never tries to compile llama.cpp: it uses the prebuilt binary for the platform (Metal on Apple silicon, CPU or Vulkan/CUDA elsewhere).
 
@@ -125,10 +126,10 @@ The size is used for the "~X MB" prompt and the disk-space check, and the checks
 If you already use [Ollama](https://ollama.com/download), Bloop can use its models:
 
 1. Install Ollama and open it (it serves on `http://127.0.0.1:11434`).
-2. Pull the small model Bloop is tuned around: `ollama pull qwen3.5:0.8b` (any other model you have works too).
+2. Pull the same small model the Bloop model uses: `ollama pull qwen3.5:0.8b` (any other model you have works too).
 3. In **Settings → AI → Use Local**, pick a model from the **Ollama models** list and press **Refresh** if you just pulled one.
 
-If Ollama is running without `qwen3.5:0.8b`, Bloop offers **Pull qwen3.5:0.8b with Ollama?** and pulls it only after you confirm. If Ollama is installed but closed, Bloop says "Ollama is installed but not running: open Ollama". A different Ollama address can be set under **Advanced**. Requests use `/api/chat` with the plan's JSON schema as `format`.
+If Ollama is running without `qwen3.5:0.8b`, Bloop offers **Pull qwen3.5:0.8b with Ollama?** and pulls it only after you confirm. If Ollama is installed but closed, Bloop says "Ollama is installed but not running: open Ollama". A different Ollama address can be set under **Advanced**. Requests use `/api/chat` with the plan's JSON schema as `format` and `think: false`, so Qwen3.5 answers directly instead of reasoning at length first. If the server rejects the field, the request is retried once without it.
 
 #### `.env` fallback
 

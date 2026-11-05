@@ -172,7 +172,7 @@ function BloopGroup({
           <span className="ai-pick-text">
             <span className="ai-name">{bloop.label}</span>
             <span className="ai-sub faint">
-              Fine-tuned for Bloop’s study plans. Nothing leaves your computer.
+              Writes your study plans on this device. Nothing leaves your computer.
               {bloop.sizeBytes ? <> · <span className="num">{formatBytes(bloop.sizeBytes)}</span></> : null}
             </span>
           </span>

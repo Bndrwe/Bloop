@@ -1,4 +1,5 @@
-// The Bloop model: our fine-tuned Qwen3.5-0.8B (Q4_K_M GGUF), run in-app with node-llama-cpp.
+// The Bloop model: Qwen3.5-0.8B (Q4_K_M GGUF), run in-app with node-llama-cpp. Stock by default; a
+// fine-tuned build (ml/ kit) can replace it via the constants below or by bundling it into the app.
 // The model can ship INSIDE the app (resources/models, see bundledModelDirs) but stays OFF until the
 // user turns it on (AiSettings.bloopEnabled). Otherwise it is imported, or downloaded ONLY after the
 // user confirms in the UI (download(true)); nothing here ever starts a download on its own. Electron-free so it can be unit tested; local/index.ts wires it up.
@@ -11,18 +12,22 @@ import type { BloopSource, DownloadProgress, LocalStatus } from '@shared/ai'
 import type { CompleteOptions } from '../types'
 
 // ------------------------------------------------------------------ catalog
-// Filled in after the fine-tuned GGUF is published (see README → AI → Publishing the Bloop model).
+// The download source. Set to the stock model; point these at a fine-tuned GGUF to ship that instead.
 // While BLOOP_MODEL_URL is empty the download button is disabled ("Not published yet");
 // importing a .gguf from disk still works.
 
 export const BLOOP_MODEL_ID = 'bloop-qwen3.5-0.8b'
-export const BLOOP_MODEL_LABEL = 'Bloop model · Qwen3.5 0.8B (fine-tuned)'
-/** Direct https URL of the .gguf (e.g. a Hugging Face "resolve/main/…gguf" link). */
-export const BLOOP_MODEL_URL = ''
+export const BLOOP_MODEL_LABEL = 'Bloop model · Qwen3.5 0.8B'
+/**
+ * Direct https URL of the .gguf. Default: the stock Qwen/Qwen3.5-0.8B quantized to Q4_K_M by Unsloth
+ * (Apache-2.0), pinned to a revision so the sha256 below stays valid. Swap in a fine-tuned build here.
+ */
+export const BLOOP_MODEL_URL =
+  'https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF/resolve/6ab461498e2023f6e3c1baea90a8f0fe38ab64d0/Qwen3.5-0.8B-Q4_K_M.gguf'
 /** Lowercase hex sha256 of the .gguf; when set, downloads are verified. */
-export const BLOOP_MODEL_SHA256 = ''
+export const BLOOP_MODEL_SHA256 = 'bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517'
 /** Exact size in bytes; used for the "~X MB" prompt and the free-space check. 0 = unknown. */
-export const BLOOP_MODEL_BYTES = 0
+export const BLOOP_MODEL_BYTES = 532_517_120
 /** File name inside userData/models. */
 export const BLOOP_MODEL_FILE = 'bloop-qwen3.5-0.8b-q4_k_m.gguf'
 
