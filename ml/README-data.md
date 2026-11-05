@@ -35,6 +35,8 @@ Planner rules (all checked by `scoring.py` plus extra checks in `validate.py`):
 
 ## Nudge format
 
+Note: today the app only calls the model for the study plan (`generateText` in `src/main/plan.ts`). The in-app pet nudges are fixed lines in `src/main/session.ts`, not model output, so these nudge prompts are a training/eval task for the model, not text the app currently sends.
+
 User message (exact; `{...}` are filled, singular "1 minute"):
 
 ```

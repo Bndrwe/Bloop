@@ -29,8 +29,8 @@ It creates `ml/.venv`, installs the packages, checks `ml/data/READY`, times a fe
 
 ## Using the result
 
-- **In Bloop:** Settings -> AI -> Bloop model -> "Load from file", pick the `.gguf`.
-- **Publish for everyone:** `hf auth login`, then `npm run model:publish -- <hf-username>` (= `bash ml/publish.sh`). It uploads the GGUF and `MODEL_CARD.md` and prints `BLOOP_MODEL_URL`, `BLOOP_MODEL_SHA256` and `BLOOP_MODEL_BYTES` for `src/main/ai/local/bloop.ts`.
+- **In Bloop:** Settings -> AI -> Use Local -> Bloop model -> **Import .gguf…**, pick the `.gguf`. Or bundle it into the app: `npm run model:bundle` (see `resources/models/README.md`).
+- **Publish for everyone:** `hf auth login`, then `npm run model:publish -- <hf-username>` (= `bash ml/publish.sh`). It uploads the GGUF and `MODEL_CARD.md` and prints `BLOOP_MODEL_URL`, `BLOOP_MODEL_SHA256` and `BLOOP_MODEL_BYTES` for `src/main/ai/local/bloop.ts` (they currently point at the stock unsloth/Qwen3.5-0.8B-GGUF build; replace them). The repo is created public unless you set `PRIVATE=1`, and a private repo cannot be downloaded by the app.
 - **Ollama:** `cd ml && ollama create bloop -f Modelfile && ollama run bloop`.
 
 ## Manual steps
@@ -75,6 +75,6 @@ These times are estimates, not measurements; the timing step prints a real ETA f
 - **Out of memory** (the 248k-token vocabulary makes logits big): lower `--max-len 768`, add `--grad-checkpointing`, keep `--micro-batch 1`. On a Mac close other apps; 8 GB machines may not fit.
 - **`model type qwen3_5 not recognized`**: upgrade `pip install -U 'transformers>=5.2'` (or the newest). `--trust-remote-code` is the last resort.
 - **fp16 loss is `nan` on CUDA**: use `--dtype fp32` (slower) or lower `--lr`.
-- **`convert_hf_to_gguf.py` complains about the architecture**: your llama.cpp checkout is too old; delete `ml/cache/llama.cpp` and re-run (it clones the latest master; set `LLAMA_CPP_REF` for a specific tag).
+- **`convert_hf_to_gguf.py` complains about the architecture**: your llama.cpp checkout is too old; re-run `bash ml/train/convert_quantize.sh` (it fetches the latest `master` into `ml/cache/llama.cpp`; set `LLAMA_CPP_REF` for a specific tag, and `FORCE=1` to redo finished steps).
 - **ml/data/READY not found**: the dataset is still being generated.
 - **Redo a step**: delete its marker in `ml/out/.done/` or run with `FORCE=1`.

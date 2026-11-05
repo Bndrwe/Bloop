@@ -2,7 +2,7 @@
 
 Copy everything below the line into Codex. It's written to work in Codex with browser control, or in any agent that can drive a browser. Before you start:
 
-- The repo is pulled locally, including `ml/data/train.jsonl`, `ml/data/eval.jsonl` and the `ml/colab/train_bloop.ipynb` notebook. The notebook and dataset are still being written, so pull again once they land.
+- The repo is pulled locally, including `ml/data/train.jsonl`, `ml/data/eval.jsonl` and the `ml/colab/train_bloop.ipynb` notebook. Both already exist in the repo (the dataset is validated: 240 train / 30 eval rows).
 - You're signed in to Google in the browser.
 - You have a free Hugging Face account, if you want the model published.
 
@@ -29,12 +29,12 @@ Fine-tune **Qwen/Qwen3.5-0.8B** (https://huggingface.co/Qwen/Qwen3.5-0.8B) with 
 4. Run the notebook cells top to bottom: **Runtime → Run all**, or one at a time. Wait for each cell to finish and read its output before going on.
    - The install cell may print dependency warnings. Those are fine unless a later import fails.
    - If `flash-linear-attention` or `causal-conv1d` fails to install, skip it. Training just runs slower.
-   - The training cell prints an ETA after a few timing steps. On a T4, expect about 5–15 minutes. Keep the tab active, because Colab disconnects idle sessions.
-   - If a cell runs out of memory, re-run training with a smaller `max_len` (e.g. 768) or a lower batch or accumulation setting.
+   - The training cell prints an ETA after a few timing steps. On a T4, expect about 15–25 minutes. Keep the tab active, because Colab disconnects idle sessions.
+   - If a cell runs out of memory, re-run the training cell with `--max-len 768 --grad-checkpointing` (keep `--micro-batch 1`).
 5. Check the conversion cell's output: there should be a file named `bloop-qwen3.5-0.8b-Q4_K_M.gguf` of about 400–600 MB. Copy the printed **sha256** and **size in bytes**.
 6. Optional sanity check: run the quick-test cell (`llama-cli`) and confirm it prints a short, sensible reply or valid JSON.
 7. Publish, if I want it hosted:
-   - Run the publish cell. It calls `huggingface_hub.login()`.
+   - Before running the publish cell, change its `create_repo(repo_id, repo_type="model", exist_ok=True)` to add `private=True`. The notebook creates a PUBLIC repo by default, which conflicts with the rules below. Then run it; it calls `huggingface_hub.login()`.
    - **Stop and ask me for my Hugging Face write token. Never invent one, never store it in the notebook, and only paste it into the login prompt.**
    - It creates `<my-hf-username>/bloop-qwen3.5-0.8b-GGUF` and uploads the GGUF and the model card.
    - Copy the printed resolve URL. It looks like `https://huggingface.co/<user>/bloop-qwen3.5-0.8b-GGUF/resolve/main/bloop-qwen3.5-0.8b-Q4_K_M.gguf`
@@ -60,7 +60,7 @@ Fine-tune **Qwen/Qwen3.5-0.8B** (https://huggingface.co/Qwen/Qwen3.5-0.8B) with 
 
 ```python
 # 1. install
-!pip -q install -U "transformers>=4.57" peft datasets accelerate huggingface_hub
+!pip -q install -U "transformers>=5.2,<6" peft datasets accelerate huggingface_hub  # Qwen3.5 needs transformers >= 5.2 (see ml/train/requirements.txt)
 !pip -q install flash-linear-attention causal-conv1d || true
 ```
 
@@ -115,4 +115,4 @@ upload_file(path_or_fileobj="bloop-qwen3.5-0.8b-Q4_K_M.gguf", path_in_repo="bloo
 print(f"https://huggingface.co/{repo}/resolve/main/bloop-qwen3.5-0.8b-Q4_K_M.gguf")
 ```
 
-Note: a **private** Hugging Face repo can't be downloaded by the Bloop app without a token. If the app should download the model directly, make the repo public (and check that Qwen's license allows redistribution), or load the `.gguf` into Bloop with **Settings → AI → Bloop model → Load from file**.
+Note: a **private** Hugging Face repo can't be downloaded by the Bloop app without a token. If the app should download the model directly, make the repo public (and check that Qwen's license allows redistribution), or load the `.gguf` into Bloop with **Settings → AI → Use Local → Bloop model → Import .gguf…**. (Bloop already ships with a download link to the stock Qwen3.5-0.8B GGUF in `src/main/ai/local/bloop.ts`; the three values above replace it.)
