@@ -88,7 +88,7 @@ describe('mergeSettings: corrupted values', () => {
     expect(mergeSettings(bad({ backgroundEnabled: false })).backgroundEnabled).toBe(false)
   })
   it('does not mutate its input', () => {
-    const input = Object.freeze({ focusMinutes: '30' }) as Partial<Settings>
+    const input = Object.freeze({ focusMinutes: '30' }) as unknown as Partial<Settings>
     expect(() => mergeSettings(input)).not.toThrow()
   })
   it('partial update on top of valid settings keeps the rest (saveSettings pattern)', () => {

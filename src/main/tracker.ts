@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { normalizeOwner } from './classifier'
+import { classifyTrackerError, createRateLimitedLog, linuxTrackingInfo } from './linux'
 import { getScreenRecordingState, runOsascript, setAutomationState } from './permissions'
 
 export interface RawActive {
@@ -25,6 +26,21 @@ const URL_SCRIPTS: Record<string, string> = {
 }
 
 let loggedTrackerError = false
+const isLinux = process.platform === 'linux'
+/** Failures repeat every sample (a few seconds); log each kind at most once per 10 minutes. */
+const logLimited = createRateLimitedLog((m) => console.log(m))
+let linuxChecked = false
+
+/** Linux: log once how well active-window tracking can work here. Returns false if it cannot work at all. */
+function linuxPrecheck(): boolean {
+  if (linuxChecked) return linuxUsable
+  linuxChecked = true
+  const info = linuxTrackingInfo()
+  console.log(`[bloop] linux tracking: ${info.note}`)
+  linuxUsable = info.missingTools.length === 0 && !(info.session === 'unknown' && !process.env['DISPLAY'])
+  return linuxUsable
+}
+let linuxUsable = true
 
 async function readFake(path: string): Promise<RawActive | null> {
   try {
@@ -88,6 +104,7 @@ function macActiveWindow(screenRecording: boolean): Promise<NativeWindow | null>
 export async function sampleActiveWindow(): Promise<RawActive | null> {
   const fake = process.env['BLOOP_FAKE_ACTIVE']
   if (fake) return readFake(fake)
+  if (isLinux && !linuxPrecheck()) return null
   try {
     const screenRecording = getScreenRecordingState() === 'granted'
     let w: NativeWindow | null
@@ -102,6 +119,8 @@ export async function sampleActiveWindow(): Promise<RawActive | null> {
         loggedTrackerError = true
         console.log('[bloop] get-windows returned no window (native Windows binary missing or no foreground window)')
       }
+      // Wayland: focus on a native Wayland window leaves no X11 active window
+      if (isLinux) logLimited('linux-nowin', '[bloop] no active X11 window (on Wayland, native Wayland apps are invisible to tracking)')
       return null
     }
     const { app, title } = isMac ? { app: w.owner?.name ?? '', title: w.title ?? '' } : normalizeOwner(w.owner, w.title ?? '')
@@ -113,9 +132,14 @@ export async function sampleActiveWindow(): Promise<RawActive | null> {
     }
     return res
   } catch (e) {
-    if (!loggedTrackerError) {
-      loggedTrackerError = true
-      console.log(`[bloop] active window unavailable: ${(e as Error).message}`)
+    const kind = isLinux ? classifyTrackerError(e) : 'other'
+    if (kind === 'missing-xprop') {
+      linuxUsable = false // stop spawning a failing process every sample
+      logLimited(kind, '[bloop] active window unavailable: xprop/xwininfo not found. Install x11-utils (sudo apt install x11-utils)')
+    } else if (kind === 'no-display') {
+      logLimited(kind, '[bloop] active window unavailable: cannot open the X display (is DISPLAY set? Wayland-only session?)')
+    } else {
+      logLimited(kind, `[bloop] active window unavailable: ${(e as Error).message}`)
     }
     return null
   }
