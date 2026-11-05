@@ -1,6 +1,6 @@
 // Main-process provider interface. Local (src/main/ai/local/*) and cloud (src/main/ai/cloud/*)
 // providers implement it; src/main/ai/registry.ts picks one for an AiChoice.
-import type { AiChoice, CloudProviderStatus, LocalStatus } from '@shared/ai'
+import type { AiChoice, CloudProviderId, CloudProviderStatus, LocalStatus } from '@shared/ai'
 
 export interface CompleteOptions {
   maxTokens?: number
@@ -31,7 +31,10 @@ export interface LocalModule {
 export interface CloudModule {
   status(refresh?: boolean): Promise<CloudProviderStatus[]>
   provider(choice: Extract<AiChoice, { kind: 'cloud' }>): Promise<AiProvider | Error>
-  /** First ready cloud option for 'auto', or null. Order: claude-cli, codex-cli, gemini-cli, anthropic, openrouter. */
-  autoProvider(): Promise<AiProvider | null>
+  /**
+   * First available provider among `allowed` (the user's AiSettings.autoCloud, in priority order), or null.
+   * Providers not in `allowed` are never considered.
+   */
+  autoProvider(allowed: CloudProviderId[]): Promise<AiProvider | null>
   setApiKey(provider: 'anthropic' | 'openrouter', key: string | null): Promise<{ ok: boolean; error?: string }>
 }

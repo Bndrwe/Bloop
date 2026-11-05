@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { AiChoice, AiSettings, AiStatus, DownloadProgress, LocalStatus } from '@shared/ai'
+import type { AiChoice, AiSettings, AiStatus, CloudProviderId, DownloadProgress, LocalStatus } from '@shared/ai'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Icon } from '../../lib/Icon'
 import { errMsg } from '../../lib/format'
@@ -421,6 +421,20 @@ export function AiSection(): JSX.Element {
   const choose = useCallback(
     (choice: AiChoice) => {
       ai.setChoice(choice)
+        .then(async (s) => {
+          // Picking a cloud provider by hand is also "use it in Auto": it goes to the front of the list.
+          if (choice.kind === 'cloud') s = await ai.setAutoCloud([choice.provider, ...s.autoCloud.filter((id) => id !== choice.provider)])
+          setSettings(s)
+          setNote(null)
+        })
+        .catch((e) => setNote(errMsg(e)))
+    },
+    [ai, setSettings]
+  )
+
+  const setAutoCloud = useCallback(
+    (list: CloudProviderId[]) => {
+      ai.setAutoCloud(list)
         .then((s) => {
           setSettings(s)
           setNote(null)
@@ -492,12 +506,12 @@ export function AiSection(): JSX.Element {
         <Segmented value={view} onChange={onView} />
       </div>
       <p className="section-sub muted">
-        Writes your weekly study plan. {view === 'auto' && 'Auto uses the first ready option: on this device first, then cloud.'}
+        Writes your weekly study plan. {view === 'auto' && 'Auto uses the first ready option from the order below. Cloud models are only used if you turn them on.'}
         {view === 'local' && 'Runs on this computer. Pick one model.'}
         {view === 'cloud' && 'Uses a tool or API key you already have.'}
       </p>
 
-      {view === 'auto' && <AutoSummary status={status} onPick={setView} />}
+      {view === 'auto' && <AutoSummary status={status} settings={settings} onPick={setView} />}
 
       {view === 'local' && (
         <div className="ai-local">
@@ -520,7 +534,7 @@ export function AiSection(): JSX.Element {
         </div>
       )}
 
-      {view === 'cloud' && <CloudSection status={status.cloud} settings={settings} onChoose={choose} api={ai} />}
+      {view === 'cloud' && <CloudSection status={status.cloud} settings={settings} onChoose={choose} onAutoCloud={setAutoCloud} api={ai} />}
 
       {note && (
         <p className="ai-note ai-note--error" role="alert">
@@ -563,7 +577,23 @@ export function AiSection(): JSX.Element {
   )
 }
 
-function AutoSummary({ status, onPick }: { status: AiStatus; onPick: (v: View) => void }): JSX.Element {
+/** The exact providers Auto will try, first to last: ready cloud providers the user turned on, then local. */
+export function autoOrder(status: AiStatus, settings: AiSettings): string[] {
+  const out: string[] = []
+  for (const id of settings.autoCloud) {
+    const c = status.cloud.find((x) => x.id === id)
+    if (!c?.available) continue
+    const m = settings.cloudModels[id]
+    const ml = m ? (c.models.find((x) => x.id === m)?.label ?? m) : ''
+    out.push(ml ? `${c.label} (${ml})` : c.label)
+  }
+  const { bloop, ollama } = status.local
+  if (bloop.downloaded && bloop.enabled) out.push('Bloop model (on-device)')
+  if (ollama.running && ollama.models.length > 0) out.push('Ollama (on-device)')
+  return out
+}
+
+function AutoSummary({ status, settings, onPick }: { status: AiStatus; settings: AiSettings; onPick: (v: View) => void }): JSX.Element {
   const { bloop, ollama } = status.local
   const bloopDetail =
     bloop.source === 'bundled'
@@ -571,16 +601,25 @@ function AutoSummary({ status, onPick }: { status: AiStatus; onPick: (v: View) =
         ? 'included, on'
         : 'included, off until you turn it on'
       : bloop.downloaded
-        ? 'on this device'
+        ? bloop.enabled
+          ? 'on this device'
+          : 'on this device, off until you turn it on'
         : 'not downloaded'
-  const cloudReady = status.cloud.filter((c) => c.available)
+  const cloudRows: [string, string, boolean][] = settings.autoCloud.map((id) => {
+    const c = status.cloud.find((x) => x.id === id)
+    return [c?.label ?? id, c?.available ? 'turned on' : 'turned on, but not available', Boolean(c?.available)]
+  })
   const rows: [string, string, boolean][] = [
+    ...cloudRows,
     ['Bloop model', bloopDetail, bloop.downloaded && bloop.enabled],
-    ['Ollama', ollama.running ? `${ollama.models.length} model${ollama.models.length === 1 ? '' : 's'}` : ollama.installed ? 'not running' : 'not found', ollama.running && ollama.models.length > 0],
-    ['Cloud', cloudReady.length ? cloudReady.map((c) => c.label).join(', ') : 'none set up', cloudReady.length > 0]
+    ['Ollama', ollama.running ? `${ollama.models.length} model${ollama.models.length === 1 ? '' : 's'}` : ollama.installed ? 'not running' : 'not found', ollama.running && ollama.models.length > 0]
   ]
+  const order = autoOrder(status, settings)
   return (
     <div className="ai-auto">
+      <p className="ai-auto__line" aria-live="polite">
+        <strong>Auto uses:</strong> {order.length ? order.map((o, i) => `${i + 1}. ${o}`).join(' · ') : 'nothing yet'}
+      </p>
       <ol className="ai-order">
         {rows.map(([name, detail, ready]) => (
           <li key={name} className={ready ? 'is-ready' : ''}>
@@ -590,6 +629,7 @@ function AutoSummary({ status, onPick }: { status: AiStatus; onPick: (v: View) =
           </li>
         ))}
       </ol>
+      <p className="faint ai-auto__note">Cloud models are only used if you turn them on.</p>
       {!status.active && (
         <div className="ai-actions">
           <button type="button" className="btn btn--small btn--primary" onClick={() => onPick('local')}>

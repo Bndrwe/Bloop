@@ -44,6 +44,7 @@ export const IPC = {
   aiGetSettings: 'ai:get-settings',
   aiSetChoice: 'ai:set-choice',
   aiSetCloudModel: 'ai:set-cloud-model',
+  aiSetAutoCloud: 'ai:set-auto-cloud',
   aiSetOllamaUrl: 'ai:set-ollama-url',
   aiDownloadBloop: 'ai:bloop-download',
   aiCancelBloop: 'ai:bloop-cancel',

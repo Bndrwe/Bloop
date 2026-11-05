@@ -6,7 +6,7 @@ import * as store from '../store'
 import { aiChanged } from './events'
 import { localModule } from './local'
 import { cloudModule, getAiStatus, registry, startStatusPush } from './registry'
-import { CLOUD_PROVIDER_IDS, normalizeOllamaUrl, validateChoice } from './settings'
+import { CLOUD_PROVIDER_IDS, normalizeOllamaUrl, validateAutoCloud, validateChoice } from './settings'
 import { denyAllPermissions, guardSender, hardenWebContents, isSafeExternalUrl, rendererIndexFor, type TrustedOrigins } from './guard'
 
 const log = (m: string): void => console.log(`[bloop] ${m}`)
@@ -111,6 +111,16 @@ export function registerAiIpc(ipcMain: IpcMain, deps: AiIpcDeps): void {
     const cur = store.getAiSettings()
     const choice: AiChoice = cur.choice.kind === 'cloud' && cur.choice.provider === id ? { ...cur.choice, model: model.trim() } : cur.choice
     return saved(store.saveAiSettings({ cloudModels: { ...cur.cloudModels, [id]: model.trim() }, choice }))
+  })
+
+  // Which cloud providers Auto may use, in priority order. Replaces the whole list.
+  h(IPC.aiSetAutoCloud, (_e, raw) => {
+    if (!Array.isArray(raw) || raw.length > CLOUD_PROVIDER_IDS.length * 4 || raw.some((x) => !CLOUD_PROVIDER_IDS.includes(x as CloudProviderId))) {
+      throw new Error('Unknown cloud provider.')
+    }
+    const autoCloud = validateAutoCloud(raw)
+    log(`ai auto cloud: ${autoCloud.join(', ') || '(none)'}`)
+    return saved(store.saveAiSettings({ autoCloud }))
   })
 
   h(IPC.aiSetOllamaUrl, (_e, url) => {

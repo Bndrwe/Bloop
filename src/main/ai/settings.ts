@@ -48,6 +48,16 @@ export function normalizeOllamaUrl(raw: unknown): string | null {
   }
 }
 
+/** Known cloud ids only, no duplicates, order kept. Anything else (missing, wrong type) gives []. */
+export function validateAutoCloud(raw: unknown): CloudProviderId[] {
+  if (!Array.isArray(raw)) return []
+  const out: CloudProviderId[] = []
+  for (const id of raw) {
+    if (CLOUD_PROVIDER_IDS.includes(id as CloudProviderId) && !out.includes(id as CloudProviderId)) out.push(id as CloudProviderId)
+  }
+  return out
+}
+
 /** Merge whatever is stored over the defaults, dropping anything invalid. */
 export function validateAiSettings(raw: unknown): AiSettings {
   const r = isObj(raw) ? raw : {}
@@ -58,12 +68,14 @@ export function validateAiSettings(raw: unknown): AiSettings {
       if (m) cloudModels[id] = m
     }
   }
+  const autoCloud = validateAutoCloud(r.autoCloud)
   const choice = validateChoice(r.choice) ?? { ...DEFAULT_AI_SETTINGS.choice }
   // Settings saved before bloopEnabled existed: an explicit Bloop choice counts as turned on.
   const bloopEnabled = typeof r.bloopEnabled === 'boolean' ? r.bloopEnabled : choice.kind === 'local' && choice.runtime === 'bloop'
   return {
     choice,
     cloudModels,
+    autoCloud,
     ollamaUrl: normalizeOllamaUrl(r.ollamaUrl) ?? DEFAULT_AI_SETTINGS.ollamaUrl,
     bloopOfferDismissed: r.bloopOfferDismissed === true,
     bloopEnabled

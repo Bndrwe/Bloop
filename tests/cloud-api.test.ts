@@ -30,7 +30,7 @@ import {
   parseOpenRouterModels,
   parseOpenRouterResponse
 } from '../src/main/ai/cloud/api'
-import { cloudModule, setCloudModelsReader } from '../src/main/ai/cloud'
+import { cloudModule, CLOUD_ORDER, setCloudModelsReader } from '../src/main/ai/cloud'
 import { getStoredKey, saveApiKey } from '../src/main/ai/cloud/secrets'
 import * as detect from '../src/main/ai/cloud/cli-detect'
 
@@ -173,20 +173,20 @@ describe('autoProvider order', () => {
     const installed = new Set<string>()
     vi.spyOn(detect, 'resolveBinary').mockImplementation(async (bin) => (installed.has(bin) ? `/bin/${bin}` : null))
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
-    expect(await cloudModule.autoProvider()).toBeNull()
+    expect(await cloudModule.autoProvider(CLOUD_ORDER)).toBeNull()
 
     saveApiKey('openrouter', KEY)
-    expect((await cloudModule.autoProvider())?.label).toMatch(/OpenRouter/)
+    expect((await cloudModule.autoProvider(CLOUD_ORDER))?.label).toMatch(/OpenRouter/)
     saveApiKey('anthropic', 'sk-ant-api03-abcdefghijkl')
-    expect((await cloudModule.autoProvider())?.label).toMatch(/Anthropic/)
+    expect((await cloudModule.autoProvider(CLOUD_ORDER))?.label).toMatch(/Anthropic/)
     installed.add('gemini')
-    expect((await cloudModule.autoProvider())?.label).toMatch(/Gemini CLI/)
+    expect((await cloudModule.autoProvider(CLOUD_ORDER))?.label).toMatch(/Gemini CLI/)
     installed.add('codex')
-    expect((await cloudModule.autoProvider())?.label).toMatch(/Codex CLI/)
+    expect((await cloudModule.autoProvider(CLOUD_ORDER))?.label).toMatch(/Codex CLI/)
     installed.add('claude')
-    expect((await cloudModule.autoProvider())?.label).toBe('Claude CLI')
+    expect((await cloudModule.autoProvider(CLOUD_ORDER))?.label).toBe('Claude CLI')
     setCloudModelsReader(() => ({ 'claude-cli': 'opus' }))
-    expect((await cloudModule.autoProvider())?.label).toBe('Claude CLI (opus)')
+    expect((await cloudModule.autoProvider(CLOUD_ORDER))?.label).toBe('Claude CLI (opus)')
     vi.unstubAllGlobals()
   })
   it('provider() errors when a CLI is missing or a key is not set', async () => {

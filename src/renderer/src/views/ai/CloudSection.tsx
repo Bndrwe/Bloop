@@ -7,6 +7,8 @@ interface Props {
   status: CloudProviderStatus[]
   settings: AiSettings
   onChoose(choice: AiChoice): void
+  /** Replace the list of providers Auto may use (priority order). */
+  onAutoCloud(list: CloudProviderId[]): void
   api: AiApi
 }
 
@@ -187,7 +189,7 @@ function KeyField({ provider, label, isSet, api }: { provider: 'anthropic' | 'op
   )
 }
 
-export default function CloudSection({ status, settings, onChoose, api }: Props) {
+export default function CloudSection({ status, settings, onChoose, onAutoCloud, api }: Props) {
   const [models, setModels] = useState<Partial<Record<CloudProviderId, string>>>({})
 
   const current = (p: CloudProviderStatus): string => {
@@ -216,6 +218,9 @@ export default function CloudSection({ status, settings, onChoose, api }: Props)
             ? `${p.detail ?? 'key set'} ✓`
             : `found at ${p.detail}`
           : (p.detail ?? (isApi ? 'no key' : 'not installed'))
+        const inAuto = settings.autoCloud.includes(p.id)
+        const toggleAuto = (): void => onAutoCloud(inAuto ? settings.autoCloud.filter((id) => id !== p.id) : [...settings.autoCloud, p.id])
+        const hintId = `cloud-auto-hint-${p.id}`
         return (
           <div key={p.id} className={`cloud-row${selected ? ' is-selected' : ''}${p.available ? '' : ' is-off'}`}>
             <div className="cloud-row__main">
@@ -248,6 +253,36 @@ export default function CloudSection({ status, settings, onChoose, api }: Props)
               ) : (
                 <ModelSelect label={`${p.label} model`} value={model} models={p.models} onChange={(v) => changeModel(p, v, selected)} />
               )}
+            </div>
+            <div className="cloud-auto">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={inAuto}
+                aria-label={`Use ${p.label} in Auto`}
+                aria-describedby={hintId}
+                className="cloud-switch"
+                disabled={!p.available && !inAuto}
+                onClick={toggleAuto}
+              >
+                <span className="cloud-switch__knob" aria-hidden="true" />
+              </button>
+              <span className="cloud-auto__label">Use in Auto</span>
+              <span className="cloud-auto__hint" id={hintId}>
+                {p.available
+                  ? inAuto
+                    ? settings.autoCloud[0] === p.id
+                      ? 'Auto tries this first'
+                      : `Auto tries this ${settings.autoCloud.indexOf(p.id) + 1 === 2 ? 'second' : `no. ${settings.autoCloud.indexOf(p.id) + 1}`}, before local models`
+                    : 'Off: Auto will not use it'
+                  : inAuto
+                    ? isApi
+                      ? 'On, but waiting for a key'
+                      : 'On, but not installed or signed in'
+                    : isApi
+                      ? 'Add an API key first'
+                      : 'Install / sign in first'}
+              </span>
             </div>
             {isApi && (
               <>

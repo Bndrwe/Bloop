@@ -19,6 +19,7 @@ const ai: AiApi = {
   getSettings: () => inv(IPC.aiGetSettings),
   setChoice: (choice) => inv(IPC.aiSetChoice, choice),
   setCloudModel: (provider, model) => inv(IPC.aiSetCloudModel, str(provider, 40), str(model, 200)),
+  setAutoCloud: (providers) => inv(IPC.aiSetAutoCloud, Array.isArray(providers) ? providers.slice(0, 20).map((p) => str(p, 40)) : []),
   setOllamaUrl: (url) => inv(IPC.aiSetOllamaUrl, str(url, 500)),
   downloadBloopModel: (confirmed) => inv(IPC.aiDownloadBloop, confirmed === true),
   cancelBloopDownload: () => inv(IPC.aiCancelBloop),

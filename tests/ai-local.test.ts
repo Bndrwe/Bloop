@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { getPath: () => tmpdir(), isPackaged: false } }))
-vi.mock('../src/main/store', () => ({ getAiSettings: () => ({ choice: { kind: 'auto' }, cloudModels: {}, ollamaUrl: 'http://127.0.0.1:11434', bloopOfferDismissed: false, bloopEnabled: false }) }))
+vi.mock('../src/main/store', () => ({ getAiSettings: () => ({ choice: { kind: 'auto' }, cloudModels: {}, autoCloud: [], ollamaUrl: 'http://127.0.0.1:11434', bloopOfferDismissed: false, bloopEnabled: false }) }))
 const execFileMock = vi.fn()
 vi.mock('node:child_process', () => ({ execFile: (...a: unknown[]) => execFileMock(...a) }))
 
@@ -259,9 +259,9 @@ describe('Ollama', () => {
 })
 
 describe('local module', () => {
-  let settings: AiSettings = { choice: { kind: 'auto' }, cloudModels: {}, ollamaUrl: 'http://h:1', bloopOfferDismissed: false, bloopEnabled: true }
+  let settings: AiSettings = { choice: { kind: 'auto' }, cloudModels: {}, autoCloud: [], ollamaUrl: 'http://h:1', bloopOfferDismissed: false, bloopEnabled: true }
   beforeEach(() => {
-    settings = { choice: { kind: 'auto' }, cloudModels: {}, ollamaUrl: 'http://h:1', bloopOfferDismissed: false, bloopEnabled: true }
+    settings = { choice: { kind: 'auto' }, cloudModels: {}, autoCloud: [], ollamaUrl: 'http://h:1', bloopOfferDismissed: false, bloopEnabled: true }
   })
   const make = (downloaded: boolean, models: { name: string; sizeBytes?: number }[], running = true) => {
     const bloop = new BloopManager({ modelsDir: () => dir, catalog: catalog() })
@@ -349,7 +349,7 @@ describe('bundled Bloop model', () => {
   beforeEach(() => {
     res = join(dir, 'Resources')
     app = join(dir, 'repo')
-    settings = { choice: { kind: 'auto' }, cloudModels: {}, ollamaUrl: 'http://h:1', bloopOfferDismissed: false, bloopEnabled: false }
+    settings = { choice: { kind: 'auto' }, cloudModels: {}, autoCloud: [], ollamaUrl: 'http://h:1', bloopOfferDismissed: false, bloopEnabled: false }
   })
 
   it('builds the packaged and dev directories', () => {

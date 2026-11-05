@@ -1,4 +1,5 @@
-// QA: cloud 'auto' order for ALL 32 subsets of {claude-cli, codex-cli, gemini-cli, anthropic, openrouter}.
+// QA: cloudModule.autoProvider(allowed): only opted-in providers are tried, in the user's order.
+// Every ordered subset (permutations of every subset: 326) of the five providers x availability subset is checked.
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const state = vi.hoisted(() => ({ file: {} as Record<string, unknown> }))
@@ -44,30 +45,52 @@ beforeEach(() => {
   vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
 })
 
-describe('cloud auto order', () => {
-  it('CLOUD_ORDER is the documented order', () => {
+const perms = (xs: CloudProviderId[]): CloudProviderId[][] =>
+  xs.length <= 1 ? [xs] : xs.flatMap((x, i) => perms([...xs.slice(0, i), ...xs.slice(i + 1)]).map((r) => [x, ...r]))
+const orderedSubsets: CloudProviderId[][] = subsets.flatMap((s) => perms(s))
+
+async function setAvailable(avail: CloudProviderId[]): Promise<void> {
+  const installed = new Set(avail.filter((p) => BIN[p]).map((p) => BIN[p]))
+  vi.spyOn(detect, 'resolveBinary').mockImplementation(async (bin) => (installed.has(bin) ? `/bin/${bin}` : null))
+  if (avail.includes('anthropic')) saveApiKey('anthropic', 'sk-ant-api03-abcdefghijkl')
+  if (avail.includes('openrouter')) saveApiKey('openrouter', 'sk-or-v1-abcdefghijklmnop')
+}
+
+describe('cloud auto: opt-in only', () => {
+  it('CLOUD_ORDER (status list order) is unchanged', () => {
     expect(CLOUD_ORDER).toEqual(['claude-cli', 'codex-cli', 'gemini-cli', 'anthropic', 'openrouter'])
   })
 
-  it.each(subsets.map((s) => [s.join('+') || '(none)', s] as const))('available = %s', async (_name, avail) => {
-    const installed = new Set(avail.filter((p) => BIN[p]).map((p) => BIN[p]))
-    vi.spyOn(detect, 'resolveBinary').mockImplementation(async (bin) => (installed.has(bin) ? `/bin/${bin}` : null))
-    if (avail.includes('anthropic')) saveApiKey('anthropic', 'sk-ant-api03-abcdefghijkl')
-    if (avail.includes('openrouter')) saveApiKey('openrouter', 'sk-or-v1-abcdefghijklmnop')
-    const p = await cloudModule.autoProvider()
-    const first = CLOUD_ORDER.find((id) => avail.includes(id))
-    if (!first) expect(p).toBeNull()
-    else {
-      expect(p).not.toBeNull()
-      expect(p!.kind).toBe('cloud')
-      expect(p!.label).toMatch(LABEL[first])
+  it('326 ordered opt-in lists', () => expect(orderedSubsets).toHaveLength(326))
+
+  it.each(subsets.map((s) => [s.join('+') || '(none)', s] as const))('available = %s: result is the first AVAILABLE provider of every opt-in list', async (_n, avail) => {
+    await setAvailable(avail)
+    for (const allowed of orderedSubsets) {
+      const p = await cloudModule.autoProvider(allowed)
+      const first = allowed.find((id) => avail.includes(id))
+      if (!first) expect(p).toBeNull()
+      else {
+        expect(p).not.toBeNull()
+        expect(p!.kind).toBe('cloud')
+        expect(p!.label).toMatch(LABEL[first])
+      }
     }
+  })
+
+  it('an empty opt-in list never picks anything, even with everything available', async () => {
+    await setAvailable([...CLOUD_ORDER])
+    expect(await cloudModule.autoProvider([])).toBeNull()
+  })
+
+  it('an unknown id in the list is ignored', async () => {
+    await setAvailable(['claude-cli'])
+    expect((await cloudModule.autoProvider(['nope' as CloudProviderId, 'claude-cli']))!.label).toMatch(/^Claude CLI/)
   })
 
   it('the remembered model per provider is applied only to the provider that wins', async () => {
     vi.spyOn(detect, 'resolveBinary').mockImplementation(async (bin) => (bin === 'codex' ? '/bin/codex' : null))
     setCloudModelsReader(() => ({ 'claude-cli': 'opus', 'codex-cli': 'gpt-x' }))
-    const p = await cloudModule.autoProvider()
+    const p = await cloudModule.autoProvider(['claude-cli', 'codex-cli'])
     expect(p!.label).toMatch(/Codex CLI.*gpt-x/)
   })
 
@@ -76,15 +99,15 @@ describe('cloud auto order', () => {
     setCloudModelsReader(() => {
       throw new Error('store unreadable')
     })
-    expect((await cloudModule.autoProvider())!.label).toBe('Claude CLI')
+    expect((await cloudModule.autoProvider(['claude-cli']))!.label).toBe('Claude CLI')
   })
 
-  it('a CLI that exists but whose detection throws is skipped, not fatal', async () => {
+  it('a CLI whose detection throws is skipped, not fatal', async () => {
     vi.spyOn(detect, 'resolveBinary').mockImplementation(async (bin) => {
       if (bin === 'claude') throw new Error('spawn EACCES')
       return bin === 'gemini' ? '/bin/gemini' : null
     })
-    const p = await cloudModule.autoProvider()
+    const p = await cloudModule.autoProvider(['claude-cli', 'gemini-cli'])
     expect(p!.label).toMatch(/Gemini CLI/)
   })
 })

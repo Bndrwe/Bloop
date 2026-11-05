@@ -7,7 +7,10 @@ export type LocalRuntime = 'bloop' | 'ollama'
 /** Cloud providers. CLIs use the user's own logged-in tools; the others use API keys. */
 export type CloudProviderId = 'claude-cli' | 'codex-cli' | 'gemini-cli' | 'anthropic' | 'openrouter'
 
-/** What the user picked. 'auto' = first ready option: local first, then cloud (see main/ai/registry.ts). */
+/**
+ * What the user picked. 'auto' = the first ready cloud provider the user turned on (AiSettings.autoCloud),
+ * then the local models. Cloud providers that were not turned on are never used by Auto (see main/ai/registry.ts).
+ */
 export type AiChoice =
   | { kind: 'auto' }
   | { kind: 'local'; runtime: LocalRuntime; model: string } // bloop: catalog id; ollama: model tag e.g. "qwen3.5:0.8b"
@@ -17,6 +20,12 @@ export interface AiSettings {
   choice: AiChoice
   /** Remembered per-cloud-provider model choice. */
   cloudModels: Partial<Record<CloudProviderId, string>>
+  /**
+   * Cloud providers the user allowed for Auto, in priority order. Default []: Auto never sends anything
+   * to a cloud service on its own. The first one that is available (CLI installed / key set) is Auto's
+   * first choice, ahead of the local models.
+   */
+  autoCloud: CloudProviderId[]
   /** Ollama base URL. */
   ollamaUrl: string
   /** User said "Not now" to the Bloop model download offer; don't offer again unprompted. */
@@ -31,6 +40,7 @@ export interface AiSettings {
 export const DEFAULT_AI_SETTINGS: AiSettings = {
   choice: { kind: 'auto' },
   cloudModels: {},
+  autoCloud: [],
   ollamaUrl: 'http://127.0.0.1:11434',
   bloopOfferDismissed: false,
   bloopEnabled: false
@@ -107,7 +117,10 @@ export interface CloudProviderStatus {
 }
 
 export interface AiStatus {
-  /** What a plan generation would use right now, or null if nothing is ready. */
+  /**
+   * What a plan generation would use right now, or null if nothing is ready. For 'auto' this is the first
+   * available provider in AiSettings.autoCloud, else the local auto provider.
+   */
   active: { label: string; kind: 'local' | 'cloud' } | null
   local: LocalStatus
   cloud: CloudProviderStatus[]
@@ -120,6 +133,8 @@ export interface AiApi {
   getSettings(): Promise<AiSettings>
   setChoice(choice: AiChoice): Promise<AiSettings>
   setCloudModel(provider: CloudProviderId, model: string): Promise<AiSettings>
+  /** Replace the cloud providers Auto may use, in priority order (unknown ids and duplicates are dropped). */
+  setAutoCloud(providers: CloudProviderId[]): Promise<AiSettings>
   setOllamaUrl(url: string): Promise<AiSettings>
   /** Downloads ONLY when confirmed === true (the user clicked Download in a confirmation). */
   downloadBloopModel(confirmed: boolean): Promise<{ ok: boolean; error?: string }>

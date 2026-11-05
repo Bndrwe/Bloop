@@ -193,3 +193,58 @@
     transition: none !important;
   }
 }
+
+/* "Use in Auto" switch: filled knob + filled track = on; outline = off. */
+.cloud-auto {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  flex-wrap: wrap;
+}
+.cloud-auto__label {
+  font-weight: 600;
+}
+.cloud-auto__hint {
+  color: var(--text-3);
+  font-size: 12px;
+}
+.cloud-switch {
+  position: relative;
+  width: 34px;
+  height: 20px;
+  flex: none;
+  padding: 0;
+  border: 1px solid var(--paper);
+  border-radius: 999px;
+  background: transparent;
+}
+.cloud-switch__knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--paper);
+  transition: transform 0.12s;
+}
+.cloud-switch[aria-checked='true'] {
+  background: var(--paper);
+}
+.cloud-switch[aria-checked='true'] .cloud-switch__knob {
+  background: var(--ink, #000);
+  transform: translateX(14px);
+}
+.cloud-switch:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.cloud-switch:focus-visible {
+  outline: 2px solid var(--paper);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cloud-switch__knob {
+    transition: none;
+  }
+}

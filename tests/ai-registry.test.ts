@@ -2,10 +2,10 @@
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { getPath: () => '/tmp', isPackaged: false } }))
-vi.mock('../src/main/store', () => ({ getAiSettings: () => ({ choice: { kind: 'auto' }, cloudModels: {}, ollamaUrl: 'http://127.0.0.1:11434', bloopOfferDismissed: false, bloopEnabled: false }) }))
+vi.mock('../src/main/store', () => ({ getAiSettings: () => ({ choice: { kind: 'auto' }, cloudModels: {}, autoCloud: [], ollamaUrl: 'http://127.0.0.1:11434', bloopOfferDismissed: false, bloopEnabled: false }) }))
 vi.mock('../src/main/ai/cloud', () => ({ cloudModule: null, setCloudModelsReader: () => undefined }))
 
-import { DEFAULT_AI_SETTINGS, type AiChoice } from '../src/shared/ai'
+import { DEFAULT_AI_SETTINGS, type AiChoice, type CloudProviderId } from '../src/shared/ai'
 import { createRegistry, NO_AI_MESSAGE } from '../src/main/ai/registry'
 import { normalizeOllamaUrl, validateAiSettings, validateChoice } from '../src/main/ai/settings'
 import type { AiProvider, CloudModule, LocalModule } from '../src/main/ai/types'
@@ -27,24 +27,33 @@ function fakes(local: AiProvider | null, cloud: AiProvider | null) {
 }
 
 describe('registry', () => {
-  const settings = (choice: AiChoice) => () => ({ ...DEFAULT_AI_SETTINGS, choice })
+  const settings = (choice: AiChoice, autoCloud: CloudProviderId[] = []) => () => ({ ...DEFAULT_AI_SETTINGS, choice, autoCloud })
 
-  it('auto: local first, then cloud, then a setup error', async () => {
+  it('auto: opted-in cloud first, then local, then a setup error', async () => {
     let f = fakes(prov('Bloop model (on-device)', 'local'), prov('Claude CLI', 'cloud'))
-    let r = createRegistry({ local: f.l, cloud: f.c, getSettings: settings({ kind: 'auto' }) })
+    let r = createRegistry({ local: f.l, cloud: f.c, getSettings: settings({ kind: 'auto' }, ['claude-cli']) })
+    expect(((await r.resolve()) as AiProvider).label).toBe('Claude CLI')
+    expect(f.c.autoProvider).toHaveBeenCalledWith(['claude-cli'])
+    expect(f.l.autoProvider).not.toHaveBeenCalled()
+
+    // not opted in: local wins and cloud is never asked
+    f = fakes(prov('Bloop model (on-device)', 'local'), prov('Claude CLI', 'cloud'))
+    r = createRegistry({ local: f.l, cloud: f.c, getSettings: settings({ kind: 'auto' }) })
     expect(((await r.resolve()) as AiProvider).label).toBe('Bloop model (on-device)')
     expect(f.c.autoProvider).not.toHaveBeenCalled()
 
+    // opted in but nothing available: falls through to local
+    f = fakes(prov('Bloop model (on-device)', 'local'), null)
+    r = createRegistry({ local: f.l, cloud: f.c, getSettings: settings({ kind: 'auto' }, ['claude-cli']) })
+    expect(((await r.resolve()) as AiProvider).label).toBe('Bloop model (on-device)')
+
+    // not opted in and no local: friendly error, cloud untouched
     f = fakes(null, prov('Claude CLI', 'cloud'))
     r = createRegistry({ local: f.l, cloud: f.c, getSettings: settings({ kind: 'auto' }) })
-    expect(((await r.resolve()) as AiProvider).label).toBe('Claude CLI')
-
-    f = fakes(null, null)
-    r = createRegistry({ local: f.l, cloud: f.c, getSettings: settings({ kind: 'auto' }) })
     expect(((await r.resolve()) as Error).message).toBe(NO_AI_MESSAGE)
-    await expect(r.generateText('p')).rejects.toThrow(/Settings → AI/)
-    const st = await r.status()
-    expect(st.active).toBeNull()
+    expect(f.c.autoProvider).not.toHaveBeenCalled()
+    await expect(r.generateText('p')).rejects.toThrow(/Turn on a model in Settings → AI/)
+    expect((await r.status()).active).toBeNull()
   })
 
   it('routes explicit choices and reports active', async () => {
@@ -127,5 +136,41 @@ describe('bloopEnabled validation', () => {
   it('settings saved before the flag existed keep an explicit Bloop choice on', () => {
     expect(validateAiSettings({ choice: { kind: 'local', runtime: 'bloop', model: 'b' } }).bloopEnabled).toBe(true)
     expect(validateAiSettings({ choice: { kind: 'local', runtime: 'ollama', model: 'm' } }).bloopEnabled).toBe(false)
+  })
+})
+
+describe('autoCloud validation and migration', () => {
+  it('defaults to [] (cloud is opt-in)', () => {
+    expect(DEFAULT_AI_SETTINGS.autoCloud).toEqual([])
+    expect(validateAiSettings(undefined).autoCloud).toEqual([])
+    expect(validateAiSettings({}).autoCloud).toEqual([])
+  })
+  it('settings stored before the field existed migrate to [] and keep everything else', () => {
+    const old = { choice: { kind: 'auto' }, cloudModels: { 'claude-cli': 'sonnet' }, ollamaUrl: 'http://box:11434', bloopOfferDismissed: true, bloopEnabled: true }
+    expect(validateAiSettings(old)).toEqual({ ...old, autoCloud: [] })
+  })
+  it('an old explicit cloud choice still works and does not opt into Auto', () => {
+    const s = validateAiSettings({ choice: { kind: 'cloud', provider: 'claude-cli', model: 'opus' }, cloudModels: {} })
+    expect(s.choice).toEqual({ kind: 'cloud', provider: 'claude-cli', model: 'opus' })
+    expect(s.autoCloud).toEqual([])
+  })
+  it('keeps only known ids, de-duplicates and keeps order', () => {
+    expect(validateAiSettings({ autoCloud: ['openrouter', 'nope', 'claude-cli', 'openrouter', 5, null, 'claude-cli', 'codex-cli'] }).autoCloud).toEqual([
+      'openrouter',
+      'claude-cli',
+      'codex-cli'
+    ])
+  })
+  it('non-array values become []', () => {
+    for (const v of ['claude-cli', 7, { 0: 'claude-cli' }, null, true]) expect(validateAiSettings({ autoCloud: v }).autoCloud).toEqual([])
+  })
+  it('is idempotent', () => {
+    const once = validateAiSettings({ autoCloud: ['gemini-cli', 'anthropic'] })
+    expect(validateAiSettings(once)).toEqual(once)
+  })
+  it('a patch merge (as store.saveAiSettings does) keeps autoCloud unless it is replaced', () => {
+    const cur = validateAiSettings({ autoCloud: ['claude-cli'] })
+    expect(validateAiSettings({ ...cur, ollamaUrl: 'http://x:1' }).autoCloud).toEqual(['claude-cli'])
+    expect(validateAiSettings({ ...cur, autoCloud: [] }).autoCloud).toEqual([])
   })
 })

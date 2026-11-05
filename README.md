@@ -64,7 +64,7 @@ Built as the MVP for a university AI class project. Everything runs locally: you
 
 The panel's **AI study plan** card writes a week of study blocks from your deadlines and focus history. Pick where the AI runs in **Settings → AI**:
 
-- **Auto** (default) uses the first option that is ready: the Bloop model (only after you turn it on, see below), then an Ollama model (`qwen3.5:0.8b` if you have it, otherwise your smallest), then the cloud options below. Auto never downloads or pulls anything.
+- **Auto** (default) uses the first option that is ready, in this order: (1) the cloud providers you turned on with **Use in Auto** (Settings → AI → Cloud; picking a cloud provider also turns it on, and it goes to the front), in your order and only if available, e.g. the Claude CLI installed and signed in; (2) the Bloop model (only after you turn it on, see below); (3) an Ollama model (`qwen3.5:0.8b` if you have it, otherwise your smallest). Cloud providers you haven't turned on are never used by Auto. If nothing is ready it says "Turn on a model in Settings → AI". Auto never downloads or pulls anything.
 - **Use Local** runs on your computer. It has two separate options: the **Bloop model** and **Ollama models**.
 - **Cloud** uses a CLI or API key you already have (see [Cloud AI](#cloud-ai)).
 
@@ -126,7 +126,7 @@ If Ollama is running without `qwen3.5:0.8b`, Bloop offers **Pull qwen3.5:0.8b wi
 
 ### Cloud AI
 
-Cloud AI lets the study plan run on a model you already pay for. Open the AI settings, choose **Cloud**, and pick a row. Bloop tries local options first and then the cloud options in this order: Claude CLI, Codex CLI, Gemini CLI, Anthropic API, OpenRouter.
+Cloud AI lets the study plan run on a model you already pay for. Open the AI settings, choose **Cloud**, and pick a row. Auto only uses a cloud provider you turned on with **Use in Auto** (picking a provider turns it on and puts it first), and then falls back to local models. Cloud providers you haven't turned on are never used automatically.
 
 **Your own CLIs (no key needed in Bloop).** Install the tool, then run it once in Terminal and sign in. Bloop finds it even when the app was launched from the Dock (it asks your login shell for its PATH and also checks Homebrew, `~/.local/bin`, npm, bun, volta, nvm and `%APPDATA%\npm`).
 

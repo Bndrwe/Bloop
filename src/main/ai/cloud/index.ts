@@ -17,7 +17,7 @@ import { resolveBinary } from './cli-detect'
 import { redact } from './redact'
 import { keyStatus, removeApiKey, saveApiKey, type ApiKeyProvider } from './secrets'
 
-/** Order used by 'auto' and by the status list. */
+/** Order of the status list (and the Settings rows). Auto uses AiSettings.autoCloud instead. */
 export const CLOUD_ORDER: CloudProviderId[] = ['claude-cli', 'codex-cli', 'gemini-cli', 'anthropic', 'openrouter']
 
 type CloudChoice = Extract<AiChoice, { kind: 'cloud' }>
@@ -99,8 +99,10 @@ async function provider(choice: CloudChoice): Promise<AiProvider | Error> {
   }
 }
 
-async function autoProvider(): Promise<AiProvider | null> {
-  for (const id of CLOUD_ORDER) {
+/** Only the providers the user turned on for Auto, in the order they gave. Nothing else is ever tried. */
+async function autoProvider(allowed: CloudProviderId[]): Promise<AiProvider | null> {
+  for (const id of allowed) {
+    if (!CLOUD_ORDER.includes(id)) continue
     const p = await provider({ kind: 'cloud', provider: id }) // uses the remembered model
     if (!(p instanceof Error)) return p
   }
