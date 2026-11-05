@@ -184,7 +184,7 @@ export class SessionEngine extends EventEmitter {
   say(message: string, mood?: PetMood): void {
     if (mood) this.setMood(mood)
     this.pet = { ...this.pet, message, messageId: this.pet.messageId + 1 }
-    this.d.log(`pet says: "${message}"`)
+    if (trace()) this.d.log(`pet says: "${message}"`)
     if (this.messageTimer) this.d.clearTimeout(this.messageTimer)
     this.messageTimer = this.d.setTimeout(() => {
       this.messageTimer = null
@@ -398,10 +398,16 @@ export class SessionEngine extends EventEmitter {
       category,
       durationSec: this.timing.sampleSec
     }
+    // A long gap since the previous sample (laptop asleep, lid closed, process suspended) is not
+    // time spent distracted: start any distraction streak afresh instead of counting the gap.
+    const prev = this.samples[this.samples.length - 1]
+    if (prev && t - prev.t > 3 * this.timing.sampleSec * 1000) this.resetStreak()
     this.samples.push(s)
     this.current = { app, domain, category }
     const score = computeFocusScore(this.samples, t)
-    this.d.log(`sample app="${app}"${domain ? ` domain=${domain}` : ''} category=${category} score=${score}`)
+    // Privacy: the persistent log must not record activity, so per-sample lines need BLOOP_TRACE=1.
+    if (trace()) this.d.log(`sample app="${app}"${domain ? ` domain=${domain}` : ''} category=${category} score=${score}`)
+    else if (this.samples.length === 1) this.d.log(`first sample: category=${category} score=${score}`)
     this.updateMood(category, t)
     this.emitStatus()
   }
@@ -442,6 +448,11 @@ export class SessionEngine extends EventEmitter {
       this.setMood('idle')
     }
   }
+}
+
+/** Activity details (app names, domains, pet lines) are only logged when tracing. */
+function trace(): boolean {
+  return process.env['BLOOP_TRACE'] === '1'
 }
 
 function formatDur(sec: number): string {

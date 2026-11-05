@@ -575,7 +575,7 @@ describe('clock skew / sleep (lid closed)', () => {
 
   // BUG: src/main/session.ts updateMood() computes `streak = t - streakStart` from wall-clock
   // times, so a sleep gap while on a distracting site counts as "distracted" time.
-  it.fails('BUG: laptop sleep while on YouTube must not count as 8h of distraction (no "480 minutes" notification)', async () => {
+  it('BUG: laptop sleep while on YouTube must not count as 8h of distraction (no "480 minutes" notification)', async () => {
     const h = make({ nudgeAfterSec: 60, notifyAfterSec: 180, nudgeCooldownSec: 120, focusMinutes: 600 })
     h.setRaw(YT)
     h.engine.start()

@@ -1,25 +1,79 @@
 // AI study plan. Generation goes through the AI registry (src/main/ai/registry.ts), which picks
 // the user's provider: the Bloop model, an Ollama model or a cloud provider. API keys (including
 // the .env ANTHROPIC_API_KEY fallback, read by the cloud side) stay in the main process.
-import { existsSync } from 'node:fs'
-import { join } from 'node:path'
+import { existsSync, readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import dotenv from 'dotenv'
 import type { Deadline, PlanBlock, Reminder, Result, Settings, Stats, StudyPlan } from '@shared/types'
 import type { CompleteOptions } from './ai/types'
 
+export interface EnvDirsInput {
+  packaged: boolean
+  platform: NodeJS.Platform
+  userData: string
+  /** process.execPath */
+  exePath: string
+  /** dev only: the project root and the working directory */
+  projectRoot?: string
+  cwd?: string
+  /** Linux AppImage: process.env.APPIMAGE (the .AppImage file itself, not the mount point) */
+  appImage?: string
+  /** Windows portable: process.env.PORTABLE_EXECUTABLE_FILE (the .exe, not the temp unpack dir) */
+  portableExe?: string
+}
+
+/**
+ * Where a `.env` may live, in priority order. A packaged app has no project folder (and its cwd is
+ * `/` or wherever it was launched from), so it only looks in the user-data folder and in the
+ * folder that holds the app: next to Bloop.app on macOS, next to Bloop.exe (or the portable .exe)
+ * on Windows, next to the .AppImage (or the install dir) on Linux.
+ */
+export function envSearchDirs(i: EnvDirsInput): string[] {
+  if (!i.packaged) return [...new Set([i.cwd, i.projectRoot, i.userData].filter((d): d is string => !!d))]
+  let besideApp: string
+  if (i.platform === 'darwin') {
+    // .../Bloop.app/Contents/MacOS/Bloop -> folder containing Bloop.app
+    const m = i.exePath.match(/^(.*?)[\\/][^\\/]+\.app[\\/]Contents[\\/]MacOS[\\/]/)
+    besideApp = m?.[1] || dirname(i.exePath)
+  } else if (i.platform === 'win32') besideApp = dirname(i.portableExe || i.exePath)
+  else besideApp = dirname(i.appImage || i.exePath)
+  return [...new Set([i.userData, besideApp])]
+}
+
+/** The only variable Bloop takes from a .env file (a .env next to the app may be untrusted). */
+const ENV_KEYS = ['ANTHROPIC_API_KEY'] as const
 
 let envLoaded = false
-/** Load .env from the given directories (first match wins for each var; existing env vars are kept). */
-export function loadEnv(dirs: string[]): void {
-  if (envLoaded) return
+/**
+ * Read ANTHROPIC_API_KEY from the first .env (in `dirs` order) that sets it, unless it is already
+ * in the environment. Nothing else in the file is applied. Only the main process reads it: the
+ * key never reaches a renderer.
+ */
+export function loadEnv(dirs: string[]): string[] {
+  if (envLoaded) return []
   envLoaded = true
+  const loaded: string[] = []
   for (const d of dirs) {
     const p = join(d, '.env')
-    if (existsSync(p)) {
-      dotenv.config({ path: p, quiet: true } as dotenv.DotenvConfigOptions)
-      console.log(`[bloop] loaded env from ${p}`)
+    if (!existsSync(p)) continue
+    let parsed: Record<string, string>
+    try {
+      parsed = dotenv.parse(readFileSync(p))
+    } catch (e) {
+      console.log(`[bloop] couldn't read ${p}: ${(e as Error).message}`)
+      continue
+    }
+    for (const k of ENV_KEYS) {
+      const v = parsed[k]?.trim()
+      if (v && !process.env[k]) {
+        process.env[k] = v
+        loaded.push(p)
+        console.log(`[bloop] ${k} loaded from ${p}`)
+      }
     }
   }
+  if (!loaded.length) console.log(`[bloop] no .env key loaded (looked in: ${dirs.join(', ')})`)
+  return loaded
 }
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -28,7 +82,7 @@ const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frid
 export function buildPrompt(deadlines: Deadline[], stats: Stats, settings: Settings, now: Date): string {
   const dl = deadlines.length
     ? deadlines
-        .map((d) => `- ${d.summary}${d.isExam ? ' (EXAM)' : ''}: ${new Date(d.start).toString()}`)
+        .map((d) => `- ${String(d.summary).replace(/[\r\n]+/g, ' ').slice(0, 120)}${d.isExam ? ' (EXAM)' : ''}: ${new Date(d.start).toString()}`)
         .join('\n')
     : '- (no upcoming deadlines found)'
   const days = stats.last7

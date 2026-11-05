@@ -22,6 +22,7 @@ let petWin: BrowserWindow | null = null
 let panelWin: BrowserWindow | null = null
 let settingsWin: BrowserWindow | null = null
 let onboardingWin: BrowserWindow | null = null
+let petRestarts = 0
 
 function webPreferences(): BrowserWindowConstructorOptions['webPreferences'] {
   return {
@@ -32,8 +33,31 @@ function webPreferences(): BrowserWindowConstructorOptions['webPreferences'] {
   }
 }
 
+/**
+ * Installed apps have no terminal, so renderer errors, failed loads and crashes go to the main
+ * log (and so to main.log, see log.ts) where a user can find them. Crashes are logged in index.ts.
+ */
+function watchContents(win: BrowserWindow, route: string): void {
+  const wc = win.webContents
+  wc.on('console-message', (e) => {
+    const d = e as unknown as { level?: string | number; message?: string; sourceId?: string; lineNumber?: number }
+    if (d.level === 'error' || d.level === 3) {
+      console.log(`[bloop] renderer(${route}) error: ${d.message ?? ''} (${d.sourceId ?? ''}:${d.lineNumber ?? ''})`)
+    }
+  })
+  wc.on('did-fail-load', (_e, code, desc, url) => {
+    console.log(`[bloop] renderer(${route}) failed to load ${url}: ${code} ${desc}`)
+  })
+  wc.on('preload-error', (_e, path, err) => {
+    console.log(`[bloop] renderer(${route}) preload ${path} failed: ${err.message}`)
+  })
+}
+
 function loadRoute(win: BrowserWindow, route: string): void {
+  watchContents(win, route)
   const devUrl = process.env['ELECTRON_RENDERER_URL']
+  // Packaged: out/main/index.js and out/renderer/index.html both sit inside app.asar, so this
+  // relative path works in dev (`electron-vite preview`) and in the installed app alike.
   if (!app.isPackaged && devUrl) void win.loadURL(`${devUrl}#/${route}`)
   else void win.loadFile(join(__dirname, '../renderer/index.html'), { hash: `/${route}` })
 }
@@ -96,8 +120,18 @@ export function createPetWindow(): BrowserWindow {
   }
   win.once('ready-to-show', () => win.showInactive())
   win.on('closed', () => {
-    petWin = null
+    if (petWin === win) petWin = null
     stopDrag()
+  })
+  // The pet is the app's only always-visible UI: if its renderer crashes, bring it back
+  // (a few times at most, so a renderer that crashes on load can't loop forever).
+  win.webContents.on('render-process-gone', (_e, d) => {
+    if (d.reason === 'clean-exit' || petRestarts >= 3) return
+    petRestarts++
+    setTimeout(() => {
+      if (!win.isDestroyed()) win.destroy()
+      if (!getPetWindow()) createPetWindow()
+    }, 1000)
   })
   loadRoute(win, 'pet')
   petWin = win
@@ -148,6 +182,9 @@ export function dragEnd(): { moved: boolean } {
 }
 
 export function setIgnoreMouse(ignore: boolean): void {
+  // Linux: click-through with {forward:true} isn't supported and can leave the pet unclickable,
+  // and without a tray (GNOME) the pet is the only way into Bloop. Keep it clickable.
+  if (process.platform === 'linux') return
   getPetWindow()?.setIgnoreMouseEvents(ignore, { forward: true })
 }
 
@@ -228,6 +265,21 @@ export function togglePanel(): void {
   if (win.webContents.isLoading()) win.once('ready-to-show', () => win.show())
   else win.show()
   win.focus()
+}
+
+/** Show the panel (never hide it): used when the user launches Bloop again while it is running. */
+export function showPanel(): void {
+  if (!panelWin || panelWin.isDestroyed()) panelWin = createPanelWindow()
+  const win = panelWin
+  if (win.isVisible()) {
+    win.focus()
+    return
+  }
+  positionPanel(win)
+  if (win.webContents.isLoading()) win.once('ready-to-show', () => win.show())
+  else win.show()
+  win.focus()
+  if (isMac) app.focus({ steal: true })
 }
 
 export function closePanel(): void {

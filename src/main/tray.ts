@@ -13,10 +13,14 @@ export interface TrayActions {
   stop(): void
   openSettings(): void
   togglePanel(): void
+  about(): void
+  openLogs(): void
+  quit(): void
 }
 
 let tray: Tray | null = null
 let lastKey = ''
+let lastItems: MenuItemConstructorOptions[] = []
 
 /**
  * Tray icon: macOS uses a monochrome template image; Windows/Linux need a coloured PNG
@@ -39,19 +43,52 @@ function fmt(sec: number): string {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
+/**
+ * Windows draws the tray icon at 16 px (100%), 20 (125%), 24 (150%) or 32 (200%). A single 32 px
+ * bitmap gets squashed by the shell and looks blurry, so give it one representation per scale.
+ */
+function windowsTrayImage(src: Electron.NativeImage): Electron.NativeImage {
+  const out = nativeImage.createEmpty()
+  for (const scaleFactor of [1, 1.25, 1.5, 2]) {
+    const px = Math.round(16 * scaleFactor)
+    const r = src.resize({ width: px, height: px, quality: 'best' })
+    out.addRepresentation({ scaleFactor, width: px, height: px, buffer: r.toPNG() })
+  }
+  return out.isEmpty() ? src : out
+}
+
 export function createTray(actions: TrayActions, status: AppStatus): Tray | null {
+  const path = iconPath()
   try {
-    const img = nativeImage.createFromPath(iconPath())
-    if (img.isEmpty()) throw new Error(`tray icon not found at ${iconPath()}`)
+    let img = nativeImage.createFromPath(path)
+    if (img.isEmpty()) throw new Error(`tray icon not found at ${path}`)
     if (process.platform === 'darwin') img.setTemplateImage(true)
+    if (process.platform === 'win32') img = windowsTrayImage(img)
     tray = new Tray(img)
   } catch (e) {
     console.log(`[bloop] tray unavailable: ${(e as Error).message}`)
     return null
   }
+  console.log(`[bloop] tray ready (icon ${path})`)
   if (process.platform !== 'darwin') tray.on('click', () => actions.togglePanel())
+  // Windows users often double-click tray icons; treat it like a click.
+  if (process.platform === 'win32') tray.on('double-click', () => actions.togglePanel())
   updateTray(actions, status)
   return tray
+}
+
+/** For automated tests of the packaged app (BLOOP_E2E=1): the current menu's labels. */
+export function trayMenuLabels(): string[] | null {
+  if (!tray || tray.isDestroyed()) return null
+  return lastItems.filter((i) => i.type !== 'separator').map((i) => String(i.label ?? ''))
+}
+
+/** For automated tests of the packaged app (BLOOP_E2E=1): click a menu item by label. */
+export function clickTrayItem(label: string): boolean {
+  const item = lastItems.find((i) => i.label === label && i.enabled !== false)
+  if (!item?.click) return false
+  ;(item.click as () => void)()
+  return true
 }
 
 export function updateTray(actions: TrayActions, s: AppStatus): void {
@@ -86,7 +123,11 @@ export function updateTray(actions: TrayActions, s: AppStatus): void {
     { label: 'Show panel', click: () => actions.togglePanel() },
     { label: 'Settings…', click: () => actions.openSettings() },
     { type: 'separator' },
-    { label: 'Quit Bloop', click: () => app.quit() }
+    { label: `About Bloop ${app.getVersion()}`, click: () => actions.about() },
+    { label: 'Open logs folder', click: () => actions.openLogs() },
+    { type: 'separator' },
+    { label: 'Quit Bloop', click: () => actions.quit() }
   )
+  lastItems = items
   tray.setContextMenu(Menu.buildFromTemplate(items))
 }

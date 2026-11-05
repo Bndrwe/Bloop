@@ -175,7 +175,7 @@ describe('parseDeadlines', () => {
     // BUG: deadlines.ts parseDeadlines() filters `start < now`; an all-day event TODAY has
     // start = local 00:00 which is already < now, so an all-day exam happening today vanishes
     // from the list (and from the exam reminders) as soon as the day begins.
-    it.fails('BUG: an all-day exam happening today is still listed during that day', () => {
+    it('BUG: an all-day exam happening today is still listed during that day', () => {
       process.env.TZ = 'America/New_York'
       const noonOnTheDay = new Date(2099, 11, 1, 12).getTime()
       expect(parse(body, noonOnTheDay)).toHaveLength(1)
@@ -183,11 +183,11 @@ describe('parseDeadlines', () => {
   })
 
   describe('recurring events', () => {
-    const weekly = cal(ev('UID:rec', 'DTSTART:20200105T100000Z', 'RRULE:FREQ=WEEKLY;COUNT=2000', 'SUMMARY:Weekly quiz'))
+    const weekly = cal(ev('UID:rec', 'DTSTART:20200105T100000Z', 'RRULE:FREQ=WEEKLY;COUNT=5000', 'SUMMARY:Weekly quiz'))
     // BUG: deadlines.ts parseDeadlines() only looks at the master event's DTSTART and ignores RRULE
     // (node-ical exposes `rrule`). A recurring event whose first occurrence is in the past (e.g. a
     // weekly quiz that started last semester) is dropped entirely although future occurrences exist.
-    it.fails('BUG: a recurring event whose DTSTART is in the past still yields its next occurrence', () => {
+    it('BUG: a recurring event whose DTSTART is in the past still yields its next occurrence', () => {
       const r = parse(weekly, NOW)
       expect(r.length).toBeGreaterThan(0)
       expect(r[0].start).toBeGreaterThanOrEqual(NOW)
@@ -200,7 +200,7 @@ describe('parseDeadlines', () => {
 
   // BUG: deadlines.ts parseDeadlines() ignores STATUS:CANCELLED, so a cancelled exam keeps being listed
   // and still triggers the "in 3 days / 1 day" reminders.
-  it.fails('BUG: STATUS:CANCELLED events are not listed', () => {
+  it('BUG: STATUS:CANCELLED events are not listed', () => {
     const b = cal(ev('UID:c', 'DTSTART:20990201T100000Z', 'STATUS:CANCELLED', 'SUMMARY:Midterm Exam'))
     expect(parse(b)).toHaveLength(0)
   })
@@ -285,7 +285,7 @@ describe('refreshDeadlines', () => {
   // BUG: deadlines.ts refreshDeadlines(): `icalUrl.trim()` is evaluated OUTSIDE the try/catch, so a
   // non-string icalUrl coming from a corrupted settings file (mergeSettings does not coerce it)
   // makes the promise reject with a TypeError instead of returning { ok:false, error }.
-  it.fails('BUG: a non-string icalUrl resolves to an error result instead of rejecting', async () => {
+  it('BUG: a non-string icalUrl resolves to an error result instead of rejecting', async () => {
     const r = await refreshDeadlines(42 as never)
     expect(r.ok).toBe(false)
   })
