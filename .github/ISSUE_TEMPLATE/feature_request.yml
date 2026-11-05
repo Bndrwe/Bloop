@@ -1,0 +1,34 @@
+name: Feature request
+description: Suggest an idea or an improvement for Bloop
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an idea. Bloop is a small study pet, so the most useful requests describe the study problem first and the feature second.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do, and what gets in the way?
+      placeholder: I lose track of time during long study blocks and only notice after the session has ended.
+    validations:
+      required: true
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: Proposed idea
+      description: How could Bloop help with this?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: Any other ways you have tried to solve this, including other apps or settings you already use.
+    validations:
+      required: false

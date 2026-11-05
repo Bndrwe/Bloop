@@ -1,0 +1,119 @@
+name: Bug report
+description: Something in Bloop is broken or behaves unexpectedly
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Before you start, please check the **install and troubleshooting** section of [docs/INSTALL.md](https://github.com/Bndrwe/StudyPet/blob/claude/practical-davinci-ckp3nc/docs/INSTALL.md). Many first-launch problems (macOS "damaged" warning, Windows SmartScreen, missing tray icon) are expected for an unsigned build.
+
+        Do **not** paste API keys, `.env` contents, or personal information (names, deadline titles, calendar URLs) into this issue.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you see? Include any error message, word for word if you have it.
+      placeholder: Bloop closed when I pressed Start session.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The smallest set of steps that makes the problem happen again.
+      placeholder: |
+        1. Open the panel by clicking the pet
+        2. Press Start session
+        3. Switch to a distracting site
+        4. ...
+    validations:
+      required: false
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: What did you expect to happen instead?
+    validations:
+      required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: Bloop version
+      description: Shown in the app's Settings, or the version in the file name you installed.
+      placeholder: "1.0.0"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: OS
+      description: Your operating system. On a Mac, Apple menu → About This Mac shows the chip.
+      options:
+        - macOS Apple Silicon
+        - macOS Intel
+        - Windows 10
+        - Windows 11
+        - Linux (X11)
+        - Linux (Wayland)
+        - Other
+    validations:
+      required: false
+
+  - type: dropdown
+    id: installed-file
+    attributes:
+      label: Which file you installed
+      description: The file name you downloaded from the release page.
+      options:
+        - .dmg arm64
+        - .dmg x64
+        - Setup .exe
+        - portable .exe
+        - AppImage
+        - .deb
+        - built from source
+    validations:
+      required: false
+
+  - type: dropdown
+    id: ai-option
+    attributes:
+      label: AI option in use
+      description: Which option is selected under Settings → AI. Choose "none" if you have not set up AI.
+      options:
+        - none
+        - Bloop model
+        - Ollama
+        - Claude CLI
+        - Codex CLI
+        - Gemini CLI
+        - Anthropic API
+        - OpenRouter
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: |
+        Paste the relevant `[bloop]` output or log lines.
+
+        Where to find logs: Tray/menu-bar icon → Open logs folder, if available; or run Bloop from a terminal.
+      render: shell
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: logs-clean
+    attributes:
+      label: Privacy check
+      options:
+        - label: I removed any API keys or personal info from the logs
+          required: true
