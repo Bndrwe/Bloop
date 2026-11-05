@@ -6,6 +6,10 @@ _Your little study pet._
 
 **Watch the ad:** [16:9](docs/demo/bloop-ad.mp4) · [vertical 9:16](docs/demo/bloop-ad-vertical.mp4) (42 s, real Bloop UI with simulated activity). More stills in [`docs/demo/`](docs/demo/).
 
+A small, cute desktop pet that lives in the top-right corner of your screen, watches whether you're focused, keeps a live **focus score**, and gently nudges you when you drift off task.
+
+Built as the MVP for a university AI class project. Everything runs locally: your activity data never leaves your machine. The one optional exception is the AI study plan: with the Bloop model or Ollama it also stays on your computer, and with a cloud provider it sends your upcoming deadlines and focus stats to that provider, only when you click the button.
+
 ## Install
 
 Bloop installs with one command that builds the app on your own computer from this repo and then installs it like a normal app (in Applications, the Start menu or your app menu). There are no downloadable installers at the moment, so this is the way to get it.
@@ -18,7 +22,17 @@ Bloop installs with one command that builds the app on your own computer from th
 
 ### macOS: Terminal
 
-Recommended, with the [GitHub CLI](https://cli.github.com) (it handles the sign-in; get it with `brew install gh`, then run `gh auth login` once):
+Open **Terminal** (⌘ Space, type "Terminal"). One-time setup, if you don't have them yet ([Homebrew](https://brew.sh) first):
+
+```bash
+brew install gh node@20
+```
+
+```bash
+gh auth login
+```
+
+(choose GitHub.com → HTTPS → Login with a web browser). Then install Bloop:
 
 ```bash
 gh repo clone Bndrwe/StudyPet -- -b claude/practical-davinci-ckp3nc && cd StudyPet && ./scripts/install.sh
@@ -26,7 +40,13 @@ gh repo clone Bndrwe/StudyPet -- -b claude/practical-davinci-ckp3nc && cd StudyP
 
 ### Windows: PowerShell
 
-Recommended, with [Git for Windows](https://git-scm.com/download/win) (it opens a browser window to sign in to GitHub the first time):
+One-time setup, if you don't have them yet (then close and reopen PowerShell):
+
+```powershell
+winget install Git.Git OpenJS.NodeJS.LTS
+```
+
+Then install Bloop (Git opens a browser window to sign in to GitHub the first time):
 
 ```powershell
 git clone -b claude/practical-davinci-ckp3nc https://github.com/Bndrwe/StudyPet.git; cd StudyPet; powershell -ExecutionPolicy Bypass -File scripts\install.ps1
@@ -34,7 +54,7 @@ git clone -b claude/practical-davinci-ckp3nc https://github.com/Bndrwe/StudyPet.
 
 ### Linux: terminal
 
-Recommended, with the [GitHub CLI](https://cli.github.com) (`gh auth login` once):
+One-time setup: install the [GitHub CLI](https://cli.github.com), git and Node.js 20+ from your distro or [nvm](https://github.com/nvm-sh/nvm), plus `x11-utils` for focus tracking, then run `gh auth login`. Then:
 
 ```bash
 gh repo clone Bndrwe/StudyPet -- -b claude/practical-davinci-ckp3nc && cd StudyPet && ./scripts/install.sh
@@ -45,6 +65,13 @@ gh repo clone Bndrwe/StudyPet -- -b claude/practical-davinci-ckp3nc && cd StudyP
 ```bash
 git clone -b claude/practical-davinci-ckp3nc https://github.com/Bndrwe/StudyPet.git && cd StudyPet && ./scripts/install.sh
 ```
+
+### After installing
+
+- **Mac:** Bloop has no Dock icon. Look for it in the **menu bar** (top right); the pet sits in the top-right corner of your screen. The first launch walks you through **Screen Recording** and **Automation**; after allowing Screen Recording, click **Restart Bloop**.
+- **Windows:** Bloop is in the Start menu and in the system tray by the clock (it may be under the **^** overflow; drag it out to pin it).
+- **Linux:** open Bloop from your app menu or run `bloop`.
+- Click the pet to open the panel and press **Start**. For AI study plans, open **Settings → AI** (the on-device Bloop model is a 532 MB download that asks first).
 
 Already have the repo? From its folder, run `npm run install-app` (macOS/Linux) or `npm run install-app:win` (Windows).
 
@@ -68,25 +95,6 @@ Step-by-step help, permissions and troubleshooting: [docs/INSTALL.md](docs/INSTA
 
 Prebuilt installers (`.dmg`/`.exe`/AppImage) can be produced by `.github/workflows/release.yml` when GitHub Actions minutes are available, or locally with `npm run build:mac` / `build:win` / `build:linux`.
 
-A small, cute desktop pet that lives in the top-right corner of your screen, watches whether you're focused, keeps a live **focus score**, and gently nudges you when you drift off task.
-
-Built as the MVP for a university AI class project. Everything runs locally: your activity data never leaves your machine. The one optional exception is the AI study plan: with the Bloop model or Ollama it also stays on your computer, and with a cloud provider it sends your upcoming deadlines and focus stats to that provider, only when you click the button.
-
-![Focus loop: focused on Code (100) → drifted to YouTube (59, pet worried) → back on track (65)](docs/screenshots/demo-flow.png)
-
-*The core loop, captured from the running app: focus → drift → nudge → back on track.*
-
-| | |
-|:---:|:---:|
-| ![Pet moods](docs/screenshots/pet-moods.png) | ![Panel](docs/screenshots/panel.png) |
-| *Pet moods* | *Panel* |
-| ![Settings](docs/screenshots/settings.png) | ![First-run permissions](docs/screenshots/onboarding.png) |
-| *Settings* | *First-run permissions* |
-
-![The pet cycling through every mood, on a white and a black background](docs/screenshots/pet-motion.gif)
-
-*Every mood, animated with anime.js, on a white and a black desktop. Panel opening, score count-up and the chrome following the pointer: [panel-motion.gif](docs/screenshots/panel-motion.gif) (hero close-up: [panel-hero.png](docs/screenshots/panel-hero.png)) (WebM versions next to them in `docs/screenshots/`).*
-
 ---
 
 ## What it does
@@ -102,6 +110,21 @@ Built as the MVP for a university AI class project. Everything runs locally: you
 - **Stretch features**: Brightspace deadlines via iCal, and an AI weekly study plan generated on-device (the Bloop model or Ollama) or by a cloud model.
 
 ## Screenshots
+
+![Focus loop: focused on Code (100) → drifted to YouTube (59, pet worried) → back on track (65)](docs/screenshots/demo-flow.png)
+
+*The core loop, captured from the running app: focus → drift → nudge → back on track.*
+
+| | |
+|:---:|:---:|
+| ![Pet moods](docs/screenshots/pet-moods.png) | ![Panel](docs/screenshots/panel.png) |
+| *Pet moods* | *Panel* |
+| ![Settings](docs/screenshots/settings.png) | ![First-run permissions](docs/screenshots/onboarding.png) |
+| *Settings* | *First-run permissions* |
+
+![The pet cycling through every mood, on a white and a black background](docs/screenshots/pet-motion.gif)
+
+*Every mood, animated with anime.js, on a white and a black desktop. Panel opening, score count-up and the chrome following the pointer: [panel-motion.gif](docs/screenshots/panel-motion.gif) (hero close-up: [panel-hero.png](docs/screenshots/panel-hero.png)) (WebM versions next to them in `docs/screenshots/`).*
 
 **A day with Bloop** (stills from the ad: real Bloop UI on a simulated desktop)
 
