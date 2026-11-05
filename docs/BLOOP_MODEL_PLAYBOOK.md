@@ -350,7 +350,7 @@ Each file below is wrapped as `<!-- FILE: path sha256=… nl=… -->` followed b
 | `ml/train/test_eval_helpers.py` | 2,036 |
 | `ml/train/test_scoring.py` | 7,721 |
 | `ml/train/test_train_helpers.py` | 1,818 |
-| `ml/train/train_lora.py` | 24,721 |
+| `ml/train/train_lora.py` | 25,648 |
 | `ml/wsp/README.md` | 13,240 |
 | `ml/wsp/apply_patch.py` | 5,341 |
 | `ml/wsp/harness.py` | 46,365 |
@@ -3814,7 +3814,7 @@ if __name__ == "__main__":
 
 ### `ml/train/train_lora.py`
 
-<!-- FILE: ml/train/train_lora.py sha256=075dd50824f07b97cb7100b922ea24d0572afc4d17acfef59eed138698155707 nl=1 -->
+<!-- FILE: ml/train/train_lora.py sha256=f5afd709d8b08c8b6beb53595b51e246c5c795dcdb930d9e41c5d8434e7ee5c8 nl=1 -->
 ``````python
 #!/usr/bin/env python3
 """LoRA fine-tune Qwen/Qwen3.5-0.8B (or another --base) for the Bloop model, then merge the adapter.
@@ -4153,20 +4153,44 @@ def evaluate(model, data, args, pad_id, device, autocast_dtype) -> float:
     return total / max(1, count)
 
 
+def linear_lora_targets(model) -> list:
+    """Exact names of plain nn.Linear layers in the text model (no vision tower, MTP head or lm_head).
+
+    peft's "all-linear" also picks up Qwen3.5's non-standard modules (Gated DeltaNet internals), which
+    peft can't wrap. Listing exact names avoids that and keeps the fine-tune text-only.
+    """
+    import re
+
+    import torch
+
+    skip = re.compile(r"(visual|vision_tower|vision_model|mtp|lm_head|embed)", re.I)
+    names, skipped = [], {}
+    for name, mod in model.named_modules():
+        if not name or skip.search(name):
+            continue
+        if type(mod) is torch.nn.Linear:
+            names.append(name)
+        elif isinstance(mod, torch.nn.Linear):  # Linear subclasses: peft may not support them
+            skipped[type(mod).__name__] = skipped.get(type(mod).__name__, 0) + 1
+    suffixes = sorted({n.rsplit(".", 1)[-1] for n in names})
+    print(f"[lora] {len(names)} linear layers targeted; kinds: {', '.join(suffixes)}")
+    if skipped:
+        print(f"[lora] skipped Linear subclasses: {skipped}")
+    if not names:
+        raise SystemExit("[lora] found no nn.Linear layers to adapt; pass --lora-targets explicitly")
+    return names
+
+
 def make_peft_model(model, args):
     from peft import LoraConfig, get_peft_model
 
     targets = args.lora_targets
-    if targets != "all-linear":
+    if targets == "all-linear":
+        targets = linear_lora_targets(model)
+    else:
         targets = [t.strip() for t in targets.split(",") if t.strip()]
-    kw = dict(r=args.lora_r, lora_alpha=args.lora_alpha, lora_dropout=args.lora_dropout,
-              target_modules=targets, bias="none", task_type="CAUSAL_LM")
-    try:
-        # keep the vision tower (and any MTP head) untouched: text-only fine-tune
-        cfg = LoraConfig(exclude_modules=r".*(visual|vision_tower|vision_model|mtp).*", **kw)
-    except TypeError:
-        print("[lora] this peft has no exclude_modules; vision-tower linears will get adapters too (harmless).")
-        cfg = LoraConfig(**kw)
+    cfg = LoraConfig(r=args.lora_r, lora_alpha=args.lora_alpha, lora_dropout=args.lora_dropout,
+                     target_modules=targets, bias="none", task_type="CAUSAL_LM")
     pm = get_peft_model(model, cfg)
     pm.print_trainable_parameters()
     return pm
