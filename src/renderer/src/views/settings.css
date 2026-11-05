@@ -263,6 +263,11 @@
 .reminder-time::-webkit-calendar-picker-indicator {
   filter: invert(1);
 }
+/* Chromium paints the focused hour/minute/AM-PM segment in its blue highlight, and ignores
+   author :focus styles on those pseudo-elements. Greyscale keeps it ink-on-grey, no hue. */
+.reminder-time {
+  filter: grayscale(1);
+}
 .reminder-label {
   flex: 1;
   min-width: 80px;

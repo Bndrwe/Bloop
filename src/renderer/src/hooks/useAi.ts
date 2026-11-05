@@ -43,8 +43,9 @@ export function useAi(): {
   return { status, settings, setSettings, refresh }
 }
 
+/** Decimal units (1 MB = 1,000,000 bytes), matching the README and Hugging Face: 532,517,120 B → "532 MB" (whole MB, rounded down). */
 export function formatBytes(n: number | null | undefined): string {
   if (n == null || !Number.isFinite(n) || n <= 0) return '—'
-  if (n >= 1024 ** 3) return `${(n / 1024 ** 3).toFixed(1)} GB`
-  return `${Math.max(1, Math.round(n / 1024 ** 2))} MB`
+  if (n >= 1e9) return `${(n / 1e9).toFixed(1)} GB`
+  return `${Math.max(1, Math.floor(n / 1e6))} MB`
 }

@@ -397,7 +397,7 @@ export function SettingsView(): JSX.Element {
 
       <section className="card enter">
         <h2>Apps</h2>
-        <p className="section-sub muted">Matched against the app name in your menu bar, like “Notion” or “Discord”.</p>
+        <p className="section-sub muted">Matched against the name of the app in front, like “Notion” or “Discord”.</p>
         <div className="grid2 grid2--inner">
           <ChipList
             title="Focus apps"
