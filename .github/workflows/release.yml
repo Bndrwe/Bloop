@@ -150,9 +150,13 @@ jobs:
           Get-Process Bloop -ErrorAction SilentlyContinue | Stop-Process -Force
           '---- stdout'; Get-Content $out -ErrorAction SilentlyContinue
           '---- stderr (tail)'; Get-Content $err -Tail 40 -ErrorAction SilentlyContinue
-          $log = (Get-Content $out -Raw -ErrorAction SilentlyContinue) + (Get-Content $err -Raw -ErrorAction SilentlyContinue)
+          # A GUI-subsystem exe may not write to redirected stdout; the app also logs to main.log.
+          $mainLog = Join-Path $env:APPDATA 'bloop\logs\main.log'
+          '---- main.log'; Get-Content $mainLog -ErrorAction SilentlyContinue | Tee-Object -FilePath (Join-Path $env:SMOKE 'win.main.log.txt')
+          $log = (Get-Content $out -Raw -ErrorAction SilentlyContinue) + (Get-Content $err -Raw -ErrorAction SilentlyContinue) + (Get-Content $mainLog -Raw -ErrorAction SilentlyContinue)
           if ($log -match '\[bloop\] starting') { "found [bloop] startup lines" }
-          else { "WARNING: [bloop] lines were not captured (Windows GUI app stdout); accepting the alive check" }
+          elseif (Test-Path $mainLog) { throw "main.log exists but has no [bloop] starting line" }
+          else { "WARNING: no [bloop] lines captured and no main.log; accepting the alive check" }
           if ($log -match 'Uncaught|A JavaScript error occurred|failed to load file|ERR_FILE_NOT_FOUND') { throw "error in app output" }
           # Uninstall again so the runner stays clean and the uninstaller is exercised.
           $un = Get-ChildItem $dir -Filter 'Uninstall*.exe' | Select-Object -First 1
