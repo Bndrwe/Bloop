@@ -1,15 +1,9 @@
 name: macOS e2e
 
 on:
+  # Manual only: each run uses 3 macOS runners, which count 10x against a private repo's Actions
+  # minutes. Start it from the Actions tab ("Run workflow") when you want a real-Mac check.
   workflow_dispatch:
-  push:
-    branches: [claude/practical-davinci-ckp3nc]
-    paths-ignore:
-      - 'docs/**'
-      - 'ci-artifacts/**'
-      # Installers are built by release.yml (tag push / manual run); it never commits here.
-      - '.github/workflows/release.yml'
-      - 'README.md'
 
 permissions:
   contents: write
