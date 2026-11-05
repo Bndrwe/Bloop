@@ -7,16 +7,16 @@ VersionPlatform=1
 VersionMin=786432
 VersionSDK=1703936
 Hash type=sha256 size=32
-CandidateCDHash sha256=1da4935ddc77face2d272787bfa5e26c61169da7
-CandidateCDHashFull sha256=1da4935ddc77face2d272787bfa5e26c61169da709fbdcf626d1852449b799ac
+CandidateCDHash sha256=25daf255f573b606c7bda3fae55a7705b8a65a4b
+CandidateCDHashFull sha256=25daf255f573b606c7bda3fae55a7705b8a65a4b1d488bddcff0d37c1a3a0cc7
 Hash choices=sha256
-CMSDigest=1da4935ddc77face2d272787bfa5e26c61169da709fbdcf626d1852449b799ac
+CMSDigest=25daf255f573b606c7bda3fae55a7705b8a65a4b1d488bddcff0d37c1a3a0cc7
 CMSDigestType=2
 Executable Segment base=0
 Executable Segment limit=16384
 Executable Segment flags=0x1
 Page size=4096
-CDHash=1da4935ddc77face2d272787bfa5e26c61169da7
+CDHash=25daf255f573b606c7bda3fae55a7705b8a65a4b
 Signature=adhoc
 Info.plist entries=33
 TeamIdentifier=not set
@@ -25,26 +25,26 @@ Sealed Resources version=2 rules=13 files=795
 Internal requirements count=0 size=12
 == designated requirement
 Executable=/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/MacOS/Bloop
-# designated => cdhash H"1da4935ddc77face2d272787bfa5e26c61169da7"
+# designated => cdhash H"25daf255f573b606c7bda3fae55a7705b8a65a4b"
 == codesign --verify --deep --strict
 --prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper (Plugin).app
---prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/ReactiveObjC.framework/Versions/Current/.
---validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/ReactiveObjC.framework/Versions/Current/.
 --validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper (Plugin).app
---prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Squirrel.framework/Versions/Current/.
---validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Squirrel.framework/Versions/Current/.
---prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper (GPU).app
---validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper (GPU).app
---prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper.app
---validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper.app
---prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Mantle.framework/Versions/Current/.
---prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper (Renderer).app
---validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper (Renderer).app
---validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Mantle.framework/Versions/Current/.
 --prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Electron Framework.framework/Versions/Current/.
 --prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Electron Framework.framework/Versions/Current/Helpers/chrome_crashpad_handler
 --validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Electron Framework.framework/Versions/Current/Helpers/chrome_crashpad_handler
 --validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Electron Framework.framework/Versions/Current/.
+--prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper (GPU).app
+--prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Squirrel.framework/Versions/Current/.
+--validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper (GPU).app
+--prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/ReactiveObjC.framework/Versions/Current/.
+--validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Squirrel.framework/Versions/Current/.
+--prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper.app
+--validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/ReactiveObjC.framework/Versions/Current/.
+--validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper.app
+--prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper (Renderer).app
+--prepared:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Mantle.framework/Versions/Current/.
+--validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Bloop Helper (Renderer).app
+--validated:/Users/runner/work/StudyPet/StudyPet/dist/mac-arm64/Bloop.app/Contents/Frameworks/Mantle.framework/Versions/Current/.
 dist/mac-arm64/Bloop.app: valid on disk
 dist/mac-arm64/Bloop.app: satisfies its Designated Requirement
 exit=0
