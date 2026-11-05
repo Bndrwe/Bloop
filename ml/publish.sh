@@ -4,7 +4,7 @@
 #   hf auth login                       # once; paste a *write* token from https://huggingface.co/settings/tokens
 #   bash ml/publish.sh <hf-username>    # or: HF_USER=name bash ml/publish.sh
 #
-# Env: GGUF (path), REPO_NAME (default bloop-qwen3.5-0.8b-GGUF), PRIVATE=1 to create a private repo.
+# Env: GGUF (path), REPO_NAME (default bloop-qwen3.5-0.8b-GGUF), PRIVATE=1 to create a private repo (default is PUBLIC; the app can only download from a public repo).
 set -euo pipefail
 
 ML_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -42,7 +42,7 @@ CREATE=("${HF[@]}" repo create "$REPO" --repo-type model)
 SHA="$(sha256_of "$GGUF")"; BYTES="$(size_of "$GGUF")"
 cat <<OUT
 
-Done. Put these three constants in src/main/ai/local/bloop.ts:
+Done. These three constants REPLACE the ones at the top of src/main/ai/local/bloop.ts:
 
   BLOOP_MODEL_URL    = 'https://huggingface.co/$REPO/resolve/main/$FILE'
   BLOOP_MODEL_SHA256 = '$SHA'

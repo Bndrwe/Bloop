@@ -235,7 +235,7 @@ The long string of letters and numbers from the first command must match the one
 
 The panel has an **AI study plan** card that writes a week of study blocks from your deadlines and focus history. It only works once you pick where the AI runs, under **Settings → AI**:
 
-- **Use Local → Bloop model.** A small AI model that runs entirely on your computer and works offline. It is **not** downloaded automatically. When you choose it (or press Generate with it selected), Bloop asks "Download the Bloop model (~532 MB)?" with **Download** and **Not now**. Nothing is fetched until you press **Download**. You need about 532 MB of free disk space, and the download can resume if you cancel. If you already have a `.gguf` file, you can use **Import .gguf…** instead.
+- **Use Local → Bloop model.** A small AI model that runs entirely on your computer and works offline. It is **not** downloaded automatically. When you choose it (or press Generate with it selected), Bloop asks "Download the Bloop model?" (it says the model is 532 MB) with **Download** and **Not now**. Nothing is fetched until you press **Download**. You need about 532 MB of free disk space, and the download can resume if you cancel. If you already have a `.gguf` file, you can use **Import .gguf…** instead. Some builds ship the model inside the app; there it is off until you pick **Use Bloop model**.
 - **Use Local → Ollama models.** If you already use [Ollama](https://ollama.com/download), open it and pick one of its models from the list (press **Refresh** after pulling one). If Ollama is running but missing the small recommended model, Bloop offers to pull it and only does so after you confirm.
 - **Cloud.** Uses a tool or key you already have: the Claude, Codex or Gemini command-line tools, or an Anthropic or OpenRouter API key. With a cloud option, your upcoming deadline titles and focus totals are sent to that provider, and only when you click **Generate plan**.
 - **Auto** (default) uses the first option that is ready: Bloop model (only if you turned it on), then Ollama, then cloud. It never downloads anything on its own.
@@ -309,7 +309,7 @@ If it still fails, download the file again and compare it with `SHA256SUMS.txt` 
 - Check your internet connection and that you have about 532 MB of free disk space; Bloop checks for space first.
 - Press **Download…** again. Downloads resume where they stopped.
 - Some school and work networks block the download site (huggingface.co). Try a different network, or download the `.gguf` file elsewhere and use **Import .gguf…**.
-- If the button says "Not published yet", this build has no download link. Use **Import .gguf…**, Ollama, or Cloud instead.
+- If the button instead reads "Download · Not published yet", that build has no download link. Use **Import .gguf…**, Ollama, or Cloud instead. (Normally the button reads **Download…**; the link points at the stock Qwen3.5 0.8B model, 532 MB.)
 - You can also skip the model and use Ollama or Cloud.
 
 **Where are the logs?**

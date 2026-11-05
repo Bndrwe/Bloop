@@ -2,7 +2,7 @@
 
 **One file, everything included.** This Markdown file has the full runbook *and* every file of the Bloop model kit embedded below: the training scripts, the dataset, the weight-space harness, the eval, and the publishing scripts. You don't need GitHub access or a zip. Give this file to Codex (or any agent) or follow it yourself.
 
-> **What you're making:** the **Bloop model**. It's [Qwen/Qwen3.5-0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B), lightly LoRA fine-tuned on Bloop's study-plan and nudge tasks, optionally edited MIT-style in weight space, then converted to **GGUF Q4_K_M** (about 500 MB). The Bloop desktop app downloads it (only after the user confirms) and runs it on-device with node-llama-cpp.
+> **What you're making:** the **Bloop model**. It's [Qwen/Qwen3.5-0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B), lightly LoRA fine-tuned on Bloop's study-plan and nudge tasks, optionally edited MIT-style in weight space, then converted to **GGUF Q4_K_M** (about 500 MB). The app can bundle it, import it, or download it (only after the user confirms); by default it downloads the stock Qwen3.5-0.8B. It runs on-device with node-llama-cpp.
 
 ---
 
@@ -81,7 +81,7 @@ docs/             the two original Codex briefs (Part A and Part B as separate d
 | Linux/NVIDIA box | any CUDA GPU | ~10–20 min | Same commands as the Mac script, using CUDA. |
 | CPU only | — | hours | Works, but slowly. Not recommended. |
 
-The first run includes downloading PyTorch (~150 MB) and Qwen3.5-0.8B (~1.6 GB), building llama.cpp (~3–5 min), conversion and quantization (~2 min), and eval (~5 min). Training itself is ~5–15 min on a GPU. The script times a few steps first and prints an ETA.
+The first run includes downloading PyTorch (~150 MB) and Qwen3.5-0.8B (~1.6 GB), building llama.cpp (~3–5 min), conversion and quantization (~2 min), and eval (~5 min). Training itself is ~15–25 min on a T4 (faster on a newer GPU). The script times a few steps first and prints an ETA.
 
 **Codex cloud containers have no GPU.** Use Codex *with a browser* to drive Colab, or Codex CLI on a Mac.
 
@@ -116,7 +116,7 @@ If MPS complains about an unsupported op: `export PYTORCH_ENABLE_MPS_FALLBACK=1`
 - **Base model:** `Qwen/Qwen3.5-0.8B` (Apache-2.0). It's multimodal (`Qwen3_5ForConditionalGeneration`), so the vision tower is left untouched. It has 24 layers: 18 Gated DeltaNet linear-attention layers and 6 full-attention layers.
 - **LoRA:** r=16, alpha=32, dropout 0.05, target `all-linear` (vision excluded).
 - **Schedule:** lr 2e-4 with cosine decay and warmup, 2 epochs, effective batch 8, max length 1024.
-- **Loss:** on the assistant answer only (the prompt is masked). Chat template with thinking **off**.
+- **Loss:** on the assistant answer only (the prompt is masked). Chat template default (Qwen3.5-0.8B is non-thinking by default); if the printed prompt tail shows an open `<think>` block, pass `--enable-thinking false`.
 - **Precision:** CUDA uses fp32 weights with fp16 autocast (T4 has no bf16). MPS uses fp32. Missing `flash-linear-attention` / `causal-conv1d` only means slower training.
 - **Outputs:** the adapter each epoch → `ml/out/merged` (the merged model) → GGUF.
 
@@ -213,12 +213,14 @@ npm run build            # electron-builder copies resources/models/ into the ap
 
 ### Publish (optional, needs YOUR Hugging Face token; agents must ask)
 
-Only if you want an in-app **Download** button instead of (or besides) bundling:
+Bundling is the default way to ship a fine-tuned model; publishing is optional. The app's **Download** button is already enabled: the constants at the top of `src/main/ai/local/bloop.ts` point by default at the stock `unsloth/Qwen3.5-0.8B-GGUF` Q4_K_M build. Publish only if you want that button to fetch your fine-tuned model instead (or besides bundling):
 
 ```bash
 hf auth login                      # paste a WRITE token from https://huggingface.co/settings/tokens
 bash ml/publish.sh <hf-username>   # uploads GGUF + MODEL_CARD.md to <user>/bloop-qwen3.5-0.8b-GGUF
 ```
+
+**This creates a PUBLIC repo** unless you set `PRIVATE=1` (`PRIVATE=1 bash ml/publish.sh <hf-username>`). The notebook's publish cell likewise creates a public repo unless you add `private=True` to `create_repo(...)`. The app can only download from a public repo.
 
 It prints the three values the app needs:
 
@@ -228,9 +230,9 @@ BLOOP_MODEL_SHA256 = <sha256>
 BLOOP_MODEL_BYTES  = <size in bytes>
 ```
 
-These go at the top of `src/main/ai/local/bloop.ts` in the app, which switches on the in-app **Download** button (used only when no model is bundled).
+These constants **replace** the ones at the top of `src/main/ai/local/bloop.ts`, so the in-app **Download** button fetches your model instead of the stock one (used only when no model is bundled).
 
-- **Visibility:** the repo must be **public** for the app to download it without a token. Qwen3.5 is Apache-2.0, so redistribution is allowed.
+- **Visibility:** the repo must be **public** for the app to download it without a token (a private repo is fine if you only bundle or import). Qwen3.5 is Apache-2.0, so redistribution is allowed.
 - **Not bundling or publishing?** Load the `.gguf` in Bloop via **Settings → AI → Use Local → Bloop model → Import .gguf…**
 
 ### Ollama (optional)
@@ -264,7 +266,7 @@ Paste this back to whoever is integrating the app:
 - **Leave the data and model alone:** don't change the dataset, the prompt format, or the base model choice (beyond `qwen` vs `mit`).
 - **Part B is edits only:** no gradient training in Part B, only harness edits. Never exceed 50 passes. Call `final_test()` exactly once, and never look at the `test` split before it.
 - **Protected weights:** never edit the embeddings, the unembedding or the vision tower. Keep every edit reversible, with a reason in `ws.notes`.
-- **Tokens:** never invent, store or print a token. **Stop and ask** for the Hugging Face token at publishing time. Create the HF repo **private** unless told to make it public.
+- **Tokens:** never invent, store or print a token. **Stop and ask** for the Hugging Face token at publishing time. Create the HF repo **private** unless the user wants the app to download it (then public). Note `ml/publish.sh` and the notebook publish cell default to public; use `PRIVATE=1` / `private=True` otherwise.
 - **No private-repo clones:** don't clone the GitHub repo (it's private). Use the files unpacked from this playbook.
 - **Stop on repeated failure:** if a step fails twice, stop and show the full error output.
 - **Be honest:** if fine-tuning or editing doesn't beat the base, say so and recommend what to ship.
@@ -284,7 +286,7 @@ Paste this back to whoever is integrating the app:
 | Batched generation garbage in the harness (Gated DeltaNet + left padding) | Set `ws.gen_batch_size = 1` |
 | `convert_hf_to_gguf.py` rejects the arch | `git -C ml/cache/llama.cpp pull`, then re-run. Qwen3.5 GGUFs exist upstream (ggml-org/Qwen3.5-0.8B-GGUF), so it's supported. |
 | Colab disconnected | Re-run. `run_mac.sh` and the notebook skip finished steps when outputs exist. |
-| Plan outputs include `<think>` | Make sure thinking is off (`enable_thinking=False`). The kit defaults to off. |
+| Plan outputs include `<think>` | Make sure thinking is off (`enable_thinking=False`). The kit uses the template default; add `--enable-thinking false` to `train_lora.py` (e.g. via `TRAIN_ARGS`). |
 
 ---
 
@@ -315,7 +317,7 @@ The scoring code is `ml/train/scoring.py`. The same checks are used by the datas
 
 Bloop's **Settings → AI** has **Auto / Use Local / Cloud**.
 
-- **Use Local → Bloop model:** this GGUF, bundled in the app (`resources/models/`) and off until the user picks **Use Bloop model** (or imported, or downloaded after a confirmation when a URL is published), run with node-llama-cpp using the JSON-schema grammar and thinking off.
+- **Use Local → Bloop model:** this GGUF, bundled in the app (`resources/models/`) and off until the user picks **Use Bloop model** (or imported, or downloaded after a confirmation (the URL points at the stock model by default)), run with node-llama-cpp using the JSON-schema grammar and thinking off.
 - **Use Local → Ollama models:** detected separately, with a pull offer behind a confirmation.
 - **Cloud:** Claude / Codex / Gemini CLIs, plus Anthropic / OpenRouter keys.
 - **Auto order:** Bloop model (only once the user turned it on) → Ollama → cloud. It never downloads anything by itself.
@@ -328,13 +330,13 @@ Each file below is wrapped as `<!-- FILE: path sha256=… nl=… -->` followed b
 
 | File | Bytes |
 |---|---|
-| `docs/codex-colab-prompt.md` | 8,009 |
+| `docs/codex-colab-prompt.md` | 8,442 |
 | `docs/codex-weight-space-prompt.md` | 7,387 |
 | `ml/MODEL_CARD.md` | 3,003 |
 | `ml/Modelfile` | 1,271 |
-| `ml/README-data.md` | 6,054 |
-| `ml/README.md` | 5,780 |
-| `ml/colab/train_bloop.ipynb` | 12,491 |
+| `ml/README-data.md` | 6,334 |
+| `ml/README.md` | 6,142 |
+| `ml/colab/train_bloop.ipynb` | 13,043 |
 | `ml/data/READY` | 163 |
 | `ml/data/build_dataset.py` | 33,036 |
 | `ml/data/eval.jsonl` | 53,891 |
@@ -342,8 +344,8 @@ Each file below is wrapped as `<!-- FILE: path sha256=… nl=… -->` followed b
 | `ml/data/render_prompts.cjs` | 1,778 |
 | `ml/data/train.jsonl` | 433,149 |
 | `ml/data/validate.py` | 10,866 |
-| `ml/publish.sh` | 2,460 |
-| `ml/run_mac.sh` | 6,768 |
+| `ml/publish.sh` | 2,550 |
+| `ml/run_mac.sh` | 6,865 |
 | `ml/train/convert_quantize.sh` | 3,911 |
 | `ml/train/eval.py` | 14,658 |
 | `ml/train/requirements.txt` | 442 |
@@ -359,17 +361,17 @@ Each file below is wrapped as `<!-- FILE: path sha256=… nl=… -->` followed b
 | `ml/wsp/session.ipynb` | 13,077 |
 | `ml/wsp/test_harness_pure.py` | 19,193 |
 | `ml/wsp/wsp_core.py` | 32,033 |
-| `src/main/plan.ts` | 6,179 |
+| `src/main/plan.ts` | 7,891 |
 
 ### `docs/codex-colab-prompt.md`
 
-<!-- FILE: docs/codex-colab-prompt.md sha256=69c6f078c58deb7236530242c8c2421d94e02d6a333b7ab00967725ef576138e nl=1 -->
+<!-- FILE: docs/codex-colab-prompt.md sha256=1fe2576b4972268ded3e193f97eae1138a7f4d99c04cf1fbde2ceb807c53083e nl=1 -->
 ``````markdown
 # Brief for Codex (or any browser agent): train the Bloop model on Google Colab
 
 Copy everything below the line into Codex. It's written to work in Codex with browser control, or in any agent that can drive a browser. Before you start:
 
-- The repo is pulled locally, including `ml/data/train.jsonl`, `ml/data/eval.jsonl` and the `ml/colab/train_bloop.ipynb` notebook. The notebook and dataset are still being written, so pull again once they land.
+- The repo is pulled locally, including `ml/data/train.jsonl`, `ml/data/eval.jsonl` and the `ml/colab/train_bloop.ipynb` notebook. Both already exist in the repo (the dataset is validated: 240 train / 30 eval rows).
 - You're signed in to Google in the browser.
 - You have a free Hugging Face account, if you want the model published.
 
@@ -396,12 +398,12 @@ Fine-tune **Qwen/Qwen3.5-0.8B** (https://huggingface.co/Qwen/Qwen3.5-0.8B) with 
 4. Run the notebook cells top to bottom: **Runtime → Run all**, or one at a time. Wait for each cell to finish and read its output before going on.
    - The install cell may print dependency warnings. Those are fine unless a later import fails.
    - If `flash-linear-attention` or `causal-conv1d` fails to install, skip it. Training just runs slower.
-   - The training cell prints an ETA after a few timing steps. On a T4, expect about 5–15 minutes. Keep the tab active, because Colab disconnects idle sessions.
-   - If a cell runs out of memory, re-run training with a smaller `max_len` (e.g. 768) or a lower batch or accumulation setting.
+   - The training cell prints an ETA after a few timing steps. On a T4, expect about 15–25 minutes. Keep the tab active, because Colab disconnects idle sessions.
+   - If a cell runs out of memory, re-run the training cell with `--max-len 768 --grad-checkpointing` (keep `--micro-batch 1`).
 5. Check the conversion cell's output: there should be a file named `bloop-qwen3.5-0.8b-Q4_K_M.gguf` of about 400–600 MB. Copy the printed **sha256** and **size in bytes**.
 6. Optional sanity check: run the quick-test cell (`llama-cli`) and confirm it prints a short, sensible reply or valid JSON.
 7. Publish, if I want it hosted:
-   - Run the publish cell. It calls `huggingface_hub.login()`.
+   - Before running the publish cell, change its `create_repo(repo_id, repo_type="model", exist_ok=True)` to add `private=True`. The notebook creates a PUBLIC repo by default, which conflicts with the rules below. Then run it; it calls `huggingface_hub.login()`.
    - **Stop and ask me for my Hugging Face write token. Never invent one, never store it in the notebook, and only paste it into the login prompt.**
    - It creates `<my-hf-username>/bloop-qwen3.5-0.8b-GGUF` and uploads the GGUF and the model card.
    - Copy the printed resolve URL. It looks like `https://huggingface.co/<user>/bloop-qwen3.5-0.8b-GGUF/resolve/main/bloop-qwen3.5-0.8b-Q4_K_M.gguf`
@@ -427,7 +429,7 @@ Fine-tune **Qwen/Qwen3.5-0.8B** (https://huggingface.co/Qwen/Qwen3.5-0.8B) with 
 
 ```python
 # 1. install
-!pip -q install -U "transformers>=4.57" peft datasets accelerate huggingface_hub
+!pip -q install -U "transformers>=5.2,<6" peft datasets accelerate huggingface_hub  # Qwen3.5 needs transformers >= 5.2 (see ml/train/requirements.txt)
 !pip -q install flash-linear-attention causal-conv1d || true
 ```
 
@@ -482,7 +484,7 @@ upload_file(path_or_fileobj="bloop-qwen3.5-0.8b-Q4_K_M.gguf", path_in_repo="bloo
 print(f"https://huggingface.co/{repo}/resolve/main/bloop-qwen3.5-0.8b-Q4_K_M.gguf")
 ```
 
-Note: a **private** Hugging Face repo can't be downloaded by the Bloop app without a token. If the app should download the model directly, make the repo public (and check that Qwen's license allows redistribution), or load the `.gguf` into Bloop with **Settings → AI → Bloop model → Load from file**.
+Note: a **private** Hugging Face repo can't be downloaded by the Bloop app without a token. If the app should download the model directly, make the repo public (and check that Qwen's license allows redistribution), or load the `.gguf` into Bloop with **Settings → AI → Use Local → Bloop model → Import .gguf…**. (Bloop already ships with a download link to the stock Qwen3.5-0.8B GGUF in `src/main/ai/local/bloop.ts`; the three values above replace it.)
 ``````
 
 ### `docs/codex-weight-space-prompt.md`
@@ -690,7 +692,7 @@ PARAMETER stop "<|im_start|>"
 
 ### `ml/README-data.md`
 
-<!-- FILE: ml/README-data.md sha256=4601d992f2ab71ec08686272e66e2856cb0fad7f8b120f5a2f45f422ba7550f1 nl=1 -->
+<!-- FILE: ml/README-data.md sha256=6083d3944d16df83eddee796add2c4385cf2ab9dea5e9cc3ab20e74a59a8c53f nl=1 -->
 ``````markdown
 # Bloop SFT dataset
 
@@ -728,6 +730,8 @@ Planner rules (all checked by `scoring.py` plus extra checks in `validate.py`):
 - Summary: 2-3 short warm sentences naming the first priority, its weekday (or today/tomorrow), and the pacing reasoning.
 
 ## Nudge format
+
+Note: today the app only calls the model for the study plan (`generateText` in `src/main/plan.ts`). The in-app pet nudges are fixed lines in `src/main/session.ts`, not model output, so these nudge prompts are a training/eval task for the model, not text the app currently sends.
 
 User message (exact; `{...}` are filled, singular "1 minute"):
 
@@ -768,7 +772,7 @@ It prints token stats (chars/3.5 and a digit-aware proxy).
 
 ### `ml/README.md`
 
-<!-- FILE: ml/README.md sha256=35dcea5d65c910e88ed7e3318785e25602e4d1e79ca628e4848b5f25005772cf nl=1 -->
+<!-- FILE: ml/README.md sha256=8a6b2dcf47a066034ac2646f79ac5c6a092a8ebb5fd9b2b5e1e4cd9abfe672ac nl=1 -->
 ``````markdown
 # Bloop model training kit
 
@@ -801,8 +805,8 @@ It creates `ml/.venv`, installs the packages, checks `ml/data/READY`, times a fe
 
 ## Using the result
 
-- **In Bloop:** Settings -> AI -> Bloop model -> "Load from file", pick the `.gguf`.
-- **Publish for everyone:** `hf auth login`, then `npm run model:publish -- <hf-username>` (= `bash ml/publish.sh`). It uploads the GGUF and `MODEL_CARD.md` and prints `BLOOP_MODEL_URL`, `BLOOP_MODEL_SHA256` and `BLOOP_MODEL_BYTES` for `src/main/ai/local/bloop.ts`.
+- **In Bloop:** Settings -> AI -> Use Local -> Bloop model -> **Import .gguf…**, pick the `.gguf`. Or bundle it into the app: `npm run model:bundle` (see `resources/models/README.md`).
+- **Publish for everyone:** `hf auth login`, then `npm run model:publish -- <hf-username>` (= `bash ml/publish.sh`). It uploads the GGUF and `MODEL_CARD.md` and prints `BLOOP_MODEL_URL`, `BLOOP_MODEL_SHA256` and `BLOOP_MODEL_BYTES` for `src/main/ai/local/bloop.ts` (they currently point at the stock unsloth/Qwen3.5-0.8B-GGUF build; replace them). The repo is created public unless you set `PRIVATE=1`, and a private repo cannot be downloaded by the app.
 - **Ollama:** `cd ml && ollama create bloop -f Modelfile && ollama run bloop`.
 
 ## Manual steps
@@ -847,14 +851,14 @@ These times are estimates, not measurements; the timing step prints a real ETA f
 - **Out of memory** (the 248k-token vocabulary makes logits big): lower `--max-len 768`, add `--grad-checkpointing`, keep `--micro-batch 1`. On a Mac close other apps; 8 GB machines may not fit.
 - **`model type qwen3_5 not recognized`**: upgrade `pip install -U 'transformers>=5.2'` (or the newest). `--trust-remote-code` is the last resort.
 - **fp16 loss is `nan` on CUDA**: use `--dtype fp32` (slower) or lower `--lr`.
-- **`convert_hf_to_gguf.py` complains about the architecture**: your llama.cpp checkout is too old; delete `ml/cache/llama.cpp` and re-run (it clones the latest master; set `LLAMA_CPP_REF` for a specific tag).
+- **`convert_hf_to_gguf.py` complains about the architecture**: your llama.cpp checkout is too old; re-run `bash ml/train/convert_quantize.sh` (it fetches the latest `master` into `ml/cache/llama.cpp`; set `LLAMA_CPP_REF` for a specific tag, and `FORCE=1` to redo finished steps).
 - **ml/data/READY not found**: the dataset is still being generated.
 - **Redo a step**: delete its marker in `ml/out/.done/` or run with `FORCE=1`.
 ``````
 
 ### `ml/colab/train_bloop.ipynb`
 
-<!-- FILE: ml/colab/train_bloop.ipynb sha256=88aa281215677b020d023ac18279b3ec8888d6c72e58c560faf629b8a1abca35 nl=1 -->
+<!-- FILE: ml/colab/train_bloop.ipynb sha256=33fc16e85ddb51fd9160c5dda2ce20501604791a9c4469a38266399fd6d2fb16 nl=1 -->
 ``````json
 {
  "cells": [
@@ -1071,7 +1075,7 @@ These times are estimates, not measurements; the timing step prints a real ETA f
    "source": [
     "## 7. Quick test with llama-cli\n",
     "\n",
-    "A single prompt to see that the quantized model answers sensibly. (If your llama.cpp build uses different flags, check `llama-cli -h`.)"
+    "A single prompt to see that the quantized model answers sensibly. The cell uses `-st` (single turn, then exit); on llama.cpp builds without it, use `-no-cnv` instead (e.g. `llama-cli -m … -p \"…\" -n 40 -no-cnv`). Check `llama-cli -h` if neither works."
    ],
    "id": "cell15"
   },
@@ -1114,7 +1118,7 @@ These times are estimates, not measurements; the timing step prints a real ETA f
    "source": [
     "## 9. Publish to Hugging Face (optional)\n",
     "\n",
-    "`login()` asks for a **write** token (https://huggingface.co/settings/tokens). The cell creates `<your-user>/bloop-qwen3.5-0.8b-GGUF`, uploads the GGUF and the model card as `README.md`, then prints the three values the Bloop app needs: `BLOOP_MODEL_URL`, `BLOOP_MODEL_SHA256` and `BLOOP_MODEL_BYTES` (constants in `src/main/ai/local/bloop.ts`)."
+    "`login()` asks for a **write** token (https://huggingface.co/settings/tokens). The cell creates `<your-user>/bloop-qwen3.5-0.8b-GGUF` (a PUBLIC repo: the cell passes no `private` flag, so add `private=True` to `create_repo(...)` to keep it private; the app can only download from a public repo), uploads the GGUF and the model card as `README.md`, then prints the three values the Bloop app needs: `BLOOP_MODEL_URL`, `BLOOP_MODEL_SHA256` and `BLOOP_MODEL_BYTES` (constants that REPLACE the ones at the top of `src/main/ai/local/bloop.ts`, which already point at the stock model). Publishing is optional; bundling is the default way to ship a fine-tuned model."
    ],
    "id": "cell19"
   },
@@ -1155,7 +1159,7 @@ These times are estimates, not measurements; the timing step prints a real ETA f
    "source": [
     "## Alternative: download the .gguf directly\n",
     "\n",
-    "Skip publishing and just save the file to your computer, then import it in Bloop via **Settings -> AI -> Bloop model -> \"Load from file\"**. The cell also prints the SHA-256 and size."
+    "Skip publishing and just save the file to your computer, then import it in Bloop via **Settings → AI → Use Local → Bloop model → Import .gguf…**. To ship it inside the app instead, run `npm run model:bundle -- <file.gguf>` and then `npm run build`. The cell also prints the SHA-256 and size."
    ],
    "id": "cell21"
   },
@@ -2646,7 +2650,7 @@ if __name__ == "__main__":
 
 ### `ml/publish.sh`
 
-<!-- FILE: ml/publish.sh sha256=0ec02f56889a21e511c516b7a2f831a72c0db56a8366bba554faa83f2139d2a6 nl=1 -->
+<!-- FILE: ml/publish.sh sha256=4b6845d13bf37f080c8550586eeed0b42ed8ff6b2b03c6195547b850c2ec4271 nl=1 -->
 ``````bash
 #!/usr/bin/env bash
 # Publish the quantized Bloop GGUF + model card to Hugging Face and print the values the app needs.
@@ -2654,7 +2658,7 @@ if __name__ == "__main__":
 #   hf auth login                       # once; paste a *write* token from https://huggingface.co/settings/tokens
 #   bash ml/publish.sh <hf-username>    # or: HF_USER=name bash ml/publish.sh
 #
-# Env: GGUF (path), REPO_NAME (default bloop-qwen3.5-0.8b-GGUF), PRIVATE=1 to create a private repo.
+# Env: GGUF (path), REPO_NAME (default bloop-qwen3.5-0.8b-GGUF), PRIVATE=1 to create a private repo (default is PUBLIC; the app can only download from a public repo).
 set -euo pipefail
 
 ML_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -2692,7 +2696,7 @@ CREATE=("${HF[@]}" repo create "$REPO" --repo-type model)
 SHA="$(sha256_of "$GGUF")"; BYTES="$(size_of "$GGUF")"
 cat <<OUT
 
-Done. Put these three constants in src/main/ai/local/bloop.ts:
+Done. These three constants REPLACE the ones at the top of src/main/ai/local/bloop.ts:
 
   BLOOP_MODEL_URL    = 'https://huggingface.co/$REPO/resolve/main/$FILE'
   BLOOP_MODEL_SHA256 = '$SHA'
@@ -2702,7 +2706,7 @@ OUT
 
 ### `ml/run_mac.sh`
 
-<!-- FILE: ml/run_mac.sh sha256=392e50bb277768f75d4650fa1c297b4da424a9d274964f836767f1ac8a5943f7 nl=1 -->
+<!-- FILE: ml/run_mac.sh sha256=b8f7994a2f40ce003ac34cdbc7b3d1e714c8669a23bd3407ef007a6d2fd189e3 nl=1 -->
 ``````bash
 #!/usr/bin/env bash
 # One command: train -> merge -> GGUF -> Q4_K_M -> eval, on an Apple Silicon Mac (PyTorch MPS).
@@ -2828,7 +2832,8 @@ cat <<MSG
   Report:  $ML_DIR/eval/REPORT.md
 
 Next steps
-  * Try it now in Bloop:  Settings -> AI -> Bloop model -> "Load from file"  and pick the .gguf above.
+  * Try it now in Bloop:  Settings -> AI -> Use Local -> Bloop model -> Import .gguf...  and pick the .gguf above.
+  * Ship it in the app:   npm run model:bundle -- <file.gguf>   then   npm run build
   * Try it in Ollama:     cd ml && ollama create bloop -f Modelfile && ollama run bloop
   * Publish for everyone: hf auth login && bash ml/publish.sh <your-hf-username>
                           (prints BLOOP_MODEL_URL / BLOOP_MODEL_SHA256 / BLOOP_MODEL_BYTES for src/main/ai/local/bloop.ts)
@@ -7328,30 +7333,69 @@ def render_report(state: dict) -> str:
 
 ### `src/main/plan.ts`
 
-<!-- FILE: src/main/plan.ts sha256=e9202f461827bddf6bf744091bd4a3b646e1e4032e2787c476aed6d0dfafd1db nl=1 -->
+<!-- FILE: src/main/plan.ts sha256=84ee19ca2ac166449554f306ef6365ebfd954da91c885c08add530ee216bd605 nl=1 -->
 ``````ts
 // AI study plan. Generation goes through the AI registry (src/main/ai/registry.ts), which picks
 // the user's provider: the Bloop model, an Ollama model or a cloud provider. API keys (including
 // the .env ANTHROPIC_API_KEY fallback, read by the cloud side) stay in the main process.
 import { existsSync } from 'node:fs'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import dotenv from 'dotenv'
 import type { Deadline, PlanBlock, Reminder, Result, Settings, Stats, StudyPlan } from '@shared/types'
 import type { CompleteOptions } from './ai/types'
 
+export interface EnvDirsInput {
+  packaged: boolean
+  platform: NodeJS.Platform
+  userData: string
+  /** process.execPath */
+  exePath: string
+  /** dev only: the project root and the working directory */
+  projectRoot?: string
+  cwd?: string
+  /** Linux AppImage: process.env.APPIMAGE (the .AppImage file itself, not the mount point) */
+  appImage?: string
+  /** Windows portable: process.env.PORTABLE_EXECUTABLE_FILE (the .exe, not the temp unpack dir) */
+  portableExe?: string
+}
+
+/**
+ * Where a `.env` may live, in priority order. A packaged app has no project folder (and its cwd is
+ * `/` or wherever it was launched from), so it only looks in the user-data folder and in the
+ * folder that holds the app: next to Bloop.app on macOS, next to Bloop.exe (or the portable .exe)
+ * on Windows, next to the .AppImage (or the install dir) on Linux.
+ */
+export function envSearchDirs(i: EnvDirsInput): string[] {
+  if (!i.packaged) return [...new Set([i.cwd, i.projectRoot, i.userData].filter((d): d is string => !!d))]
+  let besideApp: string
+  if (i.platform === 'darwin') {
+    // .../Bloop.app/Contents/MacOS/Bloop -> folder containing Bloop.app
+    const m = i.exePath.match(/^(.*?)[\\/][^\\/]+\.app[\\/]Contents[\\/]MacOS[\\/]/)
+    besideApp = m?.[1] || dirname(i.exePath)
+  } else if (i.platform === 'win32') besideApp = dirname(i.portableExe || i.exePath)
+  else besideApp = dirname(i.appImage || i.exePath)
+  return [...new Set([i.userData, besideApp])]
+}
 
 let envLoaded = false
-/** Load .env from the given directories (first match wins for each var; existing env vars are kept). */
-export function loadEnv(dirs: string[]): void {
-  if (envLoaded) return
+/**
+ * Load .env from the given directories (first match wins for each var; existing env vars are kept).
+ * Only the main process reads it: the key never reaches a renderer.
+ */
+export function loadEnv(dirs: string[]): string[] {
+  if (envLoaded) return []
   envLoaded = true
+  const loaded: string[] = []
   for (const d of dirs) {
     const p = join(d, '.env')
     if (existsSync(p)) {
       dotenv.config({ path: p, quiet: true } as dotenv.DotenvConfigOptions)
+      loaded.push(p)
       console.log(`[bloop] loaded env from ${p}`)
     }
   }
+  if (!loaded.length) console.log(`[bloop] no .env found (looked in: ${dirs.join(', ')})`)
+  return loaded
 }
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']

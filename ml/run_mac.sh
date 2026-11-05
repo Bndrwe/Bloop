@@ -122,7 +122,8 @@ cat <<MSG
   Report:  $ML_DIR/eval/REPORT.md
 
 Next steps
-  * Try it now in Bloop:  Settings -> AI -> Bloop model -> "Load from file"  and pick the .gguf above.
+  * Try it now in Bloop:  Settings -> AI -> Use Local -> Bloop model -> Import .gguf...  and pick the .gguf above.
+  * Ship it in the app:   npm run model:bundle -- <file.gguf>   then   npm run build
   * Try it in Ollama:     cd ml && ollama create bloop -f Modelfile && ollama run bloop
   * Publish for everyone: hf auth login && bash ml/publish.sh <your-hf-username>
                           (prints BLOOP_MODEL_URL / BLOOP_MODEL_SHA256 / BLOOP_MODEL_BYTES for src/main/ai/local/bloop.ts)
