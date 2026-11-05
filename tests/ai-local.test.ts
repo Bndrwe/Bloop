@@ -1,16 +1,16 @@
 // Use Local: Bloop downloader, Ollama client, local module 'auto' order. No real network/models.
-import { mkdtempSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createHash } from 'node:crypto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { getPath: () => tmpdir(), isPackaged: false } }))
-vi.mock('../src/main/store', () => ({ getAiSettings: () => ({ choice: { kind: 'auto' }, cloudModels: {}, ollamaUrl: 'http://127.0.0.1:11434', bloopOfferDismissed: false }) }))
+vi.mock('../src/main/store', () => ({ getAiSettings: () => ({ choice: { kind: 'auto' }, cloudModels: {}, ollamaUrl: 'http://127.0.0.1:11434', bloopOfferDismissed: false, bloopEnabled: false }) }))
 const execFileMock = vi.fn()
 vi.mock('node:child_process', () => ({ execFile: (...a: unknown[]) => execFileMock(...a) }))
 
-import { BloopManager, BloopRuntime, type BloopCatalogEntry } from '../src/main/ai/local/bloop'
+import { BloopManager, BloopRuntime, bundledModelDirs, type BloopCatalogEntry } from '../src/main/ai/local/bloop'
 import {
   findOllamaBinary,
   friendlyOllamaError,
@@ -22,6 +22,7 @@ import {
   pullOllamaModel
 } from '../src/main/ai/local/ollama'
 import { createLocalModule } from '../src/main/ai/local'
+import type { AiSettings } from '../src/shared/ai'
 
 const DATA = Buffer.from('GGUF' + 'x'.repeat(2000))
 const catalog = (over: Partial<BloopCatalogEntry> = {}): BloopCatalogEntry => ({
@@ -246,7 +247,10 @@ describe('Ollama', () => {
 })
 
 describe('local module', () => {
-  const settings = { choice: { kind: 'auto' as const }, cloudModels: {}, ollamaUrl: 'http://h:1', bloopOfferDismissed: false }
+  let settings: AiSettings = { choice: { kind: 'auto' }, cloudModels: {}, ollamaUrl: 'http://h:1', bloopOfferDismissed: false, bloopEnabled: true }
+  beforeEach(() => {
+    settings = { choice: { kind: 'auto' }, cloudModels: {}, ollamaUrl: 'http://h:1', bloopOfferDismissed: false, bloopEnabled: true }
+  })
   const make = (downloaded: boolean, models: { name: string; sizeBytes?: number }[], running = true) => {
     const bloop = new BloopManager({ modelsDir: () => dir, catalog: catalog() })
     if (downloaded) writeFileSync(join(dir, 'bloop.gguf'), DATA)
@@ -302,5 +306,129 @@ describe('local module', () => {
     const { mod, fetchSpy } = make(false, [])
     expect((await mod.pullOllama('qwen3.5:0.8b', false)).ok).toBe(false)
     expect(fetchSpy).not.toHaveBeenCalled()
+  })
+})
+
+
+describe('bundled Bloop model', () => {
+  const sha = createHash('sha256').update(DATA).digest('hex')
+  let res: string // fake <process.resourcesPath>
+  let app: string // fake repo root
+  const bundleAt = (root: string, withMeta = true): string => {
+    const d = join(root, 'resources', 'models')
+    mkdirSync(d, { recursive: true })
+    writeFileSync(join(d, 'bloop-qwen3.5-0.8b-Q4_K_M.gguf'), DATA)
+    if (withMeta) {
+      writeFileSync(
+        join(d, 'bloop-model.json'),
+        JSON.stringify({ file: 'bloop-qwen3.5-0.8b-Q4_K_M.gguf', bytes: DATA.length, sha256: sha, base: 'Qwen3.5-0.8B', builtAt: '2026-01-01T00:00:00.000Z' })
+      )
+    }
+    return join(d, 'bloop-qwen3.5-0.8b-Q4_K_M.gguf')
+  }
+  const mgr = (extra: Partial<ConstructorParameters<typeof BloopManager>[0]> = {}) =>
+    new BloopManager({ modelsDir: () => join(dir, 'userData'), catalog: catalog(), bundledDirs: () => bundledModelDirs(app, res), ...extra })
+  let settings: AiSettings
+  const mod = (m: BloopManager) => {
+    const runtime = { complete: vi.fn(async () => 'hi'), unload: vi.fn(async () => undefined) }
+    const local = createLocalModule({ getSettings: () => settings, onChange: () => undefined, bloop: m, runtime, findBinary: async () => null, probe: async () => ({ running: false, models: [] }) })
+    return { local, runtime }
+  }
+  beforeEach(() => {
+    res = join(dir, 'Resources')
+    app = join(dir, 'repo')
+    settings = { choice: { kind: 'auto' }, cloudModels: {}, ollamaUrl: 'http://h:1', bloopOfferDismissed: false, bloopEnabled: false }
+  })
+
+  it('builds the packaged and dev directories', () => {
+    expect(bundledModelDirs('/repo', '/App/Contents/Resources')).toEqual(['/App/Contents/Resources/resources/models', '/repo/resources/models'])
+    expect(bundledModelDirs('/repo', undefined)).toEqual(['/repo/resources/models'])
+  })
+
+  it('detects a model at the packaged path', () => {
+    const p = bundleAt(res)
+    const s = mgr().status()
+    expect(s).toMatchObject({ source: 'bundled', downloaded: true, enabled: false, path: p, sizeBytes: DATA.length, base: 'Qwen3.5-0.8B' })
+  })
+
+  it('detects a model at the dev path (also without bloop-model.json)', () => {
+    const p = bundleAt(app, false)
+    expect(mgr().status()).toMatchObject({ source: 'bundled', path: p })
+  })
+
+  it('prefers bundled over a downloaded/imported model; reports other sources', () => {
+    const m = mgr()
+    expect(m.status().source).toBeNull()
+    mkdirSync(join(dir, 'userData'), { recursive: true })
+    writeFileSync(join(dir, 'userData', 'bloop.gguf'), DATA)
+    expect(m.status().source).toBe('downloaded')
+    writeFileSync(join(dir, 'userData', 'bloop.gguf.imported'), '')
+    expect(m.status().source).toBe('imported')
+    const p = bundleAt(res)
+    expect(m.status()).toMatchObject({ source: 'bundled', path: p })
+  })
+
+  it("'auto' ignores the bundled model until it is enabled, then uses it", async () => {
+    bundleAt(res)
+    const { local } = mod(mgr())
+    expect(await local.autoProvider()).toBeNull()
+    settings = { ...settings, bloopEnabled: true }
+    expect((await local.autoProvider())?.label).toBe('Bloop model (on-device)')
+  })
+
+  it('an explicit Bloop choice still needs the bundled model to be enabled', async () => {
+    bundleAt(res)
+    const { local } = mod(mgr())
+    const choice = { kind: 'local' as const, runtime: 'bloop' as const, model: 'bloop-qwen3.5-0.8b' }
+    expect(((await local.provider(choice)) as Error).message).toMatch(/off/i)
+    settings = { ...settings, choice, bloopEnabled: true }
+    const p = await local.provider(choice)
+    expect(p).not.toBeInstanceOf(Error)
+  })
+
+  it('status carries enabled from settings; enabling never downloads', async () => {
+    bundleAt(res)
+    const m = mgr({ fetch: vi.fn() as never })
+    const download = vi.spyOn(m, 'download')
+    const fetchSpy = vi.fn()
+    vi.stubGlobal('fetch', fetchSpy)
+    const { local } = mod(m)
+    expect((await local.status()).bloop).toMatchObject({ source: 'bundled', enabled: false })
+    expect(await local.verifyBloop()).toEqual({ ok: true })
+    settings = { ...settings, bloopEnabled: true }
+    expect((await local.status()).bloop.enabled).toBe(true)
+    expect(download).not.toHaveBeenCalled()
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
+  it('verifies the checksum once and caches by size+mtime', async () => {
+    const p = bundleAt(res)
+    const cache = join(dir, 'verified.json')
+    const m = mgr({ verifyCacheFile: () => cache })
+    expect(await m.verifyBundled()).toEqual({ ok: true })
+    expect(existsSync(cache)).toBe(true)
+    // A fresh manager trusts the cache without re-hashing: same size+mtime, even if the bytes were swapped.
+    const st = (await import('node:fs')).statSync(p)
+    writeFileSync(p, Buffer.from('GGUF' + 'y'.repeat(2000)))
+    ;(await import('node:fs')).utimesSync(p, st.atime, st.mtime)
+    expect(await mgr({ verifyCacheFile: () => cache }).verifyBundled()).toEqual({ ok: true })
+    // A changed mtime forces a re-hash, which now fails.
+    ;(await import('node:fs')).utimesSync(p, st.atime, new Date(st.mtimeMs + 5000))
+    const r = await mgr({ verifyCacheFile: () => cache }).verifyBundled()
+    expect(r.ok).toBe(false)
+    expect(r.error).toMatch(/checksum/i)
+  })
+
+  it('cannot be deleted or replaced by an import', async () => {
+    const p = bundleAt(res)
+    const m = mgr()
+    await expect(m.delete()).rejects.toThrow(/can't be deleted/)
+    const { local, runtime } = mod(m)
+    await expect(local.deleteBloop()).rejects.toThrow(/can't be deleted/)
+    expect(runtime.unload).not.toHaveBeenCalled()
+    expect(existsSync(p)).toBe(true)
+    const src = join(dir, 'x.gguf')
+    writeFileSync(src, DATA)
+    expect((await m.importFile(src)).ok).toBe(false)
   })
 })

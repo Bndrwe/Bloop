@@ -74,20 +74,28 @@ function BloopGroup({
   selected,
   onSelect,
   onAskDownload,
+  onEnable,
+  onDisable,
   busyNote
 }: {
   bloop: LocalStatus['bloop']
   selected: boolean
   onSelect: () => void
   onAskDownload: () => void
+  onEnable: () => void
+  onDisable: () => void
   busyNote: (msg: string | null) => void
 }): JSX.Element {
   const ai = window.studyPet.ai
   const [askDelete, setAskDelete] = useState(false)
+  const bundled = bloop.source === 'bundled'
+  const on = bundled && bloop.enabled && selected
   const p = bloop.progress
   const downloading = p?.state === 'running' || p?.state === 'verifying'
   const published = Boolean(bloop.url)
-  const tag = downloading ? (
+  const tag = bundled ? (
+    on ? <span className="tag">On</span> : <span className="tag tag--muted">Off</span>
+  ) : downloading ? (
     <span className="tag tag--dashed">Downloading</span>
   ) : bloop.downloaded ? (
     <span className="tag">On this device</span>
@@ -110,11 +118,47 @@ function BloopGroup({
     }
   }
 
+  if (bundled) {
+    return (
+      <div className="ai-group">
+        <div className="ai-group-head">
+          <h3>Bloop model</h3>
+          <span className="faint">included with Bloop</span>
+        </div>
+        <div className={`ai-row ai-row--bloop${on ? ' is-selected' : ''}`}>
+          <div className="ai-pick" role="radio" aria-checked={on}>
+            <span className="ai-radio" aria-hidden />
+            <span className="ai-pick-text">
+              <span className="ai-name">{bloop.label}</span>
+              <span className="ai-sub faint">
+                {on ? 'On · runs on this device' : 'Included with Bloop · off'}
+                {bloop.sizeBytes ? <> · <span className="num">{formatBytes(bloop.sizeBytes)}</span></> : null}
+              </span>
+            </span>
+            {tag}
+          </div>
+          <p className="ai-note faint">Runs fully on this device. Nothing leaves your computer.</p>
+          <div className="ai-actions">
+            {on ? (
+              <button type="button" className="btn btn--small" onClick={onDisable}>
+                Turn off
+              </button>
+            ) : (
+              <button type="button" className="btn btn--small btn--primary" onClick={onEnable}>
+                Use Bloop model
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="ai-group">
       <div className="ai-group-head">
         <h3>Bloop model</h3>
-        <span className="faint">built in · runs in the app</span>
+        <span className="faint">runs in the app</span>
       </div>
       <div className={`ai-row ai-row--bloop${selected ? ' is-selected' : ''}`}>
         <button
@@ -424,6 +468,22 @@ export function AiSection(): JSX.Element {
   }
 
   const bloopSelected = settings.choice.kind === 'local' && settings.choice.runtime === 'bloop'
+  const enableBloop = (): void => {
+    ai.setBloopEnabled(true)
+      .then((s) => {
+        setSettings(s)
+        setNote(null)
+      })
+      .catch((e) => setNote(errMsg(e)))
+  }
+  const disableBloop = (): void => {
+    ai.setBloopEnabled(false)
+      .then((s) => {
+        setSettings(s)
+        setNote(null)
+      })
+      .catch((e) => setNote(errMsg(e)))
+  }
 
   return (
     <section className="card ai-card enter" aria-labelledby="ai-h">
@@ -446,6 +506,8 @@ export function AiSection(): JSX.Element {
             selected={bloopSelected}
             onSelect={() => choose({ kind: 'local', runtime: 'bloop', model: status.local.bloop.id })}
             onAskDownload={() => setAskBloop(true)}
+            onEnable={enableBloop}
+            onDisable={disableBloop}
             busyNote={setNote}
           />
           <OllamaGroup
@@ -503,9 +565,17 @@ export function AiSection(): JSX.Element {
 
 function AutoSummary({ status, onPick }: { status: AiStatus; onPick: (v: View) => void }): JSX.Element {
   const { bloop, ollama } = status.local
+  const bloopDetail =
+    bloop.source === 'bundled'
+      ? bloop.enabled
+        ? 'included, on'
+        : 'included, off until you turn it on'
+      : bloop.downloaded
+        ? 'on this device'
+        : 'not downloaded'
   const cloudReady = status.cloud.filter((c) => c.available)
   const rows: [string, string, boolean][] = [
-    ['Bloop model', bloop.downloaded ? 'on this device' : 'not downloaded', bloop.downloaded],
+    ['Bloop model', bloopDetail, bloop.downloaded && bloop.enabled],
     ['Ollama', ollama.running ? `${ollama.models.length} model${ollama.models.length === 1 ? '' : 's'}` : ollama.installed ? 'not running' : 'not found', ollama.running && ollama.models.length > 0],
     ['Cloud', cloudReady.length ? cloudReady.map((c) => c.label).join(', ') : 'none set up', cloudReady.length > 0]
   ]

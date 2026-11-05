@@ -1,12 +1,13 @@
 // The Bloop model: our fine-tuned Qwen3.5-0.8B (Q4_K_M GGUF), run in-app with node-llama-cpp.
-// It is downloaded ONLY after the user confirms in the UI (download(true)); nothing here ever
-// starts a download on its own. Electron-free so it can be unit tested; local/index.ts wires it up.
+// The model can ship INSIDE the app (resources/models, see bundledModelDirs) but stays OFF until the
+// user turns it on (AiSettings.bloopEnabled). Otherwise it is imported, or downloaded ONLY after the
+// user confirms in the UI (download(true)); nothing here ever starts a download on its own. Electron-free so it can be unit tested; local/index.ts wires it up.
 import { createHash } from 'node:crypto'
-import { createReadStream, createWriteStream, existsSync, statSync, type WriteStream } from 'node:fs'
-import { copyFile, mkdir, open, rename, rm, stat, statfs } from 'node:fs/promises'
+import { createReadStream, createWriteStream, existsSync, readdirSync, readFileSync, statSync, type WriteStream } from 'node:fs'
+import { copyFile, mkdir, open, readFile, rename, rm, stat, statfs, writeFile } from 'node:fs/promises'
 import { once } from 'node:events'
 import { join } from 'node:path'
-import type { DownloadProgress, LocalStatus } from '@shared/ai'
+import type { BloopSource, DownloadProgress, LocalStatus } from '@shared/ai'
 import type { CompleteOptions } from '../types'
 
 // ------------------------------------------------------------------ catalog
@@ -15,7 +16,7 @@ import type { CompleteOptions } from '../types'
 // importing a .gguf from disk still works.
 
 export const BLOOP_MODEL_ID = 'bloop-qwen3.5-0.8b'
-export const BLOOP_MODEL_LABEL = 'Bloop model · Qwen3.5 0.8B (fine-tuned, Q4_K_M)'
+export const BLOOP_MODEL_LABEL = 'Bloop model · Qwen3.5 0.8B (fine-tuned)'
 /** Direct https URL of the .gguf (e.g. a Hugging Face "resolve/main/…gguf" link). */
 export const BLOOP_MODEL_URL = ''
 /** Lowercase hex sha256 of the .gguf; when set, downloads are verified. */
@@ -24,6 +25,60 @@ export const BLOOP_MODEL_SHA256 = ''
 export const BLOOP_MODEL_BYTES = 0
 /** File name inside userData/models. */
 export const BLOOP_MODEL_FILE = 'bloop-qwen3.5-0.8b-q4_k_m.gguf'
+
+// ------------------------------------------------------------------ bundled model
+/** Written next to the bundled .gguf by scripts/bundle-model.mjs. */
+export const BUNDLED_META_FILE = 'bloop-model.json'
+
+export interface BundledMeta {
+  file: string
+  bytes: number
+  sha256: string
+  base: string
+  builtAt: string
+}
+
+/**
+ * Where a model shipped with the app lives. Packaged: <resourcesPath>/resources/models (electron-builder
+ * extraResources copies repo resources/** there). Dev: <app root>/resources/models.
+ */
+export function bundledModelDirs(appPath?: string, resourcesPath: string | undefined = process.resourcesPath): string[] {
+  const dirs: string[] = []
+  if (resourcesPath) dirs.push(join(resourcesPath, 'resources', 'models'))
+  if (appPath) dirs.push(join(appPath, 'resources', 'models'))
+  return dirs
+}
+
+function readBundledMeta(dir: string): BundledMeta | null {
+  try {
+    const j = JSON.parse(readFileSync(join(dir, BUNDLED_META_FILE), 'utf8')) as Partial<BundledMeta>
+    if (typeof j.file !== 'string' || !j.file || j.file !== j.file.replace(/[\\/]/g, '')) return null
+    return {
+      file: j.file,
+      bytes: typeof j.bytes === 'number' ? j.bytes : 0,
+      sha256: typeof j.sha256 === 'string' ? j.sha256.toLowerCase() : '',
+      base: typeof j.base === 'string' ? j.base : '',
+      builtAt: typeof j.builtAt === 'string' ? j.builtAt : ''
+    }
+  } catch {
+    return null
+  }
+}
+
+/** The bundled .gguf in `dir` (named by bloop-model.json, else the newest bloop-*.gguf), or null. */
+export function findBundledModel(dir: string): { path: string; meta: BundledMeta | null } | null {
+  try {
+    const meta = readBundledMeta(dir)
+    if (meta && existsSync(join(dir, meta.file))) return { path: join(dir, meta.file), meta }
+    const found = readdirSync(dir)
+      .filter((f) => /^bloop-.*\.gguf$/i.test(f))
+      .map((f) => ({ f, t: statSync(join(dir, f)).mtimeMs }))
+      .sort((a, b) => b.t - a.t)[0]
+    return found ? { path: join(dir, found.f), meta: null } : null
+  } catch {
+    return null
+  }
+}
 
 /** Shown on the disabled download button while the URL is empty. */
 export const NOT_PUBLISHED_NOTE = 'Not published yet'
@@ -54,6 +109,10 @@ const PROGRESS_EVERY_MS = 250
 export interface BloopDeps {
   /** userData/models */
   modelsDir: () => string
+  /** Directories that may hold a model shipped with the app (first hit wins). Default: none. */
+  bundledDirs?: () => string[]
+  /** Where the "bundled file verified" cache lives (size+mtime keyed). Default: in-memory only. */
+  verifyCacheFile?: () => string
   /** Called whenever status changes (progress is throttled to ≤ 4/s). */
   onChange?: () => void
   catalog?: BloopCatalogEntry
@@ -111,16 +170,83 @@ export class BloopManager {
     return this.deps.catalog ?? BLOOP_CATALOG
   }
 
-  filePath(): string {
-    return join(this.deps.modelsDir(), this.catalog.file)
-  }
-  private partPath(): string {
-    return `${this.filePath()}.part`
+  /** The model shipped inside the app, if there is one. */
+  bundled(): { path: string; meta: BundledMeta | null } | null {
+    for (const d of this.deps.bundledDirs?.() ?? []) {
+      const b = findBundledModel(d)
+      if (b) return b
+    }
+    return null
   }
 
-  isDownloaded(): boolean {
-    return existsSync(this.filePath())
+  /** Where a downloaded / imported model lives (userData/models). */
+  userPath(): string {
+    return join(this.deps.modelsDir(), this.catalog.file)
   }
+
+  /** The model that would run: the bundled one first, then the downloaded/imported one. */
+  filePath(): string {
+    return this.bundled()?.path ?? this.userPath()
+  }
+  private partPath(): string {
+    return `${this.userPath()}.part`
+  }
+  private importMarker(): string {
+    return `${this.userPath()}.imported`
+  }
+
+  source(): BloopSource | null {
+    if (this.bundled()) return 'bundled'
+    if (!existsSync(this.userPath())) return null
+    return existsSync(this.importMarker()) ? 'imported' : 'downloaded'
+  }
+
+  /** True when a model file is available (bundled, downloaded or imported). */
+  isDownloaded(): boolean {
+    return this.source() != null
+  }
+
+  /**
+   * Checks the bundled file against bloop-model.json's sha256. Called when the user first turns the
+   * model on, not at launch; a pass is cached by size+mtime so re-enabling is instant.
+   */
+  async verifyBundled(): Promise<OpResult> {
+    const b = this.bundled()
+    if (!b) return { ok: true }
+    const want = b.meta?.sha256
+    if (!want) return { ok: true }
+    let st
+    try {
+      st = await stat(b.path)
+    } catch (e) {
+      return { ok: false, error: `The bundled Bloop model can't be read: ${(e as Error).message}` }
+    }
+    if (b.meta && b.meta.bytes > 0 && st.size !== b.meta.bytes) {
+      return { ok: false, error: 'The bundled Bloop model looks incomplete (wrong size). Reinstall Bloop.' }
+    }
+    const key = { path: b.path, size: st.size, mtimeMs: Math.round(st.mtimeMs), sha256: want }
+    const cacheFile = this.deps.verifyCacheFile?.()
+    if (this.verified && this.verified.path === key.path && this.verified.size === key.size && this.verified.mtimeMs === key.mtimeMs && this.verified.sha256 === want) {
+      return { ok: true }
+    }
+    if (cacheFile) {
+      try {
+        const c = JSON.parse(await readFile(cacheFile, 'utf8')) as typeof key
+        if (c.path === key.path && c.size === key.size && c.mtimeMs === key.mtimeMs && c.sha256 === want) {
+          this.verified = key
+          return { ok: true }
+        }
+      } catch {
+        /* no cache yet */
+      }
+    }
+    const got = await sha256File(b.path, new AbortController().signal)
+    if (got !== want) return { ok: false, error: 'The bundled Bloop model failed its checksum. Reinstall Bloop.' }
+    this.verified = key
+    if (cacheFile) await writeFile(cacheFile, JSON.stringify(key)).catch(() => undefined)
+    return { ok: true }
+  }
+  private verified: { path: string; size: number; mtimeMs: number; sha256: string } | null = null
 
   isBusy(): boolean {
     return this.abort != null
@@ -128,7 +254,8 @@ export class BloopManager {
 
   status(): LocalStatus['bloop'] {
     const c = this.catalog
-    const downloaded = this.isDownloaded()
+    const source = this.source()
+    const downloaded = source != null
     let sizeBytes: number | null = c.bytes > 0 ? c.bytes : null
     if (downloaded) {
       try {
@@ -137,13 +264,19 @@ export class BloopManager {
         /* raced with delete */
       }
     }
+    const meta = this.bundled()?.meta
     return {
       id: c.id,
       label: c.label,
       url: c.url,
       sizeBytes,
       downloaded,
+      source,
+      // Filled in by the local module from AiSettings.bloopEnabled.
+      enabled: false,
       ...(downloaded ? { path: this.filePath() } : {}),
+      ...(source === 'bundled' && meta?.base ? { base: meta.base } : {}),
+      ...(source === 'bundled' && meta?.builtAt ? { builtAt: meta.builtAt } : {}),
       ...(this.progress ? { progress: { ...this.progress } } : {})
     }
   }
@@ -171,7 +304,7 @@ export class BloopManager {
     const c = this.catalog
     if (!c.url) return { ok: false, error: `${NOT_PUBLISHED_NOTE}: the Bloop model hasn't been published. You can import a .gguf file instead.` }
     if (this.abort) return { ok: false, error: 'Already downloading.' }
-    if (this.isDownloaded()) return { ok: true }
+    if (this.isDownloaded()) return { ok: true } // bundled / already on disk: nothing to fetch
 
     const ac = new AbortController()
     this.abort = ac
@@ -245,7 +378,7 @@ export class BloopManager {
           throw new Error('The downloaded file failed its checksum, so it was deleted. Try again.')
         }
       }
-      await rename(part, this.filePath())
+      await rename(part, this.userPath())
       this.setProgress({ receivedBytes: received, totalBytes: total ?? received, bytesPerSec: 0, state: 'done' })
       return { ok: true }
     } catch (e) {
@@ -269,8 +402,10 @@ export class BloopManager {
 
   /** Deletes the model (and any partial download). */
   async delete(): Promise<void> {
+    if (this.bundled()) throw new Error("The built-in Bloop model is part of the app and can't be deleted. Turn it off instead.")
     this.cancel()
-    await rm(this.filePath(), { force: true })
+    await rm(this.userPath(), { force: true })
+    await rm(this.importMarker(), { force: true })
     await rm(this.partPath(), { force: true })
     this.setProgress(undefined)
   }
@@ -278,15 +413,17 @@ export class BloopManager {
   /** Copies a user-picked .gguf into place as the Bloop model. */
   async importFile(src: string): Promise<OpResult> {
     if (this.abort) return { ok: false, error: 'A download is in progress. Cancel it first.' }
+    if (this.bundled()) return { ok: false, error: 'This Bloop already includes the model, so there is nothing to import.' }
     if (!/\.gguf$/i.test(src)) return { ok: false, error: 'Pick a .gguf model file.' }
     if (!(await isGgufFile(src))) return { ok: false, error: "That file isn't a GGUF model." }
     try {
       const size = (await stat(src)).size
       await mkdir(this.deps.modelsDir(), { recursive: true })
       this.setProgress({ receivedBytes: 0, totalBytes: size, bytesPerSec: 0, state: 'running' })
-      const tmp = `${this.filePath()}.import`
+      const tmp = `${this.userPath()}.import`
       await copyFile(src, tmp)
-      await rename(tmp, this.filePath())
+      await rename(tmp, this.userPath())
+      await writeFile(this.importMarker(), '')
       await rm(this.partPath(), { force: true })
       this.setProgress({ receivedBytes: size, totalBytes: size, bytesPerSec: 0, state: 'done' })
       return { ok: true }

@@ -6,7 +6,7 @@ import type { AiChoice, AiSettings, DownloadProgress, LocalStatus } from '@share
 import * as store from '../../store'
 import { aiChanged } from '../events'
 import type { AiProvider, CompleteOptions, LocalModule } from '../types'
-import { BLOOP_MODEL_ID, BloopManager, BloopRuntime, type OpResult } from './bloop'
+import { BLOOP_MODEL_ID, BloopManager, bundledModelDirs, BloopRuntime, type OpResult } from './bloop'
 import {
   findOllamaBinary,
   friendlyOllamaError,
@@ -26,7 +26,12 @@ export const ollamaProviderLabel = (model: string): string => `Ollama · ${model
 export interface LocalControls {
   downloadBloop(confirmed: boolean): Promise<OpResult>
   cancelBloopDownload(): void
+  /** Rejects for the bundled model. */
   deleteBloop(): Promise<void>
+  /** Verifies a bundled model (first time only, cached by size+mtime). Never downloads. */
+  verifyBloop(): Promise<OpResult>
+  /** Frees the in-memory model (Bloop turned off). */
+  unloadBloop(): Promise<void>
   importBloop(path: string): Promise<OpResult>
   pullOllama(model: string, confirmed: boolean): Promise<OpResult>
   /** Frees the in-memory model (app quit). */
@@ -92,7 +97,7 @@ export function createLocalModule(deps: LocalDeps): LocalModule & LocalControls 
       const url = deps.getSettings().ollamaUrl
       const [p, bin] = await Promise.all([getProbe(refresh), getBinary(refresh)])
       return {
-        bloop: deps.bloop.status(),
+        bloop: { ...deps.bloop.status(), enabled: deps.getSettings().bloopEnabled },
         ollama: {
           installed: Boolean(bin) || p.running,
           running: p.running,
@@ -107,8 +112,12 @@ export function createLocalModule(deps: LocalDeps): LocalModule & LocalControls 
     async provider(choice: Extract<AiChoice, { kind: 'local' }>): Promise<AiProvider | Error> {
       if (choice.runtime === 'bloop') {
         if (choice.model !== BLOOP_MODEL_ID) return new Error(`Unknown Bloop model "${choice.model}".`)
-        if (!deps.bloop.isDownloaded()) {
-          return new Error("The Bloop model isn't downloaded yet. Download it (or import a .gguf) in Settings → AI.")
+        const source = deps.bloop.source()
+        if (source == null) {
+          return new Error("The Bloop model isn't on this device yet. Download it (or import a .gguf) in Settings → AI.")
+        }
+        if (source === 'bundled' && !deps.getSettings().bloopEnabled) {
+          return new Error('The built-in Bloop model is off. Turn it on in Settings → AI → Use Local.')
         }
         return bloopProvider()
       }
@@ -125,9 +134,12 @@ export function createLocalModule(deps: LocalDeps): LocalModule & LocalControls 
       return ollamaProvider(choice.model)
     },
 
-    /** Local-first order for 'auto': the downloaded Bloop model, then an Ollama model. Never downloads/pulls. */
+    /**
+     * Local-first order for 'auto': the Bloop model, then an Ollama model. Never downloads/pulls.
+     * Bloop only counts once the user turned it on (bloopEnabled), so a bundled model never runs by itself.
+     */
     async autoProvider(): Promise<AiProvider | null> {
-      if (deps.bloop.isDownloaded()) return bloopProvider()
+      if (deps.getSettings().bloopEnabled && deps.bloop.isDownloaded()) return bloopProvider()
       const p = await getProbe()
       if (!p.running) return null
       const m = pickAutoOllamaModel(p.models)
@@ -137,9 +149,14 @@ export function createLocalModule(deps: LocalDeps): LocalModule & LocalControls 
     downloadBloop: (confirmed) => deps.bloop.download(confirmed),
     cancelBloopDownload: () => deps.bloop.cancel(),
     async deleteBloop() {
+      if (deps.bloop.source() === 'bundled') {
+        throw new Error("The built-in Bloop model is part of the app and can't be deleted. Turn it off instead.")
+      }
       await deps.runtime.unload()
       await deps.bloop.delete()
     },
+    verifyBloop: () => deps.bloop.verifyBundled(),
+    unloadBloop: () => deps.runtime.unload(),
     async importBloop(path) {
       await deps.runtime.unload()
       return deps.bloop.importFile(path)
@@ -182,6 +199,12 @@ export function createLocalModule(deps: LocalDeps): LocalModule & LocalControls 
 export const localModule = createLocalModule({
   getSettings: () => store.getAiSettings(),
   onChange: aiChanged,
-  bloop: new BloopManager({ modelsDir: () => join(app.getPath('userData'), 'models'), onChange: aiChanged }),
+  bloop: new BloopManager({
+    modelsDir: () => join(app.getPath('userData'), 'models'),
+    // Packaged: <resources>/resources/models. Dev: <repo>/resources/models.
+    bundledDirs: () => bundledModelDirs(app.getAppPath()),
+    verifyCacheFile: () => join(app.getPath('userData'), 'bloop-bundled-verified.json'),
+    onChange: aiChanged
+  }),
   runtime: new BloopRuntime({ packaged: app.isPackaged })
 })

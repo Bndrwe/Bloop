@@ -53,10 +53,14 @@ export function validateAiSettings(raw: unknown): AiSettings {
       if (m) cloudModels[id] = m
     }
   }
+  const choice = validateChoice(r.choice) ?? { ...DEFAULT_AI_SETTINGS.choice }
+  // Settings saved before bloopEnabled existed: an explicit Bloop choice counts as turned on.
+  const bloopEnabled = typeof r.bloopEnabled === 'boolean' ? r.bloopEnabled : choice.kind === 'local' && choice.runtime === 'bloop'
   return {
-    choice: validateChoice(r.choice) ?? { ...DEFAULT_AI_SETTINGS.choice },
+    choice,
     cloudModels,
     ollamaUrl: normalizeOllamaUrl(r.ollamaUrl) ?? DEFAULT_AI_SETTINGS.ollamaUrl,
-    bloopOfferDismissed: r.bloopOfferDismissed === true
+    bloopOfferDismissed: r.bloopOfferDismissed === true,
+    bloopEnabled
   }
 }

@@ -19,6 +19,7 @@ const ai: AiApi = {
   downloadBloopModel: (confirmed) => inv(IPC.aiDownloadBloop, confirmed === true),
   cancelBloopDownload: () => inv(IPC.aiCancelBloop),
   deleteBloopModel: () => inv(IPC.aiDeleteBloop),
+  setBloopEnabled: (enabled) => inv(IPC.aiSetBloopEnabled, enabled === true),
   importBloopModelFile: () => inv(IPC.aiImportBloop),
   dismissBloopOffer: () => inv(IPC.aiDismissBloopOffer),
   pullOllamaModel: (model, confirmed) => inv(IPC.aiPullOllama, model, confirmed === true),

@@ -72,7 +72,29 @@ export function registerAiIpc(ipcMain: IpcMain, deps: AiIpcDeps): void {
     const choice = validateChoice(raw)
     if (!choice) throw new Error('Unknown AI choice.')
     log(`ai choice: ${JSON.stringify(choice)}`)
+    // Picking the Bloop model is the explicit "use it": same path as the Use Bloop model button.
+    if (choice.kind === 'local' && choice.runtime === 'bloop') return enableBloop(choice)
     return saved(store.saveAiSettings({ choice }))
+  })
+
+  async function enableBloop(choice: AiChoice): Promise<AiSettings> {
+    const v = await localModule.verifyBloop()
+    if (!v.ok) throw new Error(v.error ?? 'The Bloop model could not be verified.')
+    return saved(store.saveAiSettings({ choice, bloopEnabled: true }))
+  }
+
+  // "Use Bloop model" / "Turn off". Nothing is downloaded here.
+  h(IPC.aiSetBloopEnabled, async (_e, enabled) => {
+    if (enabled === true) {
+      const st = (await getAiStatus()).local.bloop
+      if (st.source == null) throw new Error("The Bloop model isn't on this device yet.")
+      return enableBloop({ kind: 'local', runtime: 'bloop', model: st.id })
+    }
+    const cur = store.getAiSettings()
+    const choice: AiChoice = cur.choice.kind === 'local' && cur.choice.runtime === 'bloop' ? { kind: 'auto' } : cur.choice
+    const next = saved(store.saveAiSettings({ choice, bloopEnabled: false }))
+    await localModule.unloadBloop()
+    return next
   })
 
   h(IPC.aiSetCloudModel, (_e, provider, model) => {

@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { getPath: () => '/tmp', isPackaged: false } }))
-vi.mock('../src/main/store', () => ({ getAiSettings: () => ({ choice: { kind: 'auto' }, cloudModels: {}, ollamaUrl: 'http://127.0.0.1:11434', bloopOfferDismissed: false }) }))
+vi.mock('../src/main/store', () => ({ getAiSettings: () => ({ choice: { kind: 'auto' }, cloudModels: {}, ollamaUrl: 'http://127.0.0.1:11434', bloopOfferDismissed: false, bloopEnabled: false }) }))
 vi.mock('../src/main/ai/cloud', () => ({ cloudModule: null, setCloudModelsReader: () => undefined }))
 
 import { DEFAULT_AI_SETTINGS, type AiChoice } from '../src/shared/ai'
@@ -13,7 +13,7 @@ import { buildPrompt, generatePlan, PLAN_JSON_SCHEMA, parsePlan } from '../src/m
 import type { Settings, Stats } from '../src/shared/types'
 
 const prov = (label: string, kind: 'local' | 'cloud', text = 'x'): AiProvider => ({ label, kind, complete: vi.fn(async () => text) })
-const emptyLocal = { bloop: { id: 'b', label: 'B', url: '', sizeBytes: null, downloaded: false }, ollama: { installed: false, running: false, url: 'u', models: [] } }
+const emptyLocal = { bloop: { id: 'b', label: 'B', url: '', sizeBytes: null, downloaded: false, source: null, enabled: false }, ollama: { installed: false, running: false, url: 'u', models: [] } }
 
 function fakes(local: AiProvider | null, cloud: AiProvider | null) {
   const l: LocalModule = { status: vi.fn(async () => emptyLocal), provider: vi.fn(async () => new Error('nope')), autoProvider: vi.fn(async () => local) }
@@ -112,5 +112,20 @@ describe('plan.ts via a mocked provider', () => {
     const p = buildPrompt([], stats, settings, new Date(2026, 10, 4, 9))
     expect(p).toContain('You are a friendly study coach inside a desktop "study pet" app for a university student.')
     expect(p).toContain('Reply with ONLY a JSON object, no markdown fences, in exactly this shape:')
+  })
+})
+
+describe('bloopEnabled validation', () => {
+  it('defaults to false and only accepts booleans', () => {
+    expect(DEFAULT_AI_SETTINGS.bloopEnabled).toBe(false)
+    expect(validateAiSettings(undefined).bloopEnabled).toBe(false)
+    expect(validateAiSettings({ bloopEnabled: 'yes' }).bloopEnabled).toBe(false)
+    expect(validateAiSettings({ bloopEnabled: 1 }).bloopEnabled).toBe(false)
+    expect(validateAiSettings({ bloopEnabled: true }).bloopEnabled).toBe(true)
+    expect(validateAiSettings({ bloopEnabled: false, choice: { kind: 'local', runtime: 'bloop', model: 'b' } }).bloopEnabled).toBe(false)
+  })
+  it('settings saved before the flag existed keep an explicit Bloop choice on', () => {
+    expect(validateAiSettings({ choice: { kind: 'local', runtime: 'bloop', model: 'b' } }).bloopEnabled).toBe(true)
+    expect(validateAiSettings({ choice: { kind: 'local', runtime: 'ollama', model: 'm' } }).bloopEnabled).toBe(false)
   })
 })

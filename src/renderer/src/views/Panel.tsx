@@ -387,14 +387,19 @@ function AiPlan(): JSX.Element | null {
   )
 
   if (!active && !needsBloop) {
+    const bundledOff = bloop?.source === 'bundled' && !bloop.enabled
     return (
       <section className="card section section--quiet" ref={ref}>
         {title}
-        <p className="note">Pick a model on this device or a cloud provider to plan your week.</p>
+        <p className="note">
+          {bundledOff
+            ? 'Turn on the built-in Bloop model in Settings. It runs on this device.'
+            : 'Pick a model on this device or a cloud provider to plan your week.'}
+        </p>
         <div className="controls controls--start">
           <button className="btn btn--small btn--primary" onClick={() => void window.studyPet.openSettings()}>
             <Icon name="gear" size={13} />
-            Set up AI in Settings
+            {bundledOff ? 'Open AI settings' : 'Set up AI in Settings'}
           </button>
         </div>
       </section>

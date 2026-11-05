@@ -21,13 +21,19 @@ export interface AiSettings {
   ollamaUrl: string
   /** User said "Not now" to the Bloop model download offer; don't offer again unprompted. */
   bloopOfferDismissed: boolean
+  /**
+   * The user explicitly turned the Bloop model on ("Use Bloop model"). Default false. The model
+   * that ships inside the app is never used, not even by 'auto', until this is true.
+   */
+  bloopEnabled: boolean
 }
 
 export const DEFAULT_AI_SETTINGS: AiSettings = {
   choice: { kind: 'auto' },
   cloudModels: {},
   ollamaUrl: 'http://127.0.0.1:11434',
-  bloopOfferDismissed: false
+  bloopOfferDismissed: false,
+  bloopEnabled: false
 }
 
 /** One selectable model row in the picker. */
@@ -43,6 +49,9 @@ export interface AiModelOption {
   note?: string
 }
 
+/** Where the Bloop model file comes from: shipped inside the app, downloaded, or imported from disk. */
+export type BloopSource = 'bundled' | 'downloaded' | 'imported'
+
 export interface LocalStatus {
   bloop: {
     /** Catalog entry for the built-in Bloop model (fine-tuned Qwen3.5 0.8B). */
@@ -51,7 +60,15 @@ export interface LocalStatus {
     /** Empty until the fine-tuned GGUF is published. */
     url: string
     sizeBytes: number | null
+    /** A model file is available on this device (bundled, downloaded or imported). */
     downloaded: boolean
+    /** Which file would run: the bundled one first, then userData/models. null = none. */
+    source: BloopSource | null
+    /** AiSettings.bloopEnabled: the user turned the model on. Bundled models never run before this. */
+    enabled: boolean
+    /** From bloop-model.json of a bundled model. */
+    base?: string
+    builtAt?: string
     path?: string
     /** Download in progress. */
     progress?: DownloadProgress
@@ -107,7 +124,14 @@ export interface AiApi {
   /** Downloads ONLY when confirmed === true (the user clicked Download in a confirmation). */
   downloadBloopModel(confirmed: boolean): Promise<{ ok: boolean; error?: string }>
   cancelBloopDownload(): Promise<void>
+  /** Rejects for the bundled model (it is part of the app). */
   deleteBloopModel(): Promise<void>
+  /**
+   * "Use Bloop model" / "Turn off". true: verifies a bundled file the first time, sets bloopEnabled and
+   * selects the Bloop model. false: clears bloopEnabled and, if Bloop was selected, goes back to auto.
+   * Never downloads anything. Rejects with a message when the model can't be turned on.
+   */
+  setBloopEnabled(enabled: boolean): Promise<AiSettings>
   /** Use a .gguf the user picked from disk (opens a file dialog in main). */
   importBloopModelFile(): Promise<{ ok: boolean; error?: string }>
   dismissBloopOffer(): Promise<void>

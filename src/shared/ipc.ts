@@ -48,6 +48,7 @@ export const IPC = {
   aiDownloadBloop: 'ai:bloop-download',
   aiCancelBloop: 'ai:bloop-cancel',
   aiDeleteBloop: 'ai:bloop-delete',
+  aiSetBloopEnabled: 'ai:bloop-enabled',
   aiImportBloop: 'ai:bloop-import',
   aiDismissBloopOffer: 'ai:bloop-dismiss-offer',
   aiPullOllama: 'ai:ollama-pull',
