@@ -2,6 +2,10 @@
 
 _Your little study pet._
 
+![Bloop in 10 seconds: focus, drift, nudge, back on track](docs/demo/bloop-ad.gif)
+
+**Watch the ad:** [16:9](docs/demo/bloop-ad.mp4) · [vertical 9:16](docs/demo/bloop-ad-vertical.mp4) (42 s, real Bloop UI with simulated activity). More stills in [`docs/demo/`](docs/demo/).
+
 ## Install
 
 Bloop installs with one command that builds the app on your own computer from this repo and then installs it like a normal app (in Applications, the Start menu or your app menu). There are no downloadable installers at the moment, so this is the way to get it.
