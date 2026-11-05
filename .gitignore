@@ -36,3 +36,11 @@ resources/models/bloop-model.json
 # Python
 __pycache__/
 *.pyc
+
+# Code-signing material
+*.pem
+*.p12
+*.pfx
+*.key
+*.cer
+*.provisionprofile

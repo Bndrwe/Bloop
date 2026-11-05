@@ -30,13 +30,18 @@ export function validateChoice(raw: unknown): AiChoice | null {
   return null
 }
 
-/** http(s) URL without a trailing slash, or null. */
+/**
+ * http(s) URL without a trailing slash, or null. A user-set Ollama address may point anywhere (a
+ * LAN box is a real use case), so only the scheme is restricted: no file:, data:, ftp: etc., and no
+ * user:password@ (it would be sent in clear over http). Query and hash are dropped.
+ */
 export function normalizeOllamaUrl(raw: unknown): string | null {
   const s = cleanStr(raw, 500)
   if (!s) return null
   try {
-    const u = new URL(/^[a-z]+:\/\//i.test(s) ? s : `http://${s}`)
+    const u = new URL(/^[a-z][a-z0-9+.-]*:/i.test(s) && !/^[^:/]+:\d+(\/|$)/.test(s) ? s : `http://${s}`)
     if (u.protocol !== 'http:' && u.protocol !== 'https:') return null
+    if (u.username || u.password || !u.hostname) return null
     return `${u.protocol}//${u.host}${u.pathname.replace(/\/+$/, '')}`
   } catch {
     return null

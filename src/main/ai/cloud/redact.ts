@@ -5,6 +5,9 @@ const PATTERNS: RegExp[] = [
   /sk-or-v1-[A-Za-z0-9_-]{6,}/g,
   /\bsk-[A-Za-z0-9_-]{10,}/g,
   /\bAIza[0-9A-Za-z_-]{20,}/g,
+  /\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}/g,
+  /\bgithub_pat_[A-Za-z0-9_]{20,}/g,
+  /\bhf_[A-Za-z0-9]{20,}/g,
   /\b(Bearer|Basic)\s+[A-Za-z0-9._~+/=-]{8,}/gi,
   /((?:x-api-key|authorization|api[_-]?key)["']?\s*[:=]\s*["']?)[^\s"',}]{6,}/gi
 ]

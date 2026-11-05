@@ -99,8 +99,8 @@ describe("registry 'auto': every availability combination", () => {
     }
   })
 
-  it('a throwing Ollama probe surfaces as an Error result, not an unhandled rejection', async () => {
-    const { registry } = build({ enabled: false, downloaded: false, ollama: 'up-small', cloud: true, probeThrows: true })
+  it('a throwing Ollama probe surfaces as an Error result (when no cloud is ready), not an unhandled rejection', async () => {
+    const { registry } = build({ enabled: false, downloaded: false, ollama: 'up-small', cloud: false, probeThrows: true })
     const r = await registry.resolve()
     expect(r).toBeInstanceOf(Error)
     expect((r as Error).message).toBe('probe exploded')
@@ -109,7 +109,7 @@ describe("registry 'auto': every availability combination", () => {
   // BUG: registry.ts resolve() 'auto': local.autoProvider() throws when the Ollama probe throws, and the
   // catch returns that Error WITHOUT trying the cloud fallback. 'auto' is documented as "first ready
   // option: local, then cloud", so a transient local failure should still fall through to cloud.
-  it.fails('BUG: auto falls through to cloud when the local probe throws', async () => {
+  it('auto falls through to cloud when the local probe throws', async () => {
     const { registry } = build({ enabled: false, downloaded: false, ollama: 'up-small', cloud: true, probeThrows: true })
     const r = await registry.resolve()
     expect((r as AiProvider).label).toBe('Claude CLI')

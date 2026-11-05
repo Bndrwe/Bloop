@@ -66,14 +66,16 @@ function keyDetail(p: ApiKeyProvider): { available: boolean; detail?: string } {
 }
 
 async function status(refresh = false): Promise<CloudProviderStatus[]> {
+  const a = keyDetail('anthropic')
+  const o = keyDetail('openrouter')
+  // Privacy: opening Settings must not contact anyone. The public OpenRouter model list is only
+  // fetched once the user has set an OpenRouter key (i.e. chose to use OpenRouter).
   const [claude, codex, gemini, orModels] = await Promise.all([
     cliStatus('claude-cli', refresh),
     cliStatus('codex-cli', refresh),
     cliStatus('gemini-cli', refresh),
-    fetchOpenRouterModels({ refresh, timeoutMs: 4000 })
+    o.available ? fetchOpenRouterModels({ refresh, timeoutMs: 4000 }) : Promise.resolve(null)
   ])
-  const a = keyDetail('anthropic')
-  const o = keyDetail('openrouter')
   const orList = (orModels ?? cachedOpenRouterModels() ?? []).map((m) => ({ id: m.id, label: m.label }))
   if (!orList.some((m) => m.id === OPENROUTER_DEFAULT_MODEL)) orList.unshift({ id: OPENROUTER_DEFAULT_MODEL, label: 'Claude Sonnet 5.5' })
   return [

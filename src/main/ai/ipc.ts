@@ -1,5 +1,5 @@
 // All AI IPC handlers (window.studyPet.ai). Registered from main/index.ts with one call.
-import { BrowserWindow, app, dialog, shell, type IpcMain } from 'electron'
+import { BrowserWindow, app, dialog, session, shell, type IpcMain } from 'electron'
 import { IPC } from '@shared/ipc'
 import type { AiChoice, AiSettings, AiStatus, CloudProviderId } from '@shared/ai'
 import * as store from '../store'
@@ -7,6 +7,7 @@ import { aiChanged } from './events'
 import { localModule } from './local'
 import { cloudModule, getAiStatus, registry, startStatusPush } from './registry'
 import { CLOUD_PROVIDER_IDS, normalizeOllamaUrl, validateChoice } from './settings'
+import { denyAllPermissions, guardSender, hardenWebContents, isSafeExternalUrl, rendererIndexFor, type TrustedOrigins } from './guard'
 
 const log = (m: string): void => console.log(`[bloop] ${m}`)
 
@@ -15,19 +16,27 @@ export interface AiIpcDeps {
   allWindows: () => BrowserWindow[]
 }
 
-function isHttpsUrl(url: string): boolean {
-  try {
-    return new URL(url).protocol === 'https:'
-  } catch {
-    return false
+/** Our own renderer: the packaged index.html, or the Vite dev server when not packaged. */
+export function trustedOrigins(): TrustedOrigins {
+  return {
+    rendererIndex: rendererIndexFor(app.getAppPath()),
+    devUrl: process.env['ELECTRON_RENDERER_URL'],
+    packaged: app.isPackaged
   }
+}
+
+const openExternalSafe = (url: string): void => {
+  if (isSafeExternalUrl(url)) void shell.openExternal(url).catch(() => undefined)
 }
 
 const TEST_PROMPT = 'You are checking that an AI connection works. Reply with exactly: Ready to plan!'
 
 export function registerAiIpc(ipcMain: IpcMain, deps: AiIpcDeps): void {
+  const origins = trustedOrigins()
   const h = (ch: string, fn: (e: Electron.IpcMainInvokeEvent, ...args: unknown[]) => unknown): void => {
     ipcMain.handle(ch, async (e, ...args) => {
+      // Only our own renderer (top frame, file:// index.html or the dev server) may call these.
+      guardSender(ch, e, origins)
       try {
         return await fn(e, ...args)
       } catch (err) {
@@ -48,15 +57,14 @@ export function registerAiIpc(ipcMain: IpcMain, deps: AiIpcDeps): void {
   }
   startStatusPush(push)
 
-  // Help links (ollama.com, provider key pages) open in the system browser, never in a new window.
-  app.on('web-contents-created', (_e, contents) => {
-    contents.setWindowOpenHandler(({ url }) => {
-      if (isHttpsUrl(url)) void shell.openExternal(url)
-      return { action: 'deny' }
-    })
-  })
+  // Every webContents: help links (ollama.com, provider key pages) open in the system browser, never
+  // in a new window; navigation away from our renderer and <webview> are blocked.
+  app.on('web-contents-created', (_e, contents) => hardenWebContents(contents, origins, openExternalSafe))
+  // The renderer needs no web permissions (camera, mic, geolocation, notifications...): deny all.
+  denyAllPermissions(session.defaultSession)
+
   h(IPC.openExternal, async (_e, url) => {
-    if (typeof url !== 'string' || !isHttpsUrl(url)) throw new Error('Only https links can be opened.')
+    if (!isSafeExternalUrl(url)) throw new Error('Only https links can be opened.')
     await shell.openExternal(url)
   })
 
@@ -99,7 +107,7 @@ export function registerAiIpc(ipcMain: IpcMain, deps: AiIpcDeps): void {
 
   h(IPC.aiSetCloudModel, (_e, provider, model) => {
     const id = provider as CloudProviderId
-    if (!CLOUD_PROVIDER_IDS.includes(id) || typeof model !== 'string' || !model.trim()) throw new Error('Unknown model.')
+    if (!CLOUD_PROVIDER_IDS.includes(id) || typeof model !== 'string' || !model.trim() || model.trim().length > 200) throw new Error('Unknown model.')
     const cur = store.getAiSettings()
     const choice: AiChoice = cur.choice.kind === 'cloud' && cur.choice.provider === id ? { ...cur.choice, model: model.trim() } : cur.choice
     return saved(store.saveAiSettings({ cloudModels: { ...cur.cloudModels, [id]: model.trim() }, choice }))
@@ -138,12 +146,13 @@ export function registerAiIpc(ipcMain: IpcMain, deps: AiIpcDeps): void {
 
   // Pulls ONLY when confirmed === true.
   h(IPC.aiPullOllama, (_e, model, confirmed) =>
-    typeof model === 'string' ? localModule.pullOllama(model, confirmed === true) : { ok: false, error: 'No model given.' }
+    typeof model === 'string' && model.length <= 200 ? localModule.pullOllama(model, confirmed === true) : { ok: false, error: 'No model given.' }
   )
 
   h(IPC.aiSetApiKey, async (_e, provider, key) => {
     if (provider !== 'anthropic' && provider !== 'openrouter') return { ok: false, error: 'Unknown provider.' }
     if (!cloudModule) return { ok: false, error: 'Cloud providers are not available in this build yet.' }
+    if (key != null && (typeof key !== 'string' || key.length > 4096)) return { ok: false, error: 'That does not look like an API key.' }
     const r = await cloudModule.setApiKey(provider, typeof key === 'string' ? key : null)
     aiChanged()
     return r

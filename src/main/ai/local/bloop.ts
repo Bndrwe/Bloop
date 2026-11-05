@@ -57,7 +57,8 @@ export function bundledModelDirs(appPath?: string, resourcesPath: string | undef
 function readBundledMeta(dir: string): BundledMeta | null {
   try {
     const j = JSON.parse(readFileSync(join(dir, BUNDLED_META_FILE), 'utf8')) as Partial<BundledMeta>
-    if (typeof j.file !== 'string' || !j.file || j.file !== j.file.replace(/[\\/]/g, '')) return null
+    // A bare file name only: no separators, no "..", must be a .gguf.
+    if (typeof j.file !== 'string' || !isSafeModelFileName(j.file)) return null
     return {
       file: j.file,
       bytes: typeof j.bytes === 'number' ? j.bytes : 0,
@@ -68,6 +69,11 @@ function readBundledMeta(dir: string): BundledMeta | null {
   } catch {
     return null
   }
+}
+
+/** A plain `name.gguf` with no path separators, no leading dot and no "..". */
+export function isSafeModelFileName(name: string): boolean {
+  return /^[A-Za-z0-9_][A-Za-z0-9_.-]{0,200}\.gguf$/i.test(name) && !name.includes('..')
 }
 
 /** The bundled .gguf in `dir` (named by bloop-model.json, else the newest bloop-*.gguf), or null. */
@@ -308,6 +314,10 @@ export class BloopManager {
     }
     const c = this.catalog
     if (!c.url) return { ok: false, error: `${NOT_PUBLISHED_NOTE}: the Bloop model hasn't been published. You can import a .gguf file instead.` }
+    // Integrity: only a fixed https URL with a pinned sha256 is ever downloaded.
+    if (!/^https:\/\//i.test(c.url) || !/^[0-9a-f]{64}$/i.test(c.sha256) || !isSafeModelFileName(c.file)) {
+      return { ok: false, error: 'The Bloop model download is misconfigured (it needs an https URL and a sha256), so nothing was downloaded.' }
+    }
     if (this.abort) return { ok: false, error: 'Already downloading.' }
     if (this.isDownloaded()) return { ok: true } // bundled / already on disk: nothing to fetch
 
@@ -340,6 +350,8 @@ export class BloopManager {
         res = await doFetch(c.url, { signal: ac.signal, redirect: 'follow' })
       }
       if (!res.ok || !res.body) throw new Error(`Download failed (HTTP ${res.status}).`)
+      // Redirects (Hugging Face → its CDN) must stay on https.
+      if (res.url && !/^https:\/\//i.test(res.url)) throw new Error('The download was redirected to a non-https address, so it was stopped.')
       const resumed = res.status === 206 && have > 0
       if (!resumed) have = 0
       const len = Number(res.headers.get('content-length')) || 0
@@ -361,6 +373,20 @@ export class BloopManager {
         const { done, value } = await Promise.race([reader.read(), wsErr])
         if (done) break
         received += value.byteLength
+        // Never write more than the pinned size (a bad mirror can't fill the disk).
+        if (c.bytes > 0 && received > c.bytes) {
+          // Wait for the stream to fully close: destroy() is async, and a still-opening stream
+          // could re-create the file after we delete it.
+          const closing = ws
+          ws = null
+          await new Promise<void>((resolve) => {
+            if (closing.closed) return resolve()
+            closing.once('close', () => resolve())
+            closing.destroy()
+          })
+          await rm(part, { force: true })
+          throw new Error('The download is bigger than the Bloop model should be, so it was stopped.')
+        }
         if (!ws.write(value)) await Promise.race([once(ws, 'drain'), wsErr])
         const now = Date.now()
         if (now - winT >= 500) {

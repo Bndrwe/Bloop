@@ -33,13 +33,25 @@ export function anthropicErrorMessage(e: unknown, key?: string | null): string {
   return `Anthropic request failed: ${safeMessage(e, known)}`
 }
 
+export const ANTHROPIC_BASE_URL = 'https://api.anthropic.com'
+
+/**
+ * Explicit client options so nothing in the environment (e.g. a planted .env, which loadEnv merges
+ * into process.env) can redirect the key or the prompt: ANTHROPIC_BASE_URL would send the stored
+ * key to another host, ANTHROPIC_LOG=debug would write prompts to main.log, ANTHROPIC_AUTH_TOKEN
+ * would add a second credential. Profiles / credential files are not consulted either.
+ */
+export function anthropicClientOptions(apiKey: string): ConstructorParameters<typeof Anthropic>[0] {
+  return { apiKey, authToken: null, baseURL: ANTHROPIC_BASE_URL, logLevel: 'off', openTelemetry: false, maxRetries: 2 }
+}
+
 export function createAnthropicProvider(apiKey: string, model: string = ANTHROPIC_DEFAULT_MODEL): AiProvider {
   return {
     label: `Anthropic API (${model})`,
     kind: 'cloud',
     async complete(prompt: string, opts: CompleteOptions = {}): Promise<string> {
       try {
-        const client = new Anthropic({ apiKey })
+        const client = new Anthropic(anthropicClientOptions(apiKey))
         const res = await client.beta.messages.create(
           {
             model,

@@ -1,12 +1,17 @@
 // Cloud providers that drive the user's own logged-in CLIs (Claude Code, OpenAI Codex, Gemini CLI)
-// in their non-interactive modes. The prompt is never logged and is sent over stdin when long.
+// in their non-interactive modes. The prompt is never logged and always goes over stdin, never
+// argv (argv is visible to other local users in `ps`, and on Windows .cmd shims it passes through
+// cmd.exe, whose parsing is injectable).
 //
 // Invocations (verified against each tool's docs, see README "Cloud AI"):
 //   claude -p --output-format json --no-session-persistence --tools "" [--model X]      (prompt on stdin)
 //   codex exec --skip-git-repo-check --sandbox read-only --ephemeral [-m X] -            (prompt on stdin)
-//   gemini --output-format json [-m X] -p "<prompt>"                                      (stdin if long)
+//   gemini --output-format json [-m X] -p "Follow the instructions in the input."      (prompt on stdin)
 import { execFile } from 'node:child_process'
+import { existsSync } from 'node:fs'
+import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import type { CloudProviderId } from '@shared/ai'
 import type { AiProvider, CompleteOptions } from '../types'
 import { childPath, resolveBinary } from './cli-detect'
@@ -248,37 +253,132 @@ export interface RunResult {
 const MAX_BUFFER = 16 * 1024 * 1024
 export const CLI_TIMEOUT_MS = 120_000
 
-export function runCli(file: string, args: string[], stdin: string | undefined, opts: { timeoutMs?: number; signal?: AbortSignal } = {}): Promise<RunResult> {
-  return new Promise((resolve) => {
-    const isWinShim = process.platform === 'win32' && /\.(cmd|bat)$/i.test(file)
-    const child = execFile(
-      isWinShim ? `"${file}"` : file,
-      args,
-      {
-        cwd: tmpdir(), // neutral dir: the CLIs must not read the user's projects
-        timeout: opts.timeoutMs ?? CLI_TIMEOUT_MS,
-        signal: opts.signal,
-        maxBuffer: MAX_BUFFER,
-        windowsHide: true,
-        shell: isWinShim,
-        encoding: 'utf8',
-        env: { ...process.env, PATH: childPath(file), NO_COLOR: '1', CI: '1', TERM: 'dumb' }
-      },
-      (err, stdout, stderr) => {
-        const e = err as (NodeJS.ErrnoException & { killed?: boolean; signal?: string; code?: number | string }) | null
-        resolve({
-          stdout: String(stdout ?? ''),
-          stderr: String(stderr ?? ''),
-          code: e ? (e.code ?? 1) : 0,
-          timedOut: Boolean(e && e.killed && !opts.signal?.aborted),
-          aborted: Boolean(e && (e.name === 'AbortError' || e.code === 'ABORT_ERR' || opts.signal?.aborted)),
-          spawnError: e && (e.code === 'ENOENT' || e.code === 'EACCES') ? String(e.code) : undefined
-        })
-      }
-    )
-    child.stdin?.on('error', () => undefined) // EPIPE when the CLI exits before reading stdin
-    child.stdin?.end(stdin ?? '')
-  })
+// ---------------------------------------------------------------- child environment (pure)
+
+/**
+ * Env var names present when this module loaded, i.e. before main/index.ts ran loadEnv() (the bundle
+ * evaluates imported modules first). Anything Bloop's own .env added later (ANTHROPIC_API_KEY,
+ * NODE_OPTIONS, ...) is NOT passed to the CLIs: they use the user's own login, and a .env key would
+ * silently switch the Claude CLI to API billing.
+ */
+const STARTUP_ENV_KEYS: ReadonlySet<string> = new Set(Object.keys(process.env))
+
+/** Env for a CLI child: the inherited env minus .env additions and Electron/Node injection vars. */
+export function cliChildEnv(
+  binPath: string,
+  env: NodeJS.ProcessEnv = process.env,
+  startupKeys: ReadonlySet<string> = STARTUP_ENV_KEYS,
+  platform: NodeJS.Platform = process.platform
+): NodeJS.ProcessEnv {
+  const out: NodeJS.ProcessEnv = {}
+  for (const [k, v] of Object.entries(env)) {
+    if (v == null || !startupKeys.has(k)) continue
+    if (/^ELECTRON_/i.test(k) || /^NODE_OPTIONS$/i.test(k)) continue
+    out[k] = v
+  }
+  return { ...out, PATH: childPath(binPath, env, platform), NO_COLOR: '1', CI: '1', TERM: 'dumb' }
+}
+
+/**
+ * Base for the per-call working directory. Linux's /tmp is shared with other users, and the CLIs
+ * read config from their cwd and its parents (.claude/settings.json hooks, .gemini/settings.json,
+ * CLAUDE.md, AGENTS.md), so prefer the per-user 0700 XDG_RUNTIME_DIR there. macOS and Windows temp
+ * dirs are already per-user.
+ */
+export function privateTempBase(env: NodeJS.ProcessEnv = process.env, platform: NodeJS.Platform = process.platform): string {
+  const xdg = env['XDG_RUNTIME_DIR']
+  if (platform === 'linux' && xdg && xdg.startsWith('/') && existsSync(xdg)) return xdg
+  return tmpdir()
+}
+
+// ---------------------------------------------------------------- Windows .cmd / .bat shims (pure)
+
+/** Characters cmd.exe expands or treats specially even inside double quotes. */
+const CMD_UNSAFE = /["%!\r\n\u0000-\u001f]/
+
+/** Quote one argument for `cmd.exe /d /s /c "..."`. Throws on anything cmd.exe could reinterpret. */
+export function quoteCmdArg(arg: string): string {
+  if (arg === '') return '""'
+  if (CMD_UNSAFE.test(arg) || /\\$/.test(arg)) throw new Error('That command argument has characters Windows cannot pass safely.')
+  return /^[A-Za-z0-9_.:\\/@+-]+$/.test(arg) ? arg : `"${arg}"`
+}
+
+/**
+ * The verbatim command line for running a .cmd/.bat shim through cmd.exe without Node's
+ * `shell: true` (which joins args unquoted: `--tools ""` became a bare `--tools`, and any
+ * metacharacter in an arg was live). Only fixed flags and validated model ids ever get here;
+ * the prompt always goes over stdin.
+ */
+export function buildCmdShimLine(file: string, args: string[]): string {
+  if (CMD_UNSAFE.test(file)) throw new Error('The CLI path has characters Windows cannot run safely.')
+  return `"${['"' + file + '"', ...args.map(quoteCmdArg)].join(' ')}"`
+}
+
+export function isWinShim(file: string, platform: NodeJS.Platform = process.platform): boolean {
+  return platform === 'win32' && /\.(cmd|bat)$/i.test(file)
+}
+
+// ---------------------------------------------------------------- running
+
+export interface RunOptions {
+  timeoutMs?: number
+  signal?: AbortSignal
+  /** For tests. */
+  platform?: NodeJS.Platform
+  env?: NodeJS.ProcessEnv
+}
+
+export async function runCli(file: string, args: string[], stdin: string | undefined, opts: RunOptions = {}): Promise<RunResult> {
+  const platform = opts.platform ?? process.platform
+  const env = opts.env ?? process.env
+  const shim = isWinShim(file, platform)
+  let cmdFile = file
+  let cmdArgs = args
+  if (shim) {
+    try {
+      cmdFile = env['ComSpec'] || env['COMSPEC'] || 'cmd.exe'
+      cmdArgs = ['/d', '/s', '/c', buildCmdShimLine(file, args)]
+    } catch (e) {
+      return { stdout: '', stderr: (e as Error).message, code: 1, timedOut: false, aborted: false }
+    }
+  }
+  // A fresh, private (0700) empty folder per call, removed afterwards: the CLIs must not read the
+  // user's projects or anything another user planted in a shared temp dir.
+  const cwd = await mkdtemp(join(privateTempBase(env, platform), 'bloop-cli-'))
+  try {
+    return await new Promise<RunResult>((resolve) => {
+      const child = execFile(
+        cmdFile,
+        cmdArgs,
+        {
+          cwd,
+          timeout: opts.timeoutMs ?? CLI_TIMEOUT_MS,
+          signal: opts.signal,
+          maxBuffer: MAX_BUFFER,
+          windowsHide: true,
+          shell: false,
+          windowsVerbatimArguments: shim,
+          encoding: 'utf8',
+          env: cliChildEnv(file, env, STARTUP_ENV_KEYS, platform)
+        },
+        (err, stdout, stderr) => {
+          const e = err as (NodeJS.ErrnoException & { killed?: boolean; signal?: string; code?: number | string }) | null
+          resolve({
+            stdout: String(stdout ?? ''),
+            stderr: String(stderr ?? ''),
+            code: e ? (e.code ?? 1) : 0,
+            timedOut: Boolean(e && e.killed && !opts.signal?.aborted),
+            aborted: Boolean(e && (e.name === 'AbortError' || e.code === 'ABORT_ERR' || opts.signal?.aborted)),
+            spawnError: e && (e.code === 'ENOENT' || e.code === 'EACCES') ? String(e.code) : undefined
+          })
+        }
+      )
+      child.stdin?.on('error', () => undefined) // EPIPE when the CLI exits before reading stdin
+      child.stdin?.end(stdin ?? '')
+    })
+  } finally {
+    await rm(cwd, { recursive: true, force: true }).catch(() => undefined)
+  }
 }
 
 export function createCliProvider(id: CliId, binPath: string, model?: string): AiProvider {
@@ -287,7 +387,8 @@ export function createCliProvider(id: CliId, binPath: string, model?: string): A
     label: model ? `${spec.label} (${model})` : spec.label,
     kind: 'cloud',
     async complete(prompt: string, opts: CompleteOptions = {}): Promise<string> {
-      const { args, stdin } = buildCliInvocation(id, withSchema(prompt, opts.jsonSchema), model, process.platform === 'win32' && /\.(cmd|bat)$/i.test(binPath))
+      // forceStdin: the prompt never goes in argv (gemini included).
+      const { args, stdin } = buildCliInvocation(id, withSchema(prompt, opts.jsonSchema), model, true)
       const r = await runCli(binPath, args, stdin, { timeoutMs: opts.timeoutMs ?? CLI_TIMEOUT_MS, signal: opts.signal })
       if (r.aborted) throw new Error('Cancelled.')
       if (r.timedOut) throw new Error(mapCliError(id, 'timed out'))

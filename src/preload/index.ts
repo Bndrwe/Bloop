@@ -3,7 +3,11 @@ import { IPC } from '../shared/ipc'
 import type { AppStatus, Settings, StudyPetApi } from '../shared/types'
 import type { AiApi, AiStatus } from '../shared/ai'
 
+// The renderer only gets these named functions, never ipcRenderer itself or a generic invoke.
+// Arguments are coerced to their declared types here as a first filter; main still validates every
+// argument and checks the sender.
 const inv = (ch: string, ...args: unknown[]) => ipcRenderer.invoke(ch, ...args)
+const str = (v: unknown, max = 4096): string => (typeof v === 'string' ? v.slice(0, max) : '')
 
 const ai: AiApi = {
   getStatus: (refresh) => inv(IPC.aiGetStatus, refresh === true),
@@ -14,16 +18,16 @@ const ai: AiApi = {
   },
   getSettings: () => inv(IPC.aiGetSettings),
   setChoice: (choice) => inv(IPC.aiSetChoice, choice),
-  setCloudModel: (provider, model) => inv(IPC.aiSetCloudModel, provider, model),
-  setOllamaUrl: (url) => inv(IPC.aiSetOllamaUrl, url),
+  setCloudModel: (provider, model) => inv(IPC.aiSetCloudModel, str(provider, 40), str(model, 200)),
+  setOllamaUrl: (url) => inv(IPC.aiSetOllamaUrl, str(url, 500)),
   downloadBloopModel: (confirmed) => inv(IPC.aiDownloadBloop, confirmed === true),
   cancelBloopDownload: () => inv(IPC.aiCancelBloop),
   deleteBloopModel: () => inv(IPC.aiDeleteBloop),
   setBloopEnabled: (enabled) => inv(IPC.aiSetBloopEnabled, enabled === true),
   importBloopModelFile: () => inv(IPC.aiImportBloop),
   dismissBloopOffer: () => inv(IPC.aiDismissBloopOffer),
-  pullOllamaModel: (model, confirmed) => inv(IPC.aiPullOllama, model, confirmed === true),
-  setApiKey: (provider, key) => inv(IPC.aiSetApiKey, provider, key),
+  pullOllamaModel: (model, confirmed) => inv(IPC.aiPullOllama, str(model, 200), confirmed === true),
+  setApiKey: (provider, key) => inv(IPC.aiSetApiKey, str(provider, 40), typeof key === 'string' ? key : null),
   test: (choice) => inv(IPC.aiTest, choice)
 }
 
@@ -64,10 +68,10 @@ const api: StudyPetApi = {
   closeWindow: () => inv(IPC.closeWindow),
   dragStart: () => inv(IPC.dragStart),
   dragEnd: () => inv(IPC.dragEnd),
-  setIgnoreMouse: (ignore) => inv(IPC.setIgnoreMouse, ignore),
+  setIgnoreMouse: (ignore) => inv(IPC.setIgnoreMouse, ignore === true),
 
   getPermissions: () => inv(IPC.getPermissions),
-  openPermissionSettings: (kind) => inv(IPC.openPermissionSettings, kind),
+  openPermissionSettings: (kind) => inv(IPC.openPermissionSettings, kind === 'automation' ? 'automation' : 'screenRecording'),
   requestAutomation: () => inv(IPC.requestAutomation),
   dismissOnboarding: () => inv(IPC.dismissOnboarding),
   relaunchApp: () => inv(IPC.relaunchApp),
@@ -78,7 +82,7 @@ const api: StudyPetApi = {
   generatePlan: () => inv(IPC.generatePlan),
   addPlanReminders: () => inv(IPC.addPlanReminders),
 
-  openExternal: (url) => inv(IPC.openExternal, url),
+  openExternal: (url) => inv(IPC.openExternal, str(url, 2048)),
   ai
 }
 

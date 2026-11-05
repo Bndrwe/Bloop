@@ -34,10 +34,16 @@ export function createRegistry(deps: RegistryDeps): Registry {
       if (choice.kind === 'cloud') {
         return deps.cloud ? await deps.cloud.provider(choice) : new Error('Cloud providers are not available in this build yet.')
       }
-      const local = await deps.local.autoProvider()
+      // A failing local probe (e.g. Ollama answering garbage) must not hide a ready cloud option.
+      let localErr: Error | null = null
+      const local = await deps.local.autoProvider().catch((e: unknown) => {
+        localErr = e instanceof Error ? e : new Error(String(e))
+        return null
+      })
       if (local) return local
       const cloud = deps.cloud ? await deps.cloud.autoProvider() : null
-      return cloud ?? new Error(NO_AI_MESSAGE)
+      // Nothing else is ready: explain the local failure rather than the generic message.
+      return cloud ?? localErr ?? new Error(NO_AI_MESSAGE)
     } catch (e) {
       return e instanceof Error ? e : new Error(String(e))
     }

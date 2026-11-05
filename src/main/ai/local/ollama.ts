@@ -238,7 +238,7 @@ export async function pullOllamaModel(
   signal?: AbortSignal
 ): Promise<{ ok: boolean; error?: string }> {
   if (confirmed !== true) return { ok: false, error: 'Ollama models are only pulled after you confirm.' }
-  if (!/^[\w.\-/:]+$/.test(model)) return { ok: false, error: 'That model name looks wrong.' }
+  if (!/^[\w][\w.\-/:]{0,199}$/.test(model)) return { ok: false, error: 'That model name looks wrong.' }
   const res = await fetch(`${base(url)}/api/pull`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
