@@ -1,6 +1,6 @@
 // Pure classification logic: no electron imports (unit-tested in tests/classifier.test.ts).
 import type { Category, Settings } from '@shared/types'
-import { inferDomainFromTitle } from './titleDomain'
+import { cleanTitle, inferDomainFromTitle } from './titleDomain'
 
 export type ClassifyLists = Pick<Settings, 'focusApps' | 'distractApps' | 'focusDomains' | 'distractDomains'>
 
@@ -44,6 +44,73 @@ export const BROWSER_APPS = [
   'msedge',
   'microsoft-edge'
 ]
+
+/** Executable basename (no directory, no ".exe", lowercased) from a Windows or POSIX path. */
+export function exeBasename(path: string | undefined | null): string {
+  if (!path) return ''
+  const base = path.trim().split(/[\\/]/).pop() ?? ''
+  return base.toLowerCase().replace(/\.exe$/, '')
+}
+
+/** exe basename -> the canonical app name used in the default focus/distract lists. */
+const EXE_APP_NAMES: Record<string, string> = {
+  chrome: 'Google Chrome',
+  msedge: 'Microsoft Edge',
+  firefox: 'Mozilla Firefox',
+  brave: 'Brave Browser',
+  arc: 'Arc',
+  opera: 'Opera',
+  vivaldi: 'Vivaldi',
+  chromium: 'Chromium',
+  code: 'Visual Studio Code',
+  'code - insiders': 'Visual Studio Code',
+  cursor: 'Cursor',
+  windowsterminal: 'Windows Terminal',
+  wt: 'Windows Terminal',
+  powershell: 'PowerShell',
+  pwsh: 'PowerShell',
+  cmd: 'Command Prompt',
+  conhost: 'Command Prompt',
+  openconsole: 'Command Prompt',
+  winword: 'Microsoft Word',
+  acrord32: 'Adobe Acrobat',
+  acrobat: 'Adobe Acrobat',
+  notion: 'Notion',
+  obsidian: 'Obsidian',
+  rstudio: 'RStudio',
+  discord: 'Discord',
+  spotify: 'Spotify',
+  steam: 'Steam',
+  whatsapp: 'WhatsApp'
+}
+
+/** Owner names that say nothing about the app (a UWP frame, a shell host, a generic runtime). */
+const GENERIC_OWNER = /^(unknown|electron|application ?frame ?host|host process for windows tasks|console window host|windows? default lock screen)$/i
+
+export interface NativeOwner {
+  name?: string
+  path?: string
+}
+
+/**
+ * Make a get-windows result usable on Windows. The owner name there comes from the exe's version
+ * info and is sometimes the bare exe name ("chrome", "Code.exe") or empty, so fall back to the exe
+ * basename in owner.path. UWP apps are hosted by ApplicationFrameHost.exe and their real name is the
+ * window title ("Calculator"), so the title is used as the app name.
+ */
+export function normalizeOwner(owner: NativeOwner | undefined, title: string): { app: string; title: string } {
+  const name = (owner?.name ?? '').trim()
+  const exe = exeBasename(owner?.path)
+  const t = cleanTitle(title)
+  if (exe === 'applicationframehost' || (!exe && /^application ?frame ?host$/i.test(name))) {
+    return { app: t.trim() || 'Application Frame Host', title: t }
+  }
+  const mapped = EXE_APP_NAMES[exe]
+  const nameIsExe = !!name && normalizeAppName(name) === exe
+  if (mapped && (!name || nameIsExe || GENERIC_OWNER.test(name))) return { app: mapped, title: t }
+  if (!name && exe) return { app: owner?.path ? (owner.path.split(/[\\/]/).pop() ?? exe).replace(/\.exe$/i, '') : exe, title: t }
+  return { app: name, title: t }
+}
 
 /** Lowercased app name without a Windows ".exe" suffix. */
 export function normalizeAppName(app: string): string {

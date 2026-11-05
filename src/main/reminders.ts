@@ -14,7 +14,16 @@ function hhmm(d: Date): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
-/** Checks study reminders (and exam deadline reminders) every 30s. */
+/**
+ * Checks study reminders (and exam deadline reminders) every 30s.
+ *
+ * Windows: toasts need the AppUserModelId (index.ts sets 'edu.bloop.app' = build.appId, which the
+ * NSIS installer also stamps on the Start Menu shortcut). Clicking a toast fires the 'click' handler
+ * that runs onAction (start session) while Bloop is running. Windows Focus Assist / Do Not Disturb
+ * silently diverts toasts to the Action Center, so a reminder can go unseen; the pet's speech bubble
+ * (engine.say) is the fallback. The portable .exe has no Start Menu shortcut, so its toasts may be
+ * attributed to a generic name or dropped on some systems.
+ */
 export class ReminderScheduler {
   private timer: ReturnType<typeof setInterval> | null = null
   constructor(private readonly deps: ReminderDeps) {}

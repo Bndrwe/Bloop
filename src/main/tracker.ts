@@ -2,6 +2,7 @@ import { execFile } from 'node:child_process'
 import { readFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
+import { normalizeOwner } from './classifier'
 import { getScreenRecordingState, runOsascript, setAutomationState } from './permissions'
 
 export interface RawActive {
@@ -51,7 +52,7 @@ export async function getBrowserUrl(app: string): Promise<string | undefined> {
 interface NativeWindow {
   title?: string
   url?: string
-  owner?: { name?: string }
+  owner?: { name?: string; path?: string }
 }
 
 /**
@@ -95,9 +96,16 @@ export async function sampleActiveWindow(): Promise<RawActive | null> {
       const { activeWindow } = await import('get-windows')
       w = (await activeWindow({ accessibilityPermission: false, screenRecordingPermission: screenRecording })) ?? null
     }
-    if (!w) return null
-    const app = w.owner?.name ?? ''
-    const res: RawActive = { app, title: w.title ?? '' }
+    if (!w) {
+      // get-windows returns undefined (instead of throwing) when its native binary is missing
+      if (process.platform === 'win32' && !loggedTrackerError) {
+        loggedTrackerError = true
+        console.log('[bloop] get-windows returned no window (native Windows binary missing or no foreground window)')
+      }
+      return null
+    }
+    const { app, title } = isMac ? { app: w.owner?.name ?? '', title: w.title ?? '' } : normalizeOwner(w.owner, w.title ?? '')
+    const res: RawActive = { app, title }
     const native = 'url' in w && typeof w.url === 'string' ? w.url : undefined
     res.url = native ?? (await getBrowserUrl(app))
     if (process.env['BLOOP_TRACE'] === '1') {
