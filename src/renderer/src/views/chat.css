@@ -500,10 +500,6 @@ html.route-chat #root {
 }
 
 /* Panel entry point (Panel.tsx, under the AI plan card). */
-.panel .panel-chat {
-  align-self: stretch;
-  width: 100%;
-}
 .chat-hint-short {
   display: none;
 }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
-import type { Reminder, Settings } from '@shared/types'
+import type { ContentOverrideInfo, Reminder, Settings } from '@shared/types'
+import { useAi } from '../hooks/useAi'
 import { Pet } from '../pet/Pet'
 import { Icon } from '../lib/Icon'
 import { previewSettings } from '../hooks/useSettings'
@@ -14,7 +15,7 @@ import { PermissionsSection } from './PermissionsSection'
 import { parseSection } from '../lib/route'
 import './settings.css'
 
-type ListKey = 'focusApps' | 'distractApps' | 'focusDomains' | 'distractDomains'
+type ListKey = 'focusApps' | 'distractApps' | 'focusDomains' | 'distractDomains' | 'contentDomains'
 
 function ChipList({
   title,
@@ -28,7 +29,7 @@ function ChipList({
   title: string
   hint: string
   items: string[]
-  kind: 'focus' | 'distract'
+  kind: 'focus' | 'distract' | 'neutral'
   placeholder: string
   normalize?: (v: string) => string
   onChange: (next: string[]) => void
@@ -238,6 +239,104 @@ function ReminderRow({
   )
 }
 
+/**
+ * "Depends on what's open": how unclear pages are judged, and the pages you marked in the panel.
+ */
+function PageJudging({ settings, update }: { settings: Settings; update: (p: Partial<Settings>) => void }): JSX.Element {
+  const { status, settings: ai } = useAi()
+  const [pages, setPages] = useState<ContentOverrideInfo[] | null>(null)
+  const isMac = navigator.userAgent.includes('Mac')
+
+  const loadPages = useCallback(() => {
+    window.studyPet
+      .getRememberedPages()
+      .then(setPages)
+      .catch(() => setPages([]))
+  }, [])
+  useEffect(() => {
+    loadPages()
+    // pages marked in the panel while Settings is open
+    const id = window.setInterval(loadPages, 5000)
+    return () => window.clearInterval(id)
+  }, [loadPages])
+
+  const forget = (id?: string): void => {
+    window.studyPet
+      .forgetRememberedPages(id)
+      .then(setPages)
+      .catch(() => undefined)
+  }
+
+  const local = ai?.choice.kind === 'local'
+  const cloudLabel = status?.active?.kind === 'cloud' ? status.active.label : 'your cloud AI'
+  return (
+    <div className="judging">
+      <p className="faint field-help judging-how">
+        Bloop reads the page title and link and checks them against your courses and deadlines.{' '}
+        {local
+          ? 'When it can’t tell, it asks your Ollama model, on this computer.'
+          : 'Pick an Ollama model under AI and it also checks the pages it can’t tell, on this computer.'}{' '}
+        Until a page is judged, the lists above decide.
+      </p>
+      {isMac && (
+        <label className="row-toggle">
+          <span className="row-toggle-text">
+            <span>Read page text for better judging (needs a browser setting)</span>
+            <span className="faint field-help">
+              Chrome: View → Developer → Allow JavaScript from Apple Events. Safari: Develop → Allow JavaScript from Apple Events.
+            </span>
+          </span>
+          <span className="toggle">
+            <input type="checkbox" checked={settings.readPageText} onChange={(e) => update({ readPageText: e.target.checked })} />
+            <span />
+          </span>
+        </label>
+      )}
+      <label className="row-toggle">
+        <span className="row-toggle-text">
+          <span>Let my cloud AI judge unclear pages (sends page titles to {cloudLabel})</span>
+          <span className="faint field-help">
+            Sends only the page title, the site name and your course names. Never the link or page text. Off by default.
+          </span>
+        </span>
+        <span className="toggle">
+          <input type="checkbox" checked={settings.cloudJudge} onChange={(e) => update({ cloudJudge: e.target.checked })} />
+          <span />
+        </span>
+      </label>
+      <div className="remembered">
+        <div className="chiplist-head">
+          <h4>Remembered pages</h4>
+          {pages && pages.length > 0 && (
+            <button className="link-btn" onClick={() => forget()}>
+              Forget all
+            </button>
+          )}
+        </div>
+        {pages && pages.length > 0 ? (
+          <ul className="remembered-list">
+            {pages.map((p) => (
+              <li key={p.id}>
+                <span className={`chip chip--${p.study ? 'focus' : 'distract'}`}>{p.study ? 'study' : 'not study'}</span>
+                <span className="remembered-label" title={p.label}>
+                  {p.label}
+                </span>
+                <button className="icon-btn" aria-label={`Forget ${p.label}`} onClick={() => forget(p.id)}>
+                  <Icon name="close" size={12} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="faint field-help">
+            None yet. When one of these sites is in front, the panel shows Bloop’s guess with “This is study” and “Not study” to correct it.
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
 /** Saved / error toast; anime.js pops it in on each mount (keyed per toast). */
 function Toast({ text, ok }: { text: string; ok: boolean }): JSX.Element {
   const ref = useRef<HTMLDivElement>(null)
@@ -417,7 +516,8 @@ export function SettingsView(): JSX.Element {
             <span className="serif">Settings</span>
           </h1>
           <p className="muted">
-            Teach your pet what counts as studying. <span className="tag tag--outline">auto-saves</span>
+            Set up your focus score, Brightspace deadlines with the AI study plan, and reminders when you drift. Chat is an extra.{' '}
+            <span className="tag tag--outline">auto-saves</span>
           </p>
         </div>
       </header>
@@ -470,6 +570,16 @@ export function SettingsView(): JSX.Element {
             onChange={setList('distractDomains')}
           />
         </div>
+        <ChipList
+          title="Depends on what’s open"
+          hint="a lecture counts as study, gameplay doesn’t"
+          kind="neutral"
+          placeholder="e.g. youtube.com"
+          normalize={normalizeDomain}
+          items={settings.contentDomains}
+          onChange={setList('contentDomains')}
+        />
+        <PageJudging settings={settings} update={update} />
       </section>
 
       <hr className="zigzag enter" />

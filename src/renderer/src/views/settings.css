@@ -463,3 +463,41 @@
   border: 1px solid var(--hairline);
   border-radius: 4px;
 }
+
+/* Websites → "Depends on what's open" */
+.chiplist + .judging,
+.grid2--inner + .chiplist {
+  margin-top: var(--s3);
+}
+.judging-how {
+  margin: var(--s2) 0 0;
+}
+.remembered {
+  margin-top: var(--s3);
+  padding-top: var(--s3);
+  border-top: 1px solid var(--hairline);
+}
+.remembered-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.remembered-list li {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-width: 0;
+}
+.remembered-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.5px;
+}

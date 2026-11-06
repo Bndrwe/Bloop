@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { animate } from 'animejs'
-import type { AppStatus, Deadline, Stats, StudyPlan } from '@shared/types'
+import type { AppStatus, ContentJudgement, CurrentActivity, Deadline, Settings, Stats, StudyPlan } from '@shared/types'
 import { useStatus } from '../hooks/useStatus'
 import { useWindowAwake } from '../hooks/useWindowAwake'
 import { useAi } from '../hooks/useAi'
 import { useBrightspace } from '../hooks/useBrightspace'
+import { useSettings } from '../hooks/useSettings'
 import { ChatGlyph } from './Chat'
 import { Pet } from '../pet/Pet'
 import { Icon } from '../lib/Icon'
@@ -472,7 +473,89 @@ function AiPlan(): JSX.Element | null {
           </button>
         )}
       </div>
+      {plan && (
+        <button className="link-btn plan-ask" onClick={() => void window.studyPet.chat.open()}>
+          <ChatGlyph size={12} />
+          Ask Bloop about this plan
+        </button>
+      )}
     </section>
+  )
+}
+
+/** "Counts as study · matches CHEM 201" for a "depends on what's open" page, with corrections. */
+function ContentVerdictRow({ current }: { current: CurrentActivity & { content: ContentJudgement } }): JSX.Element {
+  const [busy, setBusy] = useState(false)
+  const c = current.content
+  const head =
+    c.verdict === 'study'
+      ? 'Counts as study'
+      : c.verdict === 'not-study'
+        ? 'Not study'
+        : current.category === 'distract'
+          ? 'Not sure yet, counts as distracting'
+          : current.category === 'focus'
+            ? 'Not sure yet, counts as focus'
+            : 'Not sure yet'
+  const mark = (study: boolean) => async (): Promise<void> => {
+    setBusy(true)
+    try {
+      await window.studyPet.markCurrentPage(study)
+    } catch {
+      /* the next sample shows the old verdict */
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <div className={`now-judge now-judge--${c.verdict}`} role="status">
+      <span className="now-judge-text">
+        <strong>{head}</strong>
+        {c.reason && <span className="faint"> · {c.reason}</span>}
+      </span>
+      <span className="now-judge-actions">
+        <button
+          className={`btn btn--tiny${c.verdict === 'study' && c.source === 'override' ? ' btn--on' : ''}`}
+          disabled={busy}
+          aria-pressed={c.verdict === 'study' && c.source === 'override'}
+          onClick={() => void mark(true)()}
+        >
+          This is study
+        </button>
+        <button
+          className={`btn btn--tiny${c.verdict === 'not-study' && c.source === 'override' ? ' btn--on' : ''}`}
+          disabled={busy}
+          aria-pressed={c.verdict === 'not-study' && c.source === 'override'}
+          onClick={() => void mark(false)()}
+        >
+          Not study
+        </button>
+      </span>
+    </div>
+  )
+}
+
+function secText(sec: number): string {
+  if (sec <= 0) return 'right away'
+  if (sec < 60) return `${sec} sec`
+  const m = sec / 60
+  return `${Number.isInteger(m) ? m : m.toFixed(1)} min`
+}
+
+/** Are reminders on right now, and when do they come? */
+function ReminderState({ status, settings }: { status: AppStatus; settings: Settings | null }): JSX.Element | null {
+  if (!settings) return null
+  const tracking = status.phase === 'focus' || status.watching
+  const text = tracking
+    ? `Reminders on: after ${secText(settings.notifyAfterSec)} on a distraction, then every ${secText(settings.nudgeCooldownSec)}`
+    : status.phase === 'break'
+      ? 'Reminders rest during your break'
+      : 'Reminders are off until you start a session'
+  return (
+    <p className={`reminder-state${tracking ? '' : ' reminder-state--off'}`}>
+      <Icon name="bell" size={12} />
+      <span>{text}</span>
+    </p>
   )
 }
 
@@ -500,6 +583,7 @@ const PHASE_TAG: Record<string, string> = {
 
 export function Panel(): JSX.Element {
   const { status, remaining } = useStatus()
+  const settings = useSettings()
   const [stats, setStats] = useState<Stats | null>(null)
   const [statsError, setStatsError] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -560,6 +644,14 @@ export function Panel(): JSX.Element {
             <h1 className="serif">Bloop</h1>
           </div>
           <div className="hero-actions">
+            <button
+              className="icon-btn icon-btn--pill"
+              aria-label="Chat with Bloop"
+              title="Chat with Bloop"
+              onClick={() => void window.studyPet.chat.open()}
+            >
+              <ChatGlyph size={14} />
+            </button>
             <PetToggleButton />
             <button className="icon-btn icon-btn--pill" aria-label="Settings" onClick={() => void window.studyPet.openSettings()}>
               <Icon name="gear" size={15} />
@@ -623,7 +715,19 @@ export function Panel(): JSX.Element {
         </p>
       )}
 
+      {current?.content && (
+        <div className="enter">
+          <ContentVerdictRow current={{ ...current, content: current.content }} />
+        </div>
+      )}
+      <div className="enter">
+        <ReminderState status={status} settings={settings} />
+      </div>
+
       <hr className="zigzag enter" />
+
+      <Deadlines refreshKey={phase} />
+      <AiPlan />
 
       <section className="card section enter">
         <h2 className="section-title">Today</h2>
@@ -659,13 +763,6 @@ export function Panel(): JSX.Element {
           </>
         )}
       </section>
-
-      <Deadlines refreshKey={phase} />
-      <AiPlan />
-      <button className="btn panel-chat enter" onClick={() => void window.studyPet.chat.open()}>
-        <ChatGlyph size={14} />
-        Chat with Bloop
-      </button>
     </div>
   )
 }

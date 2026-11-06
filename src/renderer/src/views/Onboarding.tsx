@@ -62,7 +62,8 @@ export function Onboarding(): JSX.Element {
           Hi, I’m <span className="tag">Bloop</span>, your study pet
         </h1>
         <p className="muted">
-          I sit in the corner, keep score of your focus, and give you a gentle nudge when you drift off.
+          I keep a live focus score, show your Brightspace deadlines with an AI plan for the week, and nudge you when you
+          drift off. You can chat with me too.
         </p>
       </div>
 
