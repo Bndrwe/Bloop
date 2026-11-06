@@ -28,17 +28,17 @@ const DRIFT: NotifyTemplate[] = [
   { title: 'Tiny reset', body: 'Deep breath. {dur} off task, and the next minute is a fresh start.' },
   { title: 'Just a reminder', body: "You set out to study. It's been {dur} off track." },
   { title: 'Hello again 🌱', body: '{dur} away. Small steps still count. Back to it?' },
-  { title: 'Still with me?', body: "{dur} off task. Let's finish this pomodoro strong." },
+  { title: 'Still with me?', body: "{dur} off task. Let's finish what you started." },
   { title: 'One more push', body: "You're closer than you think. {dur} away so far." },
   { title: 'Bloop believes in you', body: '{dur} off task. Come back and show that work who’s boss.' },
   { title: 'Off on an adventure?', body: "{dur} away. The adventure of finishing your work awaits." },
-  { title: 'Your focus timer is still going', body: "{dur} spent elsewhere. Let's make the rest count." },
+  { title: 'The clock is still ticking', body: "{dur} spent elsewhere. Let's make the rest count." },
   { title: 'Hey, it happens', body: "Everyone drifts. {dur} off task. Let's steer back." },
   { title: 'Bloop is cheering for you 📣', body: 'Come back to your work. {dur} away.' },
   { title: 'Come back soon', body: "{dur} off task. Bloop saved your spot." },
   { title: 'Quick question', body: 'Is this helping your studying? {dur} off task.' },
   { title: 'Let’s refocus', body: 'Close the distraction, open your work. {dur} away so far.' },
-  { title: 'Remember your goal', body: "You started this session for a reason. {dur} off task." },
+  { title: 'Remember your goal', body: "You sat down to study for a reason. {dur} off task." },
   { title: 'Bloop is a little worried', body: "{dur} away from your work. Everything okay?" },
   { title: 'Time flies', body: "It's already been {dur}. Want to get back on track?" },
   { title: 'Easy does it', body: "No guilt, just a nudge: {dur} off task." },
@@ -46,10 +46,10 @@ const DRIFT: NotifyTemplate[] = [
   { title: 'Your future self says hi 👋', body: 'They hope you come back to studying. {dur} away.' },
   { title: 'Bloop is tapping your shoulder', body: '{dur} off task. Shall we?' },
   { title: 'Focus check', body: "You've been elsewhere for {dur}. Ready when you are." },
-  { title: 'Let’s finish strong', body: '{dur} off task. The end of this pomodoro is close.' },
+  { title: 'Let’s finish strong', body: '{dur} off task. You’re closer to done than you think.' },
   { title: 'A small detour', body: "{dur} away. Detours are fine, now let's get back on the road." },
   { title: 'Bloop kept your seat warm', body: "{dur} off task. It's still warm. Come back?" },
-  { title: 'Hey you ✨', body: "You're doing great this session. {dur} away, time to return." },
+  { title: 'Hey you ✨', body: "You're doing great today. {dur} away, time to return." },
   { title: 'Mind wandering?', body: "That's normal. {dur} off task. Gently bring it back." },
   { title: 'Ready for round two?', body: '{dur} away. Your work is ready when you are.' },
   { title: 'Bloop noticed', body: '{dur} off task. A quick return keeps your score climbing.' },
@@ -62,7 +62,7 @@ const DRIFT: NotifyTemplate[] = [
   { title: 'You and me vs. this assignment', body: "{dur} off task. Let's win this one." },
   { title: 'Back on track?', body: "{dur} away. Bloop will be so happy when you're back." },
   { title: 'Snack break or distraction?', body: "If it's a break, start one in Bloop. {dur} off task." },
-  { title: 'Almost there', body: "{dur} off task. A few focused minutes and you're done with this block." }
+  { title: 'Almost there', body: "{dur} off task. A few focused minutes can finish this." }
 ]
 
 /** {break}: the break length, e.g. "5 min". */
