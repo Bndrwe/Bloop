@@ -130,18 +130,18 @@ There are no prebuilt installers (`.dmg`, `.exe`, AppImage) yet. You can build t
 
 *Every mood, animated with anime.js, on a white and a black desktop. Close-up of the score ring: [panel-hero.png](docs/screenshots/panel-hero.png).*
 
-**A day with Bloop** (stills from the ad: real Bloop UI on a simulated desktop)
+**A day with Bloop** (stills from the ad and demo: real Bloop UI with simulated activity)
 
 | | |
 |:---:|:---:|
-| ![Study reminder: the pet waves, "Time to study!"](docs/demo/still-01.png) | ![Writing an essay: the pet is happy](docs/demo/still-02.png) |
-| *Study reminder: Bloop waves and offers to start a session* | *Writing an essay: focused, the pet is happy* |
-| ![Coding with the hover badge at 100](docs/demo/still-03.png) | ![Research on Khan Academy, Calculator counts as neutral](docs/demo/still-04.png) |
-| *Coding: hover the pet to see the score and timer* | *Research and neutral apps don't move the score* |
-| ![YouTube: the pet is sad and a notification says Bloop misses you](docs/demo/still-05.png) | ![Break: the pet sleeps, no nudges](docs/demo/still-06.png) |
-| *Drifting off: a nudge, then a notification* | *Breaks are guilt-free: the pet naps* |
-| ![The AI study plan in the panel](docs/demo/still-07.png) | ![Panel close-up with the score ring and 7-day chart](docs/demo/still-08.png) |
-| *A study plan for the week* | *Today's score, focus time and the last 7 days* |
+| ![YouTube: the pet is worried and a macOS notification says Bloop is cheering for you](docs/demo/still-01.png) | ![Writing an essay: the pet is happy](docs/demo/still-02.png) |
+| *Drifting off: Bloop looks worried at once, then a notification after a minute* | *Writing an essay: focused, the pet is happy* |
+| ![The panel: focus score, round timer and today so far](docs/demo/still-03.png) | ![Chat with Bloop, with saved chats](docs/demo/still-04.png) |
+| *The panel: live score, round timer and today so far* | *Chat with Bloop; chats are saved on this computer* |
+| ![Settings: Brightspace connected](docs/demo/still-05.png) | ![The AI study plan in the panel](docs/demo/still-06.png) |
+| *Brightspace sign-in brings in your deadlines* | *A study plan for the week, via the AI you picked* |
+| ![Settings: AI, Use Local with the Ollama setup steps](docs/demo/still-07.png) | ![Settings: Permissions](docs/demo/still-08.png) |
+| *Use Local: step-by-step Ollama setup* | *Permissions: reset, relaunch or run setup again* |
 
 ![Every pet mood](docs/demo/still-10.png)
 
