@@ -23,13 +23,13 @@ There are no downloadable installers yet, because the repo is private. Instead, 
 **macOS and Linux** (in Terminal):
 
 ```bash
-gh repo clone Bndrwe/StudyPet -- -b claude/practical-davinci-ckp3nc && cd StudyPet && ./scripts/install.sh
+gh repo clone Bndrwe/StudyPet && cd StudyPet && ./scripts/install.sh
 ```
 
 **Windows** (in PowerShell):
 
 ```powershell
-git clone -b claude/practical-davinci-ckp3nc https://github.com/Bndrwe/StudyPet.git; cd StudyPet; powershell -ExecutionPolicy Bypass -File scripts\install.ps1
+git clone https://github.com/Bndrwe/StudyPet.git; cd StudyPet; powershell -ExecutionPolicy Bypass -File scripts\install.ps1
 ```
 
 No GitHub CLI? Plain `git clone` works too. See [INSTALL.md](INSTALL.md) for the full steps, the permissions Bloop asks for on a Mac, and troubleshooting.

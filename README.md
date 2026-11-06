@@ -35,7 +35,7 @@ gh auth login
 (choose GitHub.com → HTTPS → Login with a web browser). Then install Bloop:
 
 ```bash
-gh repo clone Bndrwe/StudyPet -- -b claude/practical-davinci-ckp3nc && cd StudyPet && ./scripts/install.sh
+gh repo clone Bndrwe/StudyPet && cd StudyPet && ./scripts/install.sh
 ```
 
 ### Windows: PowerShell
@@ -49,7 +49,7 @@ winget install Git.Git OpenJS.NodeJS.LTS
 Then install Bloop (Git opens a browser window to sign in to GitHub the first time):
 
 ```powershell
-git clone -b claude/practical-davinci-ckp3nc https://github.com/Bndrwe/StudyPet.git; cd StudyPet; powershell -ExecutionPolicy Bypass -File scripts\install.ps1
+git clone https://github.com/Bndrwe/StudyPet.git; cd StudyPet; powershell -ExecutionPolicy Bypass -File scripts\install.ps1
 ```
 
 ### Linux: terminal
@@ -57,13 +57,13 @@ git clone -b claude/practical-davinci-ckp3nc https://github.com/Bndrwe/StudyPet.
 One-time setup: install the [GitHub CLI](https://cli.github.com), git and Node.js 20+ from your distro or [nvm](https://github.com/nvm-sh/nvm), plus `x11-utils` for focus tracking, then run `gh auth login`. Then:
 
 ```bash
-gh repo clone Bndrwe/StudyPet -- -b claude/practical-davinci-ckp3nc && cd StudyPet && ./scripts/install.sh
+gh repo clone Bndrwe/StudyPet && cd StudyPet && ./scripts/install.sh
 ```
 
 **Other ways to get the code.** Plain git works on every system if you are signed in to GitHub (Git Credential Manager, a personal access token as the password, or SSH with `git@github.com:Bndrwe/StudyPet.git`):
 
 ```bash
-git clone -b claude/practical-davinci-ckp3nc https://github.com/Bndrwe/StudyPet.git && cd StudyPet && ./scripts/install.sh
+git clone https://github.com/Bndrwe/StudyPet.git && cd StudyPet && ./scripts/install.sh
 ```
 
 ### After installing
@@ -363,7 +363,7 @@ You only need this to work on Bloop's code. To use the app, see [Install](#insta
 Requirements: macOS 12+, Windows 10/11 or Linux (x86_64 or arm64; focus tracking needs X11 and `x11-utils`), git and Node.js 20+. `npm run dev` is for working on the code; to use Bloop day to day, install it with `npm run install-app` (see [Install](#install)).
 
 ```bash
-git clone -b claude/practical-davinci-ckp3nc https://github.com/Bndrwe/StudyPet.git
+git clone https://github.com/Bndrwe/StudyPet.git
 cd StudyPet
 npm install
 npm run dev      # launch in development mode

@@ -43,22 +43,22 @@ Open a terminal (macOS: **Terminal**; Windows: **PowerShell**; Linux: your termi
 
 **macOS** (GitHub CLI)
 ```bash
-gh repo clone Bndrwe/StudyPet -- -b claude/practical-davinci-ckp3nc && cd StudyPet && ./scripts/install.sh
+gh repo clone Bndrwe/StudyPet && cd StudyPet && ./scripts/install.sh
 ```
 
 **Windows** (PowerShell, Git for Windows)
 ```powershell
-git clone -b claude/practical-davinci-ckp3nc https://github.com/Bndrwe/StudyPet.git; cd StudyPet; powershell -ExecutionPolicy Bypass -File scripts\install.ps1
+git clone https://github.com/Bndrwe/StudyPet.git; cd StudyPet; powershell -ExecutionPolicy Bypass -File scripts\install.ps1
 ```
 
 **Linux** (GitHub CLI)
 ```bash
-gh repo clone Bndrwe/StudyPet -- -b claude/practical-davinci-ckp3nc && cd StudyPet && ./scripts/install.sh
+gh repo clone Bndrwe/StudyPet && cd StudyPet && ./scripts/install.sh
 ```
 
 **No GitHub CLI?** Plain git works on macOS and Linux too, as long as git can sign in to GitHub (Git Credential Manager, a [personal access token](https://github.com/settings/tokens) pasted as the password, or an SSH key with `git@github.com:Bndrwe/StudyPet.git`):
 ```bash
-git clone -b claude/practical-davinci-ckp3nc https://github.com/Bndrwe/StudyPet.git && cd StudyPet && ./scripts/install.sh
+git clone https://github.com/Bndrwe/StudyPet.git && cd StudyPet && ./scripts/install.sh
 ```
 
 **Already cloned the repo?** From the `StudyPet` folder run `npm run install-app` (macOS/Linux) or `npm run install-app:win` (Windows).

@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
   - name: Install help
-    url: https://github.com/Bndrwe/StudyPet/blob/claude/practical-davinci-ckp3nc/docs/INSTALL.md
+    url: https://github.com/Bndrwe/StudyPet/blob/main/docs/INSTALL.md
     about: Download, first launch, permissions and troubleshooting for the Bloop installers. Read this before opening an issue about installing.

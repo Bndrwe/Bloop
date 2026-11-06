@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for reporting a bug. Before you start, please check the **install and troubleshooting** section of [docs/INSTALL.md](https://github.com/Bndrwe/StudyPet/blob/claude/practical-davinci-ckp3nc/docs/INSTALL.md). Many first-launch problems (macOS "damaged" warning, Windows SmartScreen, missing tray icon) are expected for an unsigned build.
+        Thanks for reporting a bug. Before you start, please check the **install and troubleshooting** section of [docs/INSTALL.md](https://github.com/Bndrwe/StudyPet/blob/main/docs/INSTALL.md). Many first-launch problems (macOS "damaged" warning, Windows SmartScreen, missing tray icon) are expected for an unsigned build.
 
         Do **not** paste API keys, `.env` contents, or personal information (names, deadline titles, calendar URLs) into this issue.
 
