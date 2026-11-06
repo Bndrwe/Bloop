@@ -5,6 +5,7 @@ import type { ActiveSample, AppStatus, PetMood, PetState, SessionPhase, SessionR
 import { classify, resolveDomain } from './classifier'
 import { computeFocusScore, summarizeSession } from './score'
 import type { RawActive } from './tracker'
+import { NotificationPicker, type NotifyKind } from './notifications'
 
 export interface Timing {
   focusSec: number
@@ -204,6 +205,14 @@ export class SessionEngine extends EventEmitter {
     return 'idle'
   }
 
+  private readonly notes = new NotificationPicker(() => this.d.random())
+
+  /** Sends a system notification with the next message for this event (see notifications.ts). */
+  private notifyFrom(kind: NotifyKind, vars: Record<string, string> = {}): void {
+    const n = this.notes.next(kind, vars)
+    this.d.notify(n.title, n.body)
+  }
+
   private pick(lines: string[]): string {
     let i = Math.floor(this.d.random() * lines.length) % lines.length
     if (i === this.lastLine && lines.length > 1) i = (i + 1) % lines.length
@@ -350,12 +359,12 @@ export class SessionEngine extends EventEmitter {
     if (this.phase === 'focus' && this.phaseEndsAt !== null && now >= this.phaseEndsAt) {
       this.pomodoros++
       this.d.log(`pomodoro #${this.pomodoros} complete`)
-      this.d.notify('Break time!', `Nice work — ${this.timing.breakSec >= 60 ? Math.round(this.timing.breakSec / 60) + ' min' : this.timing.breakSec + 's'} break. Stretch, drink some water 💧`)
+      this.notifyFrom('breakStart', { break: this.timing.breakSec >= 60 ? Math.round(this.timing.breakSec / 60) + ' min' : this.timing.breakSec + 's' })
       this.enterPhase('break')
       this.current = null
       this.say('break time! nap time for me 💤', 'sleeping')
     } else if (this.phase === 'break' && this.phaseEndsAt !== null && now >= this.phaseEndsAt) {
-      this.d.notify('Time to focus', "Break's over — let's start the next pomodoro!")
+      this.notifyFrom('focusStart')
       this.enterPhase('focus')
       this.say("I'm awake! let's focus 💪", 'happy')
       void this.doSample()
@@ -428,7 +437,7 @@ export class SessionEngine extends EventEmitter {
         if (streak >= tm.notifyAfterSec && !this.notifiedThisStreak) {
           this.notifiedThisStreak = true
           this.d.log('nudge notification')
-          this.d.notify('Bloop misses you 🐾', `You've been off task for ${formatDur(streak)}. Let's get back to it together!`)
+          this.notifyFrom('drift', { dur: formatDur(streak) })
         }
       } else if (streak >= tm.sadAfterSec) {
         this.setMood('sad')

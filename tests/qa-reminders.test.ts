@@ -13,6 +13,11 @@ vi.mock('../src/main/store', () => ({
 import { ReminderScheduler } from '../src/main/reminders'
 import { DEFAULT_SETTINGS } from '../src/main/defaults'
 import type { Reminder, Settings } from '../src/shared/types'
+import { NOTIFICATIONS } from '../src/main/notifications'
+
+// Notification text varies (see notifications.ts); match on what it says, not the exact wording.
+const said = (c: unknown[]): string => `${c[0]} ${c[1]}`
+const daysIn = (c: unknown[]): string | undefined => said(c).match(/\b(1 day|3 days)\b/)?.[1]
 
 const DAY = 86400e3
 
@@ -49,7 +54,7 @@ describe('study reminders', () => {
     expect(t.engine.say).toHaveBeenCalledWith('Time to study!', 'wave')
     expect(t.notify).toHaveBeenCalledTimes(1)
     const [title, body, opts] = t.notify.mock.calls[0]
-    expect(title).toContain('Time to study')
+    expect(NOTIFICATIONS.studyReminder.map((n) => n.title)).toContain(title)
     expect(body).toBe('Algorithms')
     opts.onAction()
     expect(t.engine.start).toHaveBeenCalled()
@@ -59,7 +64,7 @@ describe('study reminders', () => {
     const t = setup([rem({ label: '' })])
     t.at(2026, 10, 5, 9, 0)
     t.sched.check()
-    expect(t.notify.mock.calls[0][1]).toMatch(/ready when you are/)
+    expect(NOTIFICATIONS.studyReminder.map((n) => n.body)).toContain(t.notify.mock.calls[0][1])
   })
 
   it('does not fire a minute early/late, or on the wrong weekday', () => {
@@ -223,7 +228,7 @@ describe('deadline (exam) reminders', () => {
     t.sched.check()
     t.sched.check()
     expect(t.notify).toHaveBeenCalledTimes(1)
-    expect(t.notify.mock.calls[0][0]).toBe('CS101 Midterm in 3 days')
+    expect(said(t.notify.mock.calls[0])).toMatch(/CS101 Midterm[\s\S]*3 days|3 days[\s\S]*CS101 Midterm/)
     expect(t.engine.say).toHaveBeenCalledWith('CS101 Midterm is coming up!', 'wave')
   })
 
@@ -233,7 +238,7 @@ describe('deadline (exam) reminders', () => {
     withCache(exam('a', 3), exam('b', 3.0001))
     t.sched.check()
     expect(t.notify).toHaveBeenCalledTimes(1)
-    expect(t.notify.mock.calls[0][0]).toContain('3 days')
+    expect(said(t.notify.mock.calls[0])).toContain('3 days')
   })
 
   it('exactly 1 day out fires the 1-day reminder (not the 3-day)', () => {
@@ -242,7 +247,7 @@ describe('deadline (exam) reminders', () => {
     withCache(exam('a', 1))
     t.sched.check()
     expect(t.notify).toHaveBeenCalledTimes(1)
-    expect(t.notify.mock.calls[0][0]).toBe('CS101 Midterm in 1 day')
+    expect(said(t.notify.mock.calls[0])).toMatch(/CS101 Midterm[\s\S]*1 day|1 day[\s\S]*CS101 Midterm/)
   })
 
   it('progresses 3d -> 1d as time passes, each exactly once', () => {
@@ -256,7 +261,7 @@ describe('deadline (exam) reminders', () => {
     t.sched.check()
     t.setNow(NOW + 2.6 * DAY)
     t.sched.check()
-    expect(t.notify.mock.calls.map((c) => c[0])).toEqual(['CS101 Midterm in 3 days', 'CS101 Midterm in 1 day'])
+    expect(t.notify.mock.calls.map((c) => daysIn(c))).toEqual(['3 days', '1 day'])
   })
 
   it('first seen inside the last day: only the 1-day reminder, never both', () => {
@@ -264,7 +269,7 @@ describe('deadline (exam) reminders', () => {
     t.setNow(NOW)
     withCache(exam('a', 0.5))
     t.sched.check()
-    expect(t.notify.mock.calls.map((c) => c[0])).toEqual(['CS101 Midterm in 1 day'])
+    expect(t.notify.mock.calls.map((c) => daysIn(c))).toEqual(['1 day'])
   })
 
   it('ignores non-exam events, past events and events more than 3 days away', () => {

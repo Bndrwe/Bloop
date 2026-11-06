@@ -2,6 +2,7 @@ import type { Reminder, Settings } from '@shared/types'
 import type { NotifyOptions, SessionEngine } from './session'
 import { localDateKey } from './stats'
 import { getDeadlinesCache, markReminderFired, wasReminderFired } from './store'
+import { NotificationPicker } from './notifications'
 
 export interface ReminderDeps {
   engine: SessionEngine
@@ -25,6 +26,7 @@ function hhmm(d: Date): string {
  * attributed to a generic name or dropped on some systems.
  */
 export class ReminderScheduler {
+  private readonly notes = new NotificationPicker()
   private timer: ReturnType<typeof setInterval> | null = null
   constructor(private readonly deps: ReminderDeps) {}
 
@@ -80,7 +82,8 @@ export class ReminderScheduler {
       }
       console.log(`[bloop] reminder fired: "${r.label}"`)
       this.deps.engine.say('Time to study!', 'wave')
-      this.deps.notify('Time to study! 📚', r.label || "Your study pet is ready when you are.", {
+      const note = this.notes.next('studyReminder')
+      this.deps.notify(note.title, r.label || note.body, {
         actionText: 'Start session',
         onAction: () => this.deps.engine.start()
       })
@@ -103,7 +106,8 @@ export class ReminderScheduler {
         markReminderFired(key, now)
         const when = new Date(d.start).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
         console.log(`[bloop] deadline reminder: ${d.summary} in ~${n}d`)
-        this.deps.notify(`${d.summary} in ${n === 1 ? '1 day' : '3 days'}`, `${when} — want to start a study session?`, {
+        const note = this.notes.next('deadline', { title: d.summary, days: n === 1 ? '1 day' : '3 days', when })
+        this.deps.notify(note.title, note.body, {
           actionText: 'Start session',
           onAction: () => this.deps.engine.start()
         })
