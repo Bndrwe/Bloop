@@ -28,7 +28,7 @@
     "perms": "bash scripts/mac-permissions.sh"
   },
   "build": {
-    "appId": "edu.bloop.app",
+    "appId": "io.github.bndrwe.bloop",
     "productName": "Bloop",
     "npmRebuild": false,
     "directories": {

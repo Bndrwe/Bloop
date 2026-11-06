@@ -4,7 +4,7 @@ import { animate } from 'animejs'
 import { Pet } from '../pet/Pet'
 import { prefersReducedMotion } from '../lib/motion'
 import { useStatus } from '../hooks/useStatus'
-import { mmss, phaseLabel, scoreBand, scoreLevel, scoreText } from '../lib/format'
+import { badgeText, mmss, panelToggleLabel, phaseLabel, scoreBand, scoreLevel, scoreText } from '../lib/format'
 import './pet-view.css'
 
 const PET_SIZE = 110
@@ -45,6 +45,25 @@ export function PetView(): JSX.Element {
   const hoverCount = useRef(0)
   const dragging = useRef(false)
   const ignoring = useRef<boolean | null>(null)
+  const [panelOpen, setPanelOpen] = useState(false)
+
+  // Main tells the pet when the panel opens or closes; ask once on load for the current state.
+  useEffect(() => {
+    const api = window.studyPet
+    if (!api) return
+    let live = true
+    const off = api.onPanelOpen((open) => setPanelOpen(open))
+    api
+      .isPanelOpen()
+      .then((open) => {
+        if (live) setPanelOpen(open)
+      })
+      .catch(() => undefined)
+    return () => {
+      live = false
+      off()
+    }
+  }, [])
 
   const setIgnore = useCallback((ignore: boolean) => {
     if (ignoring.current === ignore) return
@@ -122,6 +141,9 @@ export function PetView(): JSX.Element {
 
       <div
         className={`pv-pet level-${level}`}
+        role="button"
+        aria-label={panelToggleLabel(panelOpen)}
+        aria-expanded={panelOpen}
         onMouseEnter={onEnter}
         onMouseLeave={onLeave}
         onPointerDown={onPointerDown}
@@ -135,7 +157,12 @@ export function PetView(): JSX.Element {
         )}
         {hover && (
           <div className="pv-badge">
-            <span className="pv-badge-score">{scoreText(status?.score)}</span>
+            <span
+              className={`pv-badge-score${status?.score == null ? ' pv-badge-score--toggle' : ''}`}
+              aria-label={status?.score == null ? panelToggleLabel(panelOpen) : `Focus score ${scoreText(status.score)}`}
+            >
+              {badgeText(status?.score, panelOpen)}
+            </span>
             <span className="pv-badge-phase">{phaseLabel(phase)}</span>
             {showTimer && <span className="pv-badge-time">{mmss(remaining)}</span>}
           </div>

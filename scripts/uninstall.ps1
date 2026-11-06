@@ -73,7 +73,7 @@ Remove-IfExists $UninstallKey
 
 # "Open Bloop when you log in" (Electron writes a Run value named after the AppUserModelId / exe).
 $run = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
-foreach ($name in @('edu.bloop.app', 'Bloop', 'bloop')) {
+foreach ($name in @('io.github.bndrwe.bloop', 'Bloop', 'bloop')) {
   if (Get-ItemProperty -Path $run -Name $name -ErrorAction SilentlyContinue) {
     Remove-ItemProperty -Path $run -Name $name -ErrorAction SilentlyContinue
     Write-Ok "removed login item '$name'"

@@ -121,7 +121,7 @@ The first time Bloop opens on a Mac, a welcome screen walks you through two perm
 **Screen Recording**
 1. On the welcome screen, click **Open Screen Recording settings**.
 2. Turn the switch **on** next to **Bloop**. If macOS asks for your password, enter it.
-3. Come back to Bloop and click **Restart Bloop**. macOS only applies Screen Recording after the app restarts, so this step matters.
+3. Come back to Bloop and click **Relaunch Bloop**. macOS only applies Screen Recording after the app restarts, so this step matters.
 
 **Automation**
 1. Open one of the supported browsers (Chrome, Arc, Brave, Edge or Safari).
@@ -131,7 +131,14 @@ The first time Bloop opens on a Mac, a welcome screen walks you through two perm
 
 The badges on the welcome screen change from a dashed "needs attention" badge to a solid checkmark when a permission is working. Click **Continue** when you are done. You can skip the permissions and carry on; Bloop still works with what it has.
 
-**After an update** macOS may ask for these permissions again, or show them as "not granted" even though the switch is on. Each build of an unsigned app looks like a new app to macOS. Run `npm run perms` in the `StudyPet` folder: it clears the stale entries and opens each settings pane so you can switch Bloop on again.
+Later, everything is in **Settings → Permissions** (the menu bar menu shows **Permissions…** while one is missing): the live status, the same buttons, **Check again**, **Reset permissions…**, **Relaunch Bloop** and **Run setup again** to see the welcome screen again.
+
+**After an update** macOS may ask for these permissions again, or show them as "not granted" even though the switch is on. Each build of an unsigned app looks like a new app to macOS. (The update that moved Bloop's app ID to `io.github.bndrwe.bloop` always needs this once.) To fix it:
+1. Open **Settings → Permissions** and click **Reset permissions…**, then confirm. Bloop clears its old entries and opens the Screen Recording pane.
+2. Turn on **Bloop** there.
+3. Click **Relaunch Bloop**. Then, with your browser open, click **Ask for browser access**.
+
+Terminal alternative: run `npm run perms` in the `StudyPet` folder. It clears the same entries and opens each settings pane in turn.
 
 ### Notifications
 
@@ -158,7 +165,7 @@ Click the tray icon to show or hide the panel. Right-click it for the same menu 
 
 ### Notifications and Focus Assist
 
-Windows needs no special permissions for Bloop. Notifications appear in the bottom-right corner. The installer gives the Start menu shortcut Bloop's notification ID (`edu.bloop.app`), which Windows needs to show them. If you never see them:
+Windows needs no special permissions for Bloop. Notifications appear in the bottom-right corner. The installer gives the Start menu shortcut Bloop's notification ID (`io.github.bndrwe.bloop`), which Windows needs to show them. If you never see them:
 
 - Turn off **Do not disturb / Focus assist** (Windows 11: **Settings → System → Notifications → Do not disturb**; Windows 10: **Settings → System → Focus assist → Off**), or allow Bloop as a priority app.
 - Check **Settings → System → Notifications** and make sure Bloop is on in the app list.
@@ -285,9 +292,9 @@ xattr -cr /Applications/Bloop.app
 Or just run the installer on this Mac.
 
 **Permissions still say "not granted" on macOS.**
-- Did you click **Restart Bloop** after turning on Screen Recording? macOS only reads that permission when the app starts.
+- Did you click **Relaunch Bloop** after turning on Screen Recording? macOS only reads that permission when the app starts.
 - Make sure the switch is on next to **Bloop** (not an old or duplicate entry) in **Privacy & Security → Screen Recording** and **Automation**.
-- After an update, the old grant can stop matching. Run `npm run perms` in the `StudyPet` folder, or remove the Bloop entry with the **−** button, quit Bloop, open it again and grant the permission again.
+- After an update, the old grant can stop matching. In Bloop, open **Settings → Permissions → Reset permissions…**, turn Bloop on again in Screen Recording and click **Relaunch Bloop**. Or run `npm run perms` in the `StudyPet` folder, or remove the Bloop entry with the **−** button, quit Bloop, open it again and grant the permission again.
 - If you run Bloop from source with `npm run dev`, the permission belongs to your terminal app (Terminal, iTerm or VS Code), not Bloop. Turn that one on. Developers can run `npm run perms -- --dev`.
 - Automation only says "granted" once a supported browser is open when you click **Ask for browser access**.
 

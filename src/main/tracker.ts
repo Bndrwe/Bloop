@@ -4,7 +4,7 @@ import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { normalizeOwner } from './classifier'
 import { classifyTrackerError, createRateLimitedLog, linuxTrackingInfo } from './linux'
-import { getScreenRecordingState, runOsascript, setAutomationState } from './permissions'
+import { getScreenRecordingState, probeScreenRecording, runOsascript, setAutomationState } from './permissions'
 
 export interface RawActive {
   app: string
@@ -106,6 +106,9 @@ export async function sampleActiveWindow(): Promise<RawActive | null> {
   if (fake) return readFake(fake)
   if (isLinux && !linuxPrecheck()) return null
   try {
+    // Same state as Settings → Permissions: getMediaAccessStatus, or the cached window-list probe
+    // (re-run at most once a minute, and only after the user has been through setup).
+    if (isMac) await probeScreenRecording()
     const screenRecording = getScreenRecordingState() === 'granted'
     let w: NativeWindow | null
     if (isMac) w = await macActiveWindow(screenRecording)

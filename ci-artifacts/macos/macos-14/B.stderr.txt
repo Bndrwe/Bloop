@@ -1,2 +1,0 @@
-[24654:1105/182253.161869:ERROR:electron/shell/common/platform_util_mac.mm:264] Unable to set login item: The operation couldn’t be completed. Operation not permitted
-2026-11-05 18:22:53.271 Bloop Helper[24663:39461] XPC error for connection com.apple.backupd.sandbox.xpc: Connection invalid

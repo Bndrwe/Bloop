@@ -1,0 +1,75 @@
+.perm-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  white-space: nowrap;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--paper);
+}
+/* Shape, not colour: granted = solid ink + check; not granted = dashed + alert; unknown = dotted + alert. */
+.perm-state--ok {
+  background: var(--paper);
+  color: var(--ink);
+}
+.perm-state--warn {
+  border-style: dashed;
+  color: var(--paper);
+}
+.perm-state--unknown {
+  border-style: dotted;
+  color: var(--paper);
+}
+
+.perm-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  margin-bottom: var(--s4);
+}
+.perm-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s3);
+  padding-bottom: var(--s3);
+  border-bottom: 1px solid var(--hairline);
+}
+.perm-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.perm-row p {
+  margin: 4px 0 0;
+  font-size: 12px;
+}
+.perm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+.perm-actions + .perm-actions {
+  margin-top: var(--s2);
+}
+.perm-steps {
+  margin: var(--s4) 0 0;
+  padding: var(--s3) var(--s4);
+  border: 1px dashed var(--paper);
+  border-radius: var(--r-md);
+  font-size: 12.5px;
+}
+.perm-steps ol {
+  margin: var(--s2) 0 var(--s3);
+  padding-left: 20px;
+}
+.perm-steps li + li {
+  margin-top: 4px;
+}
+.perm-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: var(--s3) 0 0;
+  font-size: 12px;
+}

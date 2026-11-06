@@ -1,33 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { PermissionState, PermissionStatus } from '@shared/types'
+import type { PermissionStatus } from '@shared/types'
 import { Pet } from '../pet/Pet'
 import { errMsg } from '../lib/format'
 import { Icon } from '../lib/Icon'
 import { useEntrance } from '../lib/motion'
+import { PermissionBadge as StateBadge } from './PermissionBadge'
 import './onboarding.css'
-
-function stateLabel(s: PermissionState): { ok: boolean; text: string } {
-  switch (s) {
-    case 'granted':
-      return { ok: true, text: 'Allowed' }
-    case 'denied':
-      return { ok: false, text: 'Not allowed yet' }
-    case 'not-applicable':
-      return { ok: true, text: 'Not needed here' }
-    default:
-      return { ok: false, text: 'Not checked yet' }
-  }
-}
-
-function StateBadge({ state }: { state: PermissionState }): JSX.Element {
-  const l = stateLabel(state)
-  return (
-    <span className={`onb-state onb-state--${l.ok ? 'ok' : 'warn'}`}>
-      <Icon name={l.ok ? 'check' : 'alert'} size={13} />
-      {l.text}
-    </span>
-  )
-}
 
 export function Onboarding(): JSX.Element {
   const [perm, setPerm] = useState<PermissionStatus | null>(null)
@@ -36,10 +14,10 @@ export function Onboarding(): JSX.Element {
   const rootRef = useRef<HTMLDivElement>(null)
   useEntrance(rootRef, ':scope > .enter')
 
-  const refresh = useCallback(async (): Promise<void> => {
+  const refresh = useCallback(async (fresh = false): Promise<void> => {
     setBusy(true)
     try {
-      setPerm(await window.studyPet.getPermissions())
+      setPerm(await window.studyPet.getPermissions({ fresh }))
       setError(null)
     } catch (e) {
       setError(errMsg(e))
@@ -113,10 +91,13 @@ export function Onboarding(): JSX.Element {
                     Open Screen Recording settings
                   </button>
                   <button className="btn btn--small btn--primary" onClick={() => void window.studyPet.relaunchApp()}>
-                    Restart Bloop
+                    Relaunch Bloop
                   </button>
                 </div>
-                <p className="muted onb-hint">Turned it on already? macOS only applies it after Bloop restarts.</p>
+                <p className="muted onb-hint">
+                  Turned it on already? macOS only applies it after Bloop relaunches. Still not allowed? Use Settings, Permissions,
+                  Reset permissions.
+                </p>
               </>
             )}
           </div>
@@ -157,7 +138,7 @@ export function Onboarding(): JSX.Element {
           Works without these too, just with less detail. Everything stays on your Mac.
         </p>
         <div className="onb-actions">
-          <button className="btn" disabled={busy} onClick={() => void refresh()}>
+          <button className="btn" disabled={busy} onClick={() => void refresh(true)}>
             <Icon name="refresh" size={14} />
             Re-check
           </button>

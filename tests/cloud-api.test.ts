@@ -87,7 +87,7 @@ describe('OpenRouter request', () => {
     expect(url).toBe('https://openrouter.ai/api/v1/chat/completions')
     expect(init.method).toBe('POST')
     expect(init.headers).toMatchObject({ Authorization: `Bearer ${KEY}`, 'X-Title': 'Bloop', 'Content-Type': 'application/json' })
-    expect(init.headers['HTTP-Referer']).toMatch(/^https?:\/\//)
+    expect(init.headers).not.toHaveProperty('HTTP-Referer')
     expect(JSON.parse(init.body)).toEqual({ model: 'a/alpha', max_tokens: 50, messages: [{ role: 'user', content: 'hi' }] })
   })
   it('uses json_schema when supported, plain JSON prompting otherwise', () => {

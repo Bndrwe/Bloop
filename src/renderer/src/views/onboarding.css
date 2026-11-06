@@ -53,25 +53,6 @@
   font-size: 14px;
   font-weight: 500;
 }
-.onb-state {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 12px;
-  white-space: nowrap;
-  padding: 2px 9px;
-  border-radius: 999px;
-  border: 1px solid var(--paper);
-}
-/* Granted = solid ink + check; needs attention = dashed outline + alert. */
-.onb-state--ok {
-  background: var(--paper);
-  color: var(--ink);
-}
-.onb-state--warn {
-  border-style: dashed;
-  color: var(--paper);
-}
 .onb .row {
   display: flex;
   gap: var(--s2);

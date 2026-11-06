@@ -7,6 +7,7 @@ import { ChatView } from './views/Chat'
 import { ShaderSmoke } from '@/components/ui/shader-smoke'
 import { useWindowAwake } from './hooks/useWindowAwake'
 import { useSettings } from './hooks/useSettings'
+import { parseSection } from './lib/route'
 import { backgroundTokens, DEFAULT_BACKGROUND_INTENSITY, DEFAULT_BACKGROUND_SPEED } from '@shared/background'
 
 export type Route = 'pet' | 'panel' | 'settings' | 'onboarding' | 'chat'
@@ -63,7 +64,8 @@ export function App(): JSX.Element {
     window.addEventListener('hashchange', onHash)
     const off = window.studyPet?.onNavigate((r) => {
       const next = parseRoute(r)
-      location.hash = `#/${next}`
+      const section = parseSection(r)
+      location.hash = `#/${next}${section ? `/${section}` : ''}`
       setRoute(next)
     })
     return () => {

@@ -16,7 +16,7 @@
 # whole file before anything happens and a `git pull` that changes this script can't confuse it.
 set -euo pipefail
 
-APP_ID="edu.bloop.app"
+APP_ID="io.github.bndrwe.bloop"
 NODE_MIN=20
 
 # ------------------------------------------------------------------ output helpers

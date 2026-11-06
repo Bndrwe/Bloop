@@ -87,11 +87,19 @@ const api: StudyPetApi = {
   petContextMenu: (point) =>
     inv(IPC.petContextMenu, point && typeof point === 'object' ? { x: Number(point.x), y: Number(point.y) } : undefined),
 
-  getPermissions: () => inv(IPC.getPermissions),
+  getPermissions: (opts) => (opts?.fresh === true ? inv(IPC.getPermissions, true) : inv(IPC.getPermissions)),
   openPermissionSettings: (kind) => inv(IPC.openPermissionSettings, kind === 'automation' ? 'automation' : 'screenRecording'),
   requestAutomation: () => inv(IPC.requestAutomation),
   dismissOnboarding: () => inv(IPC.dismissOnboarding),
   relaunchApp: () => inv(IPC.relaunchApp),
+  resetPermissions: () => inv(IPC.resetPermissions),
+  openPermissionsSetup: () => inv(IPC.openPermissionsSetup),
+  isPanelOpen: () => inv(IPC.isPanelOpen),
+  onPanelOpen: (cb) => {
+    const l = (_e: IpcRendererEvent, open: unknown): void => cb(open === true)
+    ipcRenderer.on(IPC.panelOpenPush, l)
+    return () => ipcRenderer.removeListener(IPC.panelOpenPush, l)
+  },
 
   getDeadlines: () => inv(IPC.getDeadlines),
   refreshDeadlines: () => inv(IPC.refreshDeadlines),

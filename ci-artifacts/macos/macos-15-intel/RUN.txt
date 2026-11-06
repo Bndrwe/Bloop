@@ -1,1 +1,0 @@
-run: https://github.com/Bndrwe/StudyPet/actions/runs/42083221433 (commit 770378d07b2c11ea820fba3823801a240ffe9026)

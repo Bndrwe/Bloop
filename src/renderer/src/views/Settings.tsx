@@ -10,6 +10,8 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { AiSection } from './ai/AiSection'
 import { BrightspaceSection } from './BrightspaceSection'
 import { PetVisibilityRows } from './PetVisibilityRows'
+import { PermissionsSection } from './PermissionsSection'
+import { parseSection } from '../lib/route'
 import './settings.css'
 
 type ListKey = 'focusApps' | 'distractApps' | 'focusDomains' | 'distractDomains'
@@ -278,6 +280,19 @@ export function SettingsView(): JSX.Element {
   }, [])
 
   useEffect(load, [load])
+
+  // Opened as #/settings/permissions (tray → Permissions…): scroll to that section.
+  const loaded = settings != null
+  useEffect(() => {
+    if (!loaded) return
+    const go = (): void => {
+      const sec = parseSection(location.hash)
+      if (sec) window.setTimeout(() => document.getElementById(sec)?.scrollIntoView({ block: 'start' }), 50)
+    }
+    go()
+    window.addEventListener('hashchange', go)
+    return () => window.removeEventListener('hashchange', go)
+  }, [loaded])
 
   const flush = useCallback(async (): Promise<void> => {
     if (timer.current) {
@@ -615,6 +630,8 @@ export function SettingsView(): JSX.Element {
           {deadlineNote && <span className="muted">{deadlineNote}</span>}
         </div>
       </section>
+
+      <PermissionsSection />
 
       <section className="card danger-zone enter">
         <div>

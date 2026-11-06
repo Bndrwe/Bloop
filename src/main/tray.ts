@@ -22,6 +22,10 @@ export interface TrayActions {
   quit(): void
   /** Open (or focus) the Chat with Bloop window. */
   openChat?(): void
+  /** macOS: true while Screen Recording or Automation isn't granted (shows "Permissions…"). */
+  permissionsNeeded?(): boolean
+  /** Settings → Permissions. */
+  openPermissions?(): void
 }
 
 let tray: Tray | null = null
@@ -121,7 +125,8 @@ export function updateTray(actions: TrayActions, s: AppStatus): void {
   }
   // rebuild the menu only when its shape changes
   const petLabel = actions.petLabel()
-  const key = `${s.phase}|${s.pausedPhase}|${scoreText}|${petLabel}`
+  const perms = !!actions.openPermissions && actions.permissionsNeeded?.() === true
+  const key = `${s.phase}|${s.pausedPhase}|${scoreText}|${petLabel}|${perms}`
   if (key === lastKey) return
   lastKey = key
   const running = s.phase === 'focus' || s.phase === 'break' || s.phase === 'paused'
@@ -140,6 +145,7 @@ export function updateTray(actions: TrayActions, s: AppStatus): void {
     { label: 'Show panel', click: () => actions.togglePanel() },
     { label: petLabel, click: () => actions.togglePet() },
     { label: 'Settings…', click: () => actions.openSettings() },
+    ...(perms ? [{ label: 'Permissions…', click: () => actions.openPermissions?.() }] : []),
     ...(actions.openChat ? [{ label: 'Chat with Bloop', click: () => actions.openChat?.() }] : []),
     { type: 'separator' },
     { label: `About Bloop ${app.getVersion()}`, click: () => actions.about() },

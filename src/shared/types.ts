@@ -104,6 +104,11 @@ export interface PermissionStatus {
   showOnboarding: boolean
 }
 
+/** Settings → Permissions → Reset permissions… (macOS, installed app only). */
+export type PermissionResetResult =
+  | { ok: true; bundleId: string }
+  | { ok: false; reason: 'dev' | 'not-mac' | 'failed'; message: string }
+
 export interface PetState {
   mood: PetMood
   /** Short speech bubble text, or null for none. */
@@ -243,12 +248,21 @@ export interface StudyPetApi {
   petContextMenu(point?: { x: number; y: number }): Promise<void>
 
   // permissions
-  getPermissions(): Promise<PermissionStatus>
+  /** `fresh` re-runs the Screen Recording check right away (an explicit "Check again"). */
+  getPermissions(opts?: { fresh?: boolean }): Promise<PermissionStatus>
   openPermissionSettings(kind: 'screenRecording' | 'automation'): Promise<void>
   requestAutomation(): Promise<PermissionStatus>
   dismissOnboarding(): Promise<void>
   /** Quit and reopen Bloop (macOS only re-reads Screen Recording permission on launch). */
   relaunchApp(): Promise<void>
+  /** Settings window only: clear Bloop's Screen Recording + Automation entries (tccutil) and open the pane. */
+  resetPermissions(): Promise<PermissionResetResult>
+  /** Open the welcome / permissions window again, even after it was dismissed. */
+  openPermissionsSetup(): Promise<void>
+  /** Is the panel window open right now? (The pet's badge shows + or – accordingly.) */
+  isPanelOpen(): Promise<boolean>
+  /** Fires in the pet window when the panel opens or closes. Returns an unsubscribe function. */
+  onPanelOpen(cb: (open: boolean) => void): () => void
 
   // stretch: deadlines + AI plan
   getDeadlines(): Promise<Result<Deadline[]>>

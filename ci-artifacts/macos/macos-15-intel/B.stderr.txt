@@ -1,9 +1,0 @@
-[26041:1105/182821.312176:ERROR:electron/shell/common/platform_util_mac.mm:264] Unable to set login item: The operation couldn’t be completed. Operation not permitted
-2026-11-05 18:28:21.482 Bloop Helper[26099:45307] XPC error for connection com.apple.backupd.sandbox.xpc: Connection invalid
-[26113:1105/182821.615351:ERROR:gpu/ipc/client/command_buffer_proxy_impl.cc:127] ContextResult::kTransientFailure: Failed to send GpuControl.CreateCommandBuffer.
-[26097:1105/182821.767271:ERROR:gpu/command_buffer/service/gles2_cmd_decoder_passthrough.cc:1100] [GroupMarkerNotSet(crbug.com/242999)!:A0C0210014010000]Automatic fallback to software WebGL has been deprecated. Please use the --enable-unsafe-swiftshader (about:flags#enable-unsafe-swiftshader) flag to opt in to lower security guarantees for trusted content.
-[26097:1105/182821.855076:ERROR:gpu/command_buffer/service/gl_utils.cc:391] [.WebGL-0x12401329400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
-[26097:1105/182821.982981:ERROR:gpu/command_buffer/service/gl_utils.cc:391] [.WebGL-0x12401329400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
-[26097:1105/182822.130165:ERROR:gpu/command_buffer/service/gl_utils.cc:391] [.WebGL-0x12401329400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
-[26097:1105/182822.290211:ERROR:gpu/command_buffer/service/gles2_cmd_decoder_passthrough.cc:1100] [GroupMarkerNotSet(crbug.com/242999)!:A050220014010000]Automatic fallback to software WebGL has been deprecated. Please use the --enable-unsafe-swiftshader (about:flags#enable-unsafe-swiftshader) flag to opt in to lower security guarantees for trusted content.
-[26097:1105/182822.306688:ERROR:gpu/command_buffer/service/gl_utils.cc:391] [.WebGL-0x124019ed400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)

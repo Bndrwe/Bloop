@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { BrowserWindow, Menu, Notification, app, dialog, globalShortcut, ipcMain, shell, type IpcMainInvokeEvent } from 'electron'
 import { IPC } from '@shared/ipc'
+import { APP_ID } from '@shared/appId'
 import type { AppStatus, BrightspaceStatus, Settings } from '@shared/types'
 import { getDeadlines, refreshDeadlines } from './deadlines'
 import {
@@ -19,7 +20,16 @@ import { detectSessionType, isGnomeDesktop, setLinuxAutostart } from './linux'
 import { clearLogs, initFileLog, logError, logFile, logsDir } from './log'
 import { envSearchDirs, generatePlan, loadEnv, planToReminders } from './plan'
 import { registerAiIpc, trustedOrigins } from './ai/ipc'
-import { getPermissions, openPermissionSettings, probeAutomation, refreshPermissions, requestAutomation } from './permissions'
+import {
+  getPermissions,
+  openPermissionSettings,
+  parsePermissionQuery,
+  parseResetRequest,
+  probeAutomation,
+  refreshPermissions,
+  requestAutomation,
+  resetPermissions
+} from './permissions'
 import { ReminderScheduler } from './reminders'
 import { SessionEngine, type NotifyOptions } from './session'
 import * as store from './store'
@@ -47,8 +57,6 @@ const log = (m: string): void => console.log(`[bloop] ${m}`)
 /** IPC channel for "Quit Bloop" from the renderer (to be added to src/shared/ipc.ts as IPC.quitApp). */
 const QUIT_APP_CHANNEL = 'app:quit'
 
-/** Must equal package.json build.appId. */
-const APP_ID = 'edu.bloop.app'
 
 // ------------------------------------------------------------------ crash handling
 
@@ -211,7 +219,12 @@ const trayActions: TrayActions = {
   about: () => void showAbout(),
   openLogs: () => void openLogsFolder(),
   quit: () => app.quit(),
-  openChat: () => windows.openChat()
+  openChat: () => windows.openChat(),
+  permissionsNeeded: () => {
+    const p = getPermissions()
+    return isMac && (p.screenRecording !== 'granted' || p.automation !== 'granted')
+  },
+  openPermissions: () => windows.openSettings('permissions')
 }
 
 async function openLogsFolder(): Promise<void> {
@@ -364,11 +377,27 @@ function registerIpc(): void {
     menu.popup({ window: petWin, ...(req.x !== undefined && req.y !== undefined ? { x: req.x, y: req.y } : {}) })
   })
 
-  h(IPC.getPermissions, () => refreshPermissions())
+  h(IPC.getPermissions, (_e, ...args) => refreshPermissions(parsePermissionQuery(args).fresh))
   h(IPC.relaunchApp, () => {
+    // macOS only re-reads Screen Recording on launch. quit() saves a running session first;
+    // exit(0) makes sure the relaunch happens even if something holds the quit up.
     app.relaunch()
-    app.quit()
+    setTimeout(() => app.quit(), 0) // let the invoke reply first
+    setTimeout(() => app.exit(0), 3000).unref()
   })
+  // Reset permissions…: only the Settings window may ask, with no arguments.
+  h(IPC.resetPermissions, async (e, ...args) => {
+    const settingsWin = windows.getSettingsWindow()
+    if (!parseResetRequest(!!settingsWin && BrowserWindow.fromWebContents(e.sender) === settingsWin, args)) {
+      log('ipc perm:reset rejected')
+      return { ok: false, reason: 'failed', message: 'Open Settings → Permissions to reset permissions.' }
+    }
+    const r = await resetPermissions()
+    updateTray(trayActions, engine.getStatus())
+    return r
+  })
+  h(IPC.openPermissionsSetup, () => windows.openOnboarding())
+  h(IPC.isPanelOpen, () => windows.isPanelOpen())
   h(IPC.openPermissionSettings, (_e, kind) =>
     openPermissionSettings(kind === 'automation' ? 'automation' : 'screenRecording')
   )
@@ -511,6 +540,7 @@ function startApp(): void {
     const perms = getPermissions()
     log(`permissions: screen=${perms.screenRecording} automation=${perms.automation} onboarding=${perms.showOnboarding}`)
     if (perms.showOnboarding) windows.openOnboarding()
+    updateTray(trayActions, engine.getStatus()) // "Permissions…" item
   })
 
   // keep the deadline cache fresh (stretch)

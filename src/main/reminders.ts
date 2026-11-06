@@ -18,7 +18,7 @@ function hhmm(d: Date): string {
 /**
  * Checks study reminders (and exam deadline reminders) every 30s.
  *
- * Windows: toasts need the AppUserModelId (index.ts sets 'edu.bloop.app' = build.appId, which the
+ * Windows: toasts need the AppUserModelId (index.ts sets APP_ID from src/shared/appId.ts = build.appId, which the
  * NSIS installer also stamps on the Start Menu shortcut). Clicking a toast fires the 'click' handler
  * that runs onAction (start session) while Bloop is running. Windows Focus Assist / Do Not Disturb
  * silently diverts toasts to the Action Center, so a reminder can go unseen; the pet's speech bubble

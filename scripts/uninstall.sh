@@ -6,7 +6,7 @@
 #   ./scripts/uninstall.sh --purge      remove the app and all data without asking
 set -euo pipefail
 
-APP_ID="edu.bloop.app"
+APP_ID="io.github.bndrwe.bloop"
 
 if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
   B=$'\033[1m'; GRN=$'\033[32m'; YLW=$'\033[33m'; RED=$'\033[31m'; RST=$'\033[0m'

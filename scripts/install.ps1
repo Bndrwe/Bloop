@@ -38,7 +38,7 @@ Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'   # Remove-Item/Copy-Item progress bars are very slow in PS 5
 
-$AppId = 'edu.bloop.app'                   # = build.appId; the app sets the same AppUserModelId
+$AppId = 'io.github.bndrwe.bloop'                 # = build.appId; the app sets the same AppUserModelId
 $NodeMin = 20
 $Root = Split-Path -Parent $PSScriptRoot
 $InstallDir = Join-Path $env:LOCALAPPDATA 'Programs\Bloop'

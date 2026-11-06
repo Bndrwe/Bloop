@@ -86,7 +86,7 @@ export function anthropicProvider(model?: string): AiProvider | Error {
 export const OPENROUTER_BASE = 'https://openrouter.ai/api/v1'
 export const OPENROUTER_DEFAULT_MODEL = 'anthropic/claude-sonnet-5.5'
 export const OPENROUTER_HELP_URL = 'https://openrouter.ai/settings/keys'
-export const OPENROUTER_HEADERS = { 'HTTP-Referer': 'https://bloop.local', 'X-Title': 'Bloop' } as const
+export const OPENROUTER_HEADERS = { 'X-Title': 'Bloop' } as const
 
 export interface OpenRouterModel extends ApiModel {
   contextLength?: number

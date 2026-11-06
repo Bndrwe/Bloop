@@ -68,7 +68,7 @@ git clone -b claude/practical-davinci-ckp3nc https://github.com/Bndrwe/StudyPet.
 
 ### After installing
 
-- **Mac:** Bloop has no Dock icon. Look for it in the **menu bar** (top right); the pet sits in the top-right corner of your screen. The first launch walks you through **Screen Recording** and **Automation**; after allowing Screen Recording, click **Restart Bloop**.
+- **Mac:** Bloop has no Dock icon. Look for it in the **menu bar** (top right); the pet sits in the top-right corner of your screen. The first launch walks you through **Screen Recording** and **Automation**; after allowing Screen Recording, click **Relaunch Bloop**. You can come back to this any time in **Settings → Permissions** (or the menu bar's **Permissions…** item, shown while something isn't allowed).
 - **Windows:** Bloop is in the Start menu and in the system tray by the clock (it may be under the **^** overflow; drag it out to pin it).
 - **Linux:** open Bloop from your app menu or run `bloop`.
 - Click the pet to open the panel and press **Start**. For AI study plans, open **Settings → AI** and pick where the AI runs: **Use Local** (Ollama) or **Cloud** (see [AI study plan](#ai-study-plan)).
@@ -87,7 +87,7 @@ The tray / menu bar icon has **Open logs folder**. Because you built the app you
 
 Options: `--no-launch`, `--fast` (skip the type check), `--clean` (delete `node_modules`, `out` and `dist` first; fixes most odd build errors), `--no-pull`, `--keep-build`. On Windows: `-NoLaunch`, `-Fast`, `-Clean`, `-NoPull`, `-KeepBuild`, `-NoDesktopShortcut`. With npm, pass them after `--`, e.g. `npm run install-app -- --fast`.
 
-**Update.** Run the same install command again from the `StudyPet` folder (`./scripts/install.sh`, or `scripts\install.ps1` on Windows). It pulls the latest code, rebuilds, and replaces the app. Your settings and history are kept. On macOS each rebuild is a new unsigned app as far as macOS is concerned, so it may ask for Screen Recording and Automation again; if a permission says "not granted" after an update, run `npm run perms`.
+**Update.** Run the same install command again from the `StudyPet` folder (`./scripts/install.sh`, or `scripts\install.ps1` on Windows). It pulls the latest code, rebuilds, and replaces the app. Your settings and history are kept. On macOS each rebuild is a new unsigned app as far as macOS is concerned, so it may ask for Screen Recording and Automation again; if a permission says "not granted" after an update, open **Settings → Permissions**, click **Reset permissions…**, turn Bloop on again and click **Relaunch Bloop** (or run `npm run perms` in a terminal). **This update changes Bloop's app ID to `io.github.bndrwe.bloop`, so after it macOS asks for Screen Recording and Automation again once.**
 
 **Uninstall.** `./scripts/uninstall.sh` (or `npm run uninstall-app`) on macOS and Linux; on Windows, Settings → Apps → Installed apps → Bloop → Uninstall, or `powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1`. It removes the app and its shortcuts, then asks before deleting your data; `--keep-data` (`-KeepData` on Windows) keeps it.
 
@@ -274,7 +274,7 @@ The link contains a private token, so treat it like a password.
 
 ## Permissions (macOS only)
 
-On first run on macOS, Bloop checks its permissions and shows a short guide with buttons that open the right System Settings pane. Windows doesn't need any of these.
+On first run on macOS, Bloop checks its permissions and shows a short guide with buttons that open the right System Settings pane. Afterwards everything lives in **Settings → Permissions**: live status for each permission, **Open Screen Recording settings**, **Ask for browser access**, **Check again**, **Reset permissions…**, **Relaunch Bloop** and **Run setup again** (the welcome guide). While a permission is missing, the menu bar menu also has **Permissions…**. Windows and Linux don't need any of these.
 
 | Permission | Why | Without it |
 |---|---|---|
@@ -282,21 +282,29 @@ On first run on macOS, Bloop checks its permissions and shows a short guide with
 | **Automation** (Privacy & Security → Automation → Bloop → your browser) | Lets Bloop ask Chrome / Arc / Safari for the current tab URL via AppleScript | Browsers count as *neutral*, so YouTube and Google Docs can't be told apart |
 | **Notifications** | Distraction notifications and study reminders | The pet still talks in its speech bubble |
 
-After you grant Screen Recording, click **Restart Bloop** on the welcome screen. macOS only re-reads that permission when the app launches.
+After you grant Screen Recording, click **Relaunch Bloop**. macOS only re-reads that permission when the app launches.
+
+How Bloop tells: it asks macOS (`getMediaAccessStatus`), and when that doesn't say "granted" it also looks at the list of open windows. Without Screen Recording macOS hides other apps' window titles, so if titled windows of other apps show up, the permission works and tracking uses it. That check reads the list only (no screenshot, no prompt), runs at most once a minute, and only after you've been through setup.
 
 ### Permission still says "not granted"?
 
-No script can grant these permissions; macOS only lets you tick the box yourself. What you can do from the terminal is clear stale entries and get walked through the panes:
+No app or script can grant these permissions; macOS only lets you tick the box yourself. The usual cause is a stale entry: the switch looks on, but it belongs to an older build. The fix, in the app:
+
+1. **Settings → Permissions → Reset permissions…** and confirm. Bloop clears its Screen Recording and Automation entries (`tccutil reset`) and opens the Screen Recording pane.
+2. Turn on **Bloop** in Screen Recording.
+3. Click **Relaunch Bloop**. Then open your browser and click **Ask for browser access**.
+
+Reset only works in the installed app. The terminal alternative does the same and walks you through both panes:
 
 ```bash
 npm run perms
 ```
 
-It resets Bloop's Screen Recording and Automation entries (`tccutil reset`), then opens each System Settings pane in turn. Common causes:
+Common causes:
 
 - **You're running `npm run dev`.** macOS gives the permission to the app that launched Bloop, so turn on **Terminal** (or iTerm / VS Code) in Screen Recording, not Bloop. Use `npm run perms -- --dev` to also reset the "Electron" entry.
-- **You rebuilt the app.** Each new unsigned build counts as a different app to macOS, so old grants stop matching. Run `npm run perms`, then grant again.
-- **You didn't restart.** Screen Recording only takes effect after Bloop relaunches.
+- **You rebuilt or updated the app.** Each new unsigned build counts as a different app to macOS, so old grants stop matching. Reset permissions, then grant again.
+- **You didn't relaunch.** Screen Recording only takes effect after Bloop relaunches.
 
 ## How scoring works
 

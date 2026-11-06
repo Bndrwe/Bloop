@@ -33,6 +33,8 @@ export function scoreText(score: number | null | undefined): string {
   return score == null ? '–' : String(Math.round(score))
 }
 
+export { badgeText, panelToggleLabel } from '@shared/petBadge'
+
 export function phaseLabel(phase: SessionPhase): string {
   switch (phase) {
     case 'focus':

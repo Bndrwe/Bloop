@@ -1,6 +1,7 @@
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { BrowserWindow, app, screen, type BrowserWindowConstructorOptions, type Rectangle } from 'electron'
+import { IPC } from '@shared/ipc'
 import { getPetPosition, setPetPosition } from './store'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -74,6 +75,10 @@ export function getPetWindow(): BrowserWindow | null {
   return petWin && !petWin.isDestroyed() ? petWin : null
 }
 
+export function getSettingsWindow(): BrowserWindow | null {
+  return settingsWin && !settingsWin.isDestroyed() ? settingsWin : null
+}
+
 // ------------------------------------------------------------------ pet
 
 function rectVisibleOnSomeDisplay(r: Rectangle): boolean {
@@ -128,6 +133,10 @@ export function createPetWindow(): BrowserWindow {
   win.on('closed', () => {
     if (petWin === win) petWin = null
     stopDrag()
+  })
+  // a (re)loaded pet asks for the panel state itself; start sending changes afresh
+  win.webContents.on('did-finish-load', () => {
+    lastPanelOpenSent = null
   })
   // The pet is the app's only always-visible UI: if its renderer crashes, bring it back
   // (a few times at most, so a renderer that crashes on load can't loop forever).
@@ -291,11 +300,30 @@ function createPanelWindow(): BrowserWindow {
       win.hide()
     }
   })
+  // The pet's badge reads "+" while the panel is closed and "–" while it is open.
+  win.on('show', syncPanelOpen)
+  win.on('hide', syncPanelOpen)
   win.on('closed', () => {
-    panelWin = null
+    if (panelWin === win) panelWin = null
+    syncPanelOpen()
   })
   loadRoute(win, 'panel')
   return win
+}
+
+export function isPanelOpen(): boolean {
+  return !!panelWin && !panelWin.isDestroyed() && panelWin.isVisible()
+}
+
+let lastPanelOpenSent: boolean | null = null
+/** Tell the pet window whether the panel is open (only when it changed). */
+function syncPanelOpen(): void {
+  const open = isPanelOpen()
+  if (open === lastPanelOpenSent) return
+  const pet = getPetWindow()
+  if (!pet || pet.webContents.isDestroyed()) return
+  lastPanelOpenSent = open
+  pet.webContents.send(IPC.panelOpenPush, open)
 }
 
 let lastPanelBlurAt = 0
@@ -363,10 +391,17 @@ function bringToFront(win: BrowserWindow): void {
   if (isMac) app.focus({ steal: true })
 }
 
-export function openSettings(): void {
+/** Sections Settings can be opened at (#/settings/<section>). */
+export type SettingsSection = 'permissions'
+
+export function openSettings(section?: SettingsSection): void {
   closePanel()
-  if (settingsWin && !settingsWin.isDestroyed()) return bringToFront(settingsWin)
-  settingsWin = framedWindow('settings', 760, 640, 'Bloop — Settings')
+  const route = section ? `settings/${section}` : 'settings'
+  if (settingsWin && !settingsWin.isDestroyed()) {
+    if (section) settingsWin.webContents.send(IPC.navigate, route)
+    return bringToFront(settingsWin)
+  }
+  settingsWin = framedWindow(route, 760, 640, 'Bloop — Settings')
   settingsWin.on('closed', () => {
     settingsWin = null
   })

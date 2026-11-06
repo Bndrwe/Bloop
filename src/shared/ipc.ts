@@ -33,6 +33,10 @@ export const IPC = {
   requestAutomation: 'perm:request-automation',
   dismissOnboarding: 'perm:dismiss',
   relaunchApp: 'app:relaunch',
+  resetPermissions: 'perm:reset',
+  openPermissionsSetup: 'perm:open-setup',
+  isPanelOpen: 'win:panel-open',
+  panelOpenPush: 'win:panel-open-push',
 
   getDeadlines: 'deadlines:get',
   refreshDeadlines: 'deadlines:refresh',
