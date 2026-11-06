@@ -5,7 +5,7 @@ import { app, type IpcMain } from 'electron'
 import type { AppStatus } from '@shared/types'
 import { guardSender } from './ai/guard'
 import { trustedOrigins } from './ai/ipc'
-import { effectiveSystemPrompt } from './ai/prompts'
+import { DEFAULT_SYSTEM_PROMPT } from '@shared/ai'
 import { registry } from './ai/registry'
 import { ChatService, registerChatIpc, type ChatIpcEvent } from './chat'
 import { ChatStore } from './chatStore'
@@ -19,7 +19,7 @@ export function registerChat(ipcMain: IpcMain, deps: { getStatus: () => AppStatu
   const service = new ChatService({
     store: chatStore,
     resolve: () => registry.resolve(),
-    getSystem: () => effectiveSystemPrompt(store.getAiSettings()),
+    getSystem: () => DEFAULT_SYSTEM_PROMPT,
     getContext: () => {
       const dl = getDeadlines()
       return { now: Date.now(), status: deps.getStatus(), stats: store.getStats(), deadlines: dl.ok ? dl.value : [] }

@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import { IPC } from '../shared/ipc'
 import type { AppStatus, BrightspaceStatus, Settings, StudyPetApi } from '../shared/types'
-import { SYSTEM_PROMPT_MAX, TRY_PROMPT_MAX, type AiApi, type AiStatus, type ModelCheckProgress } from '../shared/ai'
+import type { AiApi, AiStatus } from '../shared/ai'
 import { CHAT_INPUT_MAX, CHAT_TITLE_MAX, type ChatApi, type ChatThinking } from '../shared/chat'
 
 // The renderer only gets these named functions, never ipcRenderer itself or a generic invoke.
@@ -30,16 +30,7 @@ const ai: AiApi = {
   dismissBloopOffer: () => inv(IPC.aiDismissBloopOffer),
   pullOllamaModel: (model, confirmed) => inv(IPC.aiPullOllama, str(model, 200), confirmed === true),
   setApiKey: (provider, key) => inv(IPC.aiSetApiKey, str(provider, 40), typeof key === 'string' ? key : null),
-  test: (choice) => inv(IPC.aiTest, choice),
-  setSystemPrompt: (text) => inv(IPC.aiSetSystemPrompt, typeof text === 'string' ? text.slice(0, SYSTEM_PROMPT_MAX + 1) : null),
-  runCheck: (choice) => inv(IPC.aiCheck, choice),
-  cancelCheck: () => inv(IPC.aiCheckCancel),
-  onCheckProgress: (cb) => {
-    const l = (_e: IpcRendererEvent, p: ModelCheckProgress): void => cb(p)
-    ipcRenderer.on(IPC.aiCheckProgress, l)
-    return () => ipcRenderer.removeListener(IPC.aiCheckProgress, l)
-  },
-  tryPrompt: (text, useSystemPrompt, choice) => inv(IPC.aiTry, str(text, TRY_PROMPT_MAX + 1), useSystemPrompt !== false, choice)
+  test: (choice) => inv(IPC.aiTest, choice)
 }
 
 const chat: ChatApi = {

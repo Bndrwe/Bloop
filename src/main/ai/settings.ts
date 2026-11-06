@@ -1,5 +1,5 @@
 // AiSettings validation. Pure (no electron), so tests can import it directly.
-import { DEFAULT_AI_SETTINGS, DEFAULT_SYSTEM_PROMPT, SYSTEM_PROMPT_MAX, type AiChoice, type AiSettings, type CloudProviderId, type LocalRuntime } from '@shared/ai'
+import { DEFAULT_AI_SETTINGS, type AiChoice, type AiSettings, type CloudProviderId, type LocalRuntime } from '@shared/ai'
 
 export const CLOUD_PROVIDER_IDS: readonly CloudProviderId[] = ['claude-cli', 'codex-cli', 'gemini-cli', 'anthropic', 'openrouter']
 const LOCAL_RUNTIMES: readonly LocalRuntime[] = ['bloop', 'ollama']
@@ -58,18 +58,6 @@ export function validateAutoCloud(raw: unknown): CloudProviderId[] {
   return out
 }
 
-/**
- * A custom system prompt, trimmed (line endings normalised), or undefined for "use the default":
- * not a string, empty, the default text itself, or longer than SYSTEM_PROMPT_MAX.
- */
-export function validateSystemPrompt(raw: unknown): string | undefined {
-  if (typeof raw !== 'string') return undefined
-  // eslint-disable-next-line no-control-regex
-  const s = raw.replace(/\r\n?/g, '\n').replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, '').trim()
-  if (!s || s.length > SYSTEM_PROMPT_MAX || s === DEFAULT_SYSTEM_PROMPT) return undefined
-  return s
-}
-
 /** Merge whatever is stored over the defaults, dropping anything invalid. */
 export function validateAiSettings(raw: unknown): AiSettings {
   const r = isObj(raw) ? raw : {}
@@ -90,7 +78,6 @@ export function validateAiSettings(raw: unknown): AiSettings {
     autoCloud,
     ollamaUrl: normalizeOllamaUrl(r.ollamaUrl) ?? DEFAULT_AI_SETTINGS.ollamaUrl,
     bloopOfferDismissed: r.bloopOfferDismissed === true,
-    bloopEnabled,
-    ...(validateSystemPrompt(r.systemPrompt) ? { systemPrompt: validateSystemPrompt(r.systemPrompt) } : {})
+    bloopEnabled
   }
 }

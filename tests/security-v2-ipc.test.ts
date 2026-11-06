@@ -62,14 +62,13 @@ describe('IPC sender checks (check 1)', () => {
     expect(index).toContain("if (typeof host !== 'string' || host.length > 300)")
   })
 
-  it('the AI IPC validates every argument that carries data (choice, model, url, key, prompt, system prompt)', () => {
+  it('the AI IPC validates every argument that carries data (choice, model, url, key); the removed check / instructions channels are gone', () => {
     const ai = read('src/main/ai/ipc.ts')
     expect(ai).toMatch(/validateChoice\(raw\)/)
     expect(ai).toMatch(/model\.trim\(\)\.length > 200/)
     expect(ai).toMatch(/normalizeOllamaUrl\(url\)/)
     expect(ai).toMatch(/key\.length > 4096/)
-    expect(ai).toMatch(/SYSTEM_PROMPT_MAX/)
-    expect(ai).toMatch(/tryPrompt\(\(\) => registry\.resolve/)
+    expect(ai).not.toMatch(/aiSetSystemPrompt|aiCheck|aiTry|tryPrompt/)
     expect(ai).toMatch(/model\.length <= 200/)
   })
 })

@@ -603,7 +603,7 @@ export class BloopRuntime {
     const run = async (): Promise<string> => {
       if (this.idleTimer) clearTimeout(this.idleTimer)
       const l = await this.ensure(path)
-      // A fresh session per prompt on the shared (cleared) sequence, so a changed system prompt always
+      // A fresh session per prompt on the shared (cleared) sequence, so the system prompt always
       // takes effect. Without one, node-llama-cpp would add its own generic default, so an empty
       // string is passed instead.
       const session = new l.nlc.LlamaChatSession({

@@ -4,7 +4,7 @@ vi.mock('electron', () => ({ app: { getPath: () => '/tmp', isPackaged: false } }
 vi.mock('../src/main/store', () => ({ getAiSettings: () => ({}) }))
 vi.mock('../src/main/ai/cloud', () => ({ cloudModule: null, setCloudModelsReader: () => undefined }))
 
-import { CHECK_CASE_COUNT, DEFAULT_SYSTEM_PROMPT, TRY_PROMPT_MAX } from '@shared/ai'
+import { CHECK_CASE_COUNT, DEFAULT_SYSTEM_PROMPT } from '@shared/ai'
 import {
   buildCheckCases,
   cancelModelCheck,
@@ -12,7 +12,6 @@ import {
   runCasesWith,
   runModelCheck,
   scoreCase,
-  tryPrompt,
   verdictFor,
   VERDICT_GOOD,
   VERDICT_OK
@@ -203,28 +202,5 @@ describe('runModelCheck', () => {
     expect(bloop.error).toMatch(/isn't on this device/)
     expect(downloadBloop).not.toHaveBeenCalled()
     expect(pullOllama).not.toHaveBeenCalled()
-  })
-})
-
-describe('tryPrompt', () => {
-  it('sends the text with the system prompt (or without) and reports latency', async () => {
-    const p = provider(() => 'hi there')
-    const r = await tryPrompt(async () => p, '  hello  ', 'SYS')
-    expect(r).toMatchObject({ ok: true, text: 'hi there', provider: 'Mock model' })
-    expect(p.calls[0]!.prompt).toBe('hello')
-    expect(p.calls[0]!.opts.system).toBe('SYS')
-    await tryPrompt(async () => p, 'hello', undefined)
-    expect(p.calls[1]!.opts.system).toBeUndefined()
-  })
-  it(`caps the message at ${TRY_PROMPT_MAX} characters and refuses empty text, without calling the model`, async () => {
-    const resolve = vi.fn(async () => provider(() => 'x'))
-    expect((await tryPrompt(resolve, 'x'.repeat(TRY_PROMPT_MAX + 1), 'S')).error).toMatch(/under 2000/)
-    expect((await tryPrompt(resolve, '   ', 'S')).ok).toBe(false)
-    expect((await tryPrompt(resolve, 42, 'S')).ok).toBe(false)
-    expect(resolve).not.toHaveBeenCalled()
-    expect((await tryPrompt(resolve, 'x'.repeat(TRY_PROMPT_MAX), 'S')).ok).toBe(true)
-  })
-  it('reports a provider that is not ready', async () => {
-    expect(await tryPrompt(async () => new Error('Nothing ready'), 'hi', 'S')).toEqual({ ok: false, ms: 0, error: 'Nothing ready' })
   })
 })

@@ -47,12 +47,12 @@ vi.mock('@anthropic-ai/sdk', () => {
 vi.mock('electron', () => ({ safeStorage: { isEncryptionAvailable: () => false }, app: { getPath: () => '/tmp', isPackaged: false } }))
 vi.mock('electron-store', () => ({ default: class { get() { return undefined } set() {} } })) // prettier-ignore
 
-import { DEFAULT_SYSTEM_PROMPT, SYSTEM_PROMPT_MAX } from '@shared/ai'
+import { DEFAULT_SYSTEM_PROMPT } from '@shared/ai'
 import { buildOpenRouterBody, createAnthropicProvider } from '../src/main/ai/cloud/api'
 import { buildCliInvocation, CLAUDE_SYSTEM_FILE, createCliProvider, isUnknownSystemFileFlag, runCli } from '../src/main/ai/cloud/cli'
 import { ollamaChat } from '../src/main/ai/local/ollama'
-import { effectiveSystemPrompt, prependSystem } from '../src/main/ai/prompts'
-import { validateAiSettings, validateSystemPrompt } from '../src/main/ai/settings'
+import { prependSystem } from '../src/main/ai/prompts'
+import { validateAiSettings } from '../src/main/ai/settings'
 import { generatePlan } from '../src/main/plan'
 import type { CompleteOptions } from '../src/main/ai/types'
 
@@ -79,25 +79,9 @@ describe('DEFAULT_SYSTEM_PROMPT', () => {
   })
 })
 
-describe('settings validation', () => {
-  it('trims, normalises line endings, strips control chars', () => {
-    expect(validateSystemPrompt('  Be brief.\r\nBe kind.\u0007  ')).toBe('Be brief.\nBe kind.')
-  })
-  it('undefined = default: missing, non-string, blank, the default text, or too long', () => {
-    for (const v of [undefined, null, 42, {}, '', '   ', DEFAULT_SYSTEM_PROMPT, `  ${DEFAULT_SYSTEM_PROMPT}\n`, 'x'.repeat(SYSTEM_PROMPT_MAX + 1)]) {
-      expect(validateSystemPrompt(v)).toBeUndefined()
-    }
-    expect(validateSystemPrompt('x'.repeat(SYSTEM_PROMPT_MAX))).toHaveLength(SYSTEM_PROMPT_MAX)
-  })
-  it('validateAiSettings keeps a valid custom prompt and drops a bad one', () => {
-    expect(validateAiSettings({ systemPrompt: ' Mine ' }).systemPrompt).toBe('Mine')
-    expect('systemPrompt' in validateAiSettings({ systemPrompt: 'x'.repeat(5000) })).toBe(false)
-    expect('systemPrompt' in validateAiSettings({})).toBe(false)
-  })
-  it('effectiveSystemPrompt falls back to the default', () => {
-    expect(effectiveSystemPrompt({})).toBe(DEFAULT_SYSTEM_PROMPT)
-    expect(effectiveSystemPrompt(null)).toBe(DEFAULT_SYSTEM_PROMPT)
-    expect(effectiveSystemPrompt({ systemPrompt: 'Mine' })).toBe('Mine')
+describe('settings: no custom instructions any more', () => {
+  it('a systemPrompt saved by an older version is dropped', () => {
+    expect('systemPrompt' in validateAiSettings({ systemPrompt: 'Mine' })).toBe(false)
   })
 })
 

@@ -136,7 +136,7 @@ export interface ChatServiceDeps {
   store: ChatStore
   /** Same resolution as everything else (the current AI choice / Auto). Never downloads. */
   resolve: () => Promise<AiProvider | Error>
-  /** The system prompt (the user's own or DEFAULT_SYSTEM_PROMPT). */
+  /** The system prompt (DEFAULT_SYSTEM_PROMPT). */
   getSystem: () => string
   getContext: () => StudentContext
   now?: () => number

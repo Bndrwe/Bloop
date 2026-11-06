@@ -6,7 +6,6 @@ import { errMsg } from '../../lib/format'
 import { formatBytes, useAi } from '../../hooks/useAi'
 import { BloopConfirm } from './BloopConfirm'
 import CloudSection from './CloudSection'
-import { ModelCheck, SystemPromptEditor } from './ModelCheck'
 import './ai.css'
 
 type View = 'auto' | 'local' | 'cloud'
@@ -563,11 +562,6 @@ export function AiSection(): JSX.Element {
             {test.busy ? 'Testing…' : 'Test'}
           </button>
         </span>
-      </div>
-
-      <div className="ck-section">
-        <ModelCheck status={status} />
-        <SystemPromptEditor settings={settings} onSettings={setSettings} />
       </div>
 
       <BloopConfirm

@@ -11,7 +11,7 @@ Everything runs on your computer, and your activity data never leaves it.
 - **Study sessions and reminders.** Pomodoro sessions (25 minutes focus, 5 minutes break) and recurring study reminders.
 - **Brightspace deadlines.** Log in to Brightspace, or paste your calendar link, and see your next deadlines. Bloop reminds you before exams.
 - **Chat with Bloop.** Ask about your studies. Chats are saved on your computer only.
-- **An optional AI study plan.** Make a weekly plan on your own computer, or use a cloud AI you already have. You can edit Bloop's instructions, and check how well a model does before you rely on it.
+- **An optional AI study plan.** Make a weekly plan on your own computer, or use a cloud AI you already have.
 - **Available for macOS, Windows and Linux.** A black-and-white look with smooth animation.
 
 ## How to install

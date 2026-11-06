@@ -6,10 +6,7 @@ import * as store from '../store'
 import { aiChanged } from './events'
 import { localModule } from './local'
 import { cloudModule, getAiStatus, registry, startStatusPush } from './registry'
-import { SYSTEM_PROMPT_MAX } from '@shared/ai'
-import { cancelModelCheck, runModelCheck, tryPrompt } from './check'
-import { effectiveSystemPrompt } from './prompts'
-import { CLOUD_PROVIDER_IDS, normalizeOllamaUrl, validateAutoCloud, validateChoice, validateSystemPrompt } from './settings'
+import { CLOUD_PROVIDER_IDS, normalizeOllamaUrl, validateAutoCloud, validateChoice } from './settings'
 import { denyAllPermissions, guardSender, hardenWebContents, isSafeExternalUrl, rendererIndexFor, type TrustedOrigins } from './guard'
 
 const log = (m: string): void => console.log(`[bloop] ${m}`)
@@ -192,39 +189,6 @@ export function registerAiIpc(ipcMain: IpcMain, deps: AiIpcDeps): void {
     } catch (e) {
       return { ok: false, ms: Date.now() - t0, error: (e as Error).message }
     }
-  })
-
-  // Settings → AI → Advanced → Instructions. null / empty / the default text = use the default.
-  h(IPC.aiSetSystemPrompt, (_e, raw) => {
-    if (raw != null && typeof raw !== 'string') throw new Error('Instructions must be text.')
-    if (typeof raw === 'string' && raw.trim().length > SYSTEM_PROMPT_MAX) throw new Error(`Keep the instructions under ${SYSTEM_PROMPT_MAX} characters.`)
-    const systemPrompt = validateSystemPrompt(raw)
-    log(`ai system prompt: ${systemPrompt ? `custom (${systemPrompt.length} chars)` : 'default'}`)
-    return saved(store.saveAiSettings({ systemPrompt }))
-  })
-
-  // Check model: runs the built-in test prompts through a choice (default: current). Only on a click
-  // in Settings (cloud providers receive the prompts); resolve() never downloads or pulls.
-  h(IPC.aiCheck, async (e, raw) => {
-    const choice = raw == null ? undefined : validateChoice(raw)
-    if (raw != null && !choice) return { ok: false, error: 'Unknown AI choice.', cases: [] }
-    const settings = store.getAiSettings()
-    const sender = e.sender
-    return runModelCheck(
-      { resolve: () => registry.resolve(choice ?? undefined), system: effectiveSystemPrompt(settings), systemIsDefault: !validateSystemPrompt(settings.systemPrompt) },
-      (p) => {
-        if (!sender.isDestroyed()) sender.send(IPC.aiCheckProgress, p)
-      }
-    )
-  })
-  h(IPC.aiCheckCancel, () => cancelModelCheck())
-
-  // Try a prompt: free text (capped) with the system prompt unless the user turned it off.
-  h(IPC.aiTry, async (_e, text, useSystem, raw) => {
-    const choice = raw == null ? undefined : validateChoice(raw)
-    if (raw != null && !choice) return { ok: false, ms: 0, error: 'Unknown AI choice.' }
-    const system = useSystem === false ? undefined : effectiveSystemPrompt(store.getAiSettings())
-    return tryPrompt(() => registry.resolve(choice ?? undefined), text, system)
   })
 
   app.on('before-quit', () => void localModule.dispose())

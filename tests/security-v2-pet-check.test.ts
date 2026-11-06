@@ -7,11 +7,10 @@ vi.mock('electron', () => ({ app: { getPath: () => '/tmp', isPackaged: false } }
 vi.mock('../src/main/store', () => ({ getAiSettings: () => ({}) }))
 vi.mock('../src/main/ai/cloud', () => ({ cloudModule: null, setCloudModelsReader: () => undefined }))
 
-import { DEFAULT_AI_SETTINGS, DEFAULT_SYSTEM_PROMPT, SYSTEM_PROMPT_MAX, TRY_PROMPT_MAX } from '../src/shared/ai'
+import { DEFAULT_AI_SETTINGS, DEFAULT_SYSTEM_PROMPT } from '../src/shared/ai'
 import { parsePetContextMenu } from '../src/main/petVisibility'
-import { OUTPUT_KEEP_CHARS, runModelCheck, tryPrompt } from '../src/main/ai/check'
+import { runModelCheck } from '../src/main/ai/check'
 import { createRegistry } from '../src/main/ai/registry'
-import { validateSystemPrompt } from '../src/main/ai/settings'
 import type { AiProvider, LocalModule } from '../src/main/ai/types'
 
 const PET = true
@@ -55,43 +54,7 @@ describe('pet:context-menu accepts requests only from the pet window (check 4)',
   })
 })
 
-describe('Try a prompt caps are enforced in main (check 5)', () => {
-  const provider = (complete: (p: string, o?: unknown) => Promise<string>): AiProvider => ({ label: 'Test', kind: 'local', complete })
-
-  it('a prompt over TRY_PROMPT_MAX is refused before any model is resolved', async () => {
-    const resolve = vi.fn(async () => provider(async () => 'x'))
-    const r = await tryPrompt(resolve, 'a'.repeat(TRY_PROMPT_MAX + 1), undefined)
-    expect(r.ok).toBe(false)
-    expect(resolve).not.toHaveBeenCalled()
-  })
-
-  it('a prompt of exactly TRY_PROMPT_MAX characters goes through', async () => {
-    const complete = vi.fn(async () => 'ok')
-    const r = await tryPrompt(async () => provider(complete), 'a'.repeat(TRY_PROMPT_MAX), undefined)
-    expect(r.ok).toBe(true)
-    expect(complete).toHaveBeenCalledTimes(1)
-  })
-
-  it.each([undefined, null, 42, { text: 'hi' }, ['hi'], '   '])('refuses non-text or blank input (%j)', async (text) => {
-    const resolve = vi.fn(async () => provider(async () => 'x'))
-    const r = await tryPrompt(resolve, text, undefined)
-    expect(r.ok).toBe(false)
-    expect(resolve).not.toHaveBeenCalled()
-  })
-
-  it('a model reply is cut to OUTPUT_KEEP_CHARS and marked truncated', async () => {
-    const r = await tryPrompt(async () => provider(async () => 'b'.repeat(OUTPUT_KEEP_CHARS + 500)), 'hi', undefined)
-    expect(r.ok).toBe(true)
-    expect(r.ok && r.text?.length).toBe(OUTPUT_KEEP_CHARS)
-    expect(r.ok && r.truncated).toBe(true)
-  })
-
-  it('a custom system prompt over SYSTEM_PROMPT_MAX is dropped, one at the cap is kept', () => {
-    expect(validateSystemPrompt('s'.repeat(SYSTEM_PROMPT_MAX + 1))).toBeUndefined()
-    expect(validateSystemPrompt('s'.repeat(SYSTEM_PROMPT_MAX))).toBe('s'.repeat(SYSTEM_PROMPT_MAX))
-    expect(validateSystemPrompt(DEFAULT_SYSTEM_PROMPT)).toBeUndefined()
-  })
-
+describe('Model check (developer CLI) guards', () => {
   it('Check model runs one at a time; a second click is refused while one is running', async () => {
     let release!: (e: Error) => void
     const pending = new Promise<Error>((r) => (release = r))
@@ -105,8 +68,8 @@ describe('Try a prompt caps are enforced in main (check 5)', () => {
   })
 })
 
-describe('Check model and Try a prompt never download or pull (check 5)', () => {
-  it('with nothing installed, both paths resolve to a friendly error and call no download or pull', async () => {
+describe('Model check never downloads or pulls (check 5)', () => {
+  it('with nothing installed, the check resolves to a friendly error and call no download or pull', async () => {
     const local = {
       status: vi.fn(async () => ({})),
       provider: vi.fn(async () => new Error('The Bloop model is not on this device yet.')),
@@ -123,8 +86,6 @@ describe('Check model and Try a prompt never download or pull (check 5)', () => 
     })
     const check = await runModelCheck({ resolve: () => registry.resolve(), system: DEFAULT_SYSTEM_PROMPT })
     expect(check.ok).toBe(false)
-    const tried = await tryPrompt(() => registry.resolve(), 'hello', undefined)
-    expect(tried.ok).toBe(false)
     expect(local.downloadBloop).not.toHaveBeenCalled()
     expect(local.pullOllama).not.toHaveBeenCalled()
     expect(local.importBloop).not.toHaveBeenCalled()

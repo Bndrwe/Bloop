@@ -1,16 +1,13 @@
-// "Check model": a few built-in prompts run through the chosen provider and scored with the same
-// rules as the ml/ evaluation (src/main/ai/scoring.ts, a port of ml/train/scoring.py). Plus the
-// "Try a prompt" playground. Electron-free: the provider is resolved by the caller (registry.resolve,
-// which never downloads or pulls), so this also runs from scripts/model-check.mjs and in tests.
+// Model check (developer tool, not in the app UI): a few built-in prompts run through a provider and
+// scored with the same rules as the ml/ evaluation (src/main/ai/scoring.ts, a port of
+// ml/train/scoring.py). Electron-free; used by `npm run model:check -- --gguf <file>`.
 import {
-  TRY_PROMPT_MAX,
   type CheckCaseKind,
   type CheckCaseResult,
   type CheckResult,
   type CheckVerdict,
   type ModelCheckProgress,
-  type ModelCheckReport,
-  type TryPromptResult
+  type ModelCheckReport
 } from '@shared/ai'
 import type { Deadline, Settings, Stats } from '@shared/types'
 import { buildPrompt, PLAN_JSON_SCHEMA } from '../plan'
@@ -309,25 +306,4 @@ export function cancelModelCheck(): void {
 
 export function isCheckRunning(): boolean {
   return running != null
-}
-
-/** "Try a prompt": one free-text message, with or without the system prompt. */
-export async function tryPrompt(
-  resolve: () => Promise<AiProvider | Error>,
-  text: unknown,
-  system: string | undefined,
-  timeoutMs = TRY_TIMEOUT_MS
-): Promise<TryPromptResult> {
-  if (typeof text !== 'string' || !text.trim()) return { ok: false, ms: 0, error: 'Type a message first.' }
-  if (text.length > TRY_PROMPT_MAX) return { ok: false, ms: 0, error: `Keep it under ${TRY_PROMPT_MAX} characters.` }
-  const t0 = Date.now()
-  const p = await resolve().catch((e: unknown) => (e instanceof Error ? e : new Error(String(e))))
-  if (p instanceof Error) return { ok: false, ms: 0, error: p.message }
-  try {
-    const out = await completeWithTimeout(p, text.trim(), { maxTokens: 1024, ...(system ? { system } : {}) }, timeoutMs)
-    const t = truncate(out)
-    return { ok: true, text: t.text, ...(t.truncated ? { truncated: true } : {}), ms: Date.now() - t0, provider: p.label }
-  } catch (e) {
-    return { ok: false, ms: Date.now() - t0, error: (e as Error)?.message || String(e), provider: p.label }
-  }
 }

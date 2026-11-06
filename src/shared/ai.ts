@@ -35,19 +35,10 @@ export interface AiSettings {
    * that ships inside the app is never used, not even by 'auto', until this is true.
    */
   bloopEnabled: boolean
-  /**
-   * The user's own instructions (system prompt), sent with every request as a system message.
-   * undefined = DEFAULT_SYSTEM_PROMPT. Trimmed, at most SYSTEM_PROMPT_MAX characters.
-   */
-  systemPrompt?: string
 }
 
-/** Longest custom system prompt Settings accepts. */
-export const SYSTEM_PROMPT_MAX = 4000
 /** How many built-in prompts "Check model" sends (buildCheckCases in src/main/ai/check.ts). */
 export const CHECK_CASE_COUNT = 5
-/** Longest "Try a prompt" message. */
-export const TRY_PROMPT_MAX = 2000
 
 /**
  * Bloop's default instructions (system prompt). Kept short on purpose: the on-device Bloop model was
@@ -189,18 +180,6 @@ export interface AiApi {
   setApiKey(provider: 'anthropic' | 'openrouter', key: string | null): Promise<{ ok: boolean; error?: string }>
   /** Run a tiny prompt through a choice (default: current) and report. */
   test(choice?: AiChoice): Promise<{ ok: boolean; ms: number; sample?: string; error?: string }>
-  /** Save custom instructions (system prompt). null or the default text = use the default. Rejects over SYSTEM_PROMPT_MAX. */
-  setSystemPrompt(text: string | null): Promise<AiSettings>
-  /**
-   * Run the built-in model check (a few plan and nudge prompts) through a choice (default: current).
-   * Never downloads or pulls. Cloud providers receive the test prompts, so only call this after a click.
-   */
-  runCheck(choice?: AiChoice): Promise<ModelCheckReport>
-  /** Stop a running check (the current case finishes as "cancelled"). */
-  cancelCheck(): Promise<void>
-  onCheckProgress(cb: (p: ModelCheckProgress) => void): () => void
-  /** "Try a prompt": free text (at most TRY_PROMPT_MAX chars) with or without the system prompt. */
-  tryPrompt(text: string, useSystemPrompt: boolean, choice?: AiChoice): Promise<TryPromptResult>
 }
 
 // ---------------------------------------------------------------- model check
@@ -259,11 +238,3 @@ export interface ModelCheckProgress {
   result?: CheckCaseResult
 }
 
-export interface TryPromptResult {
-  ok: boolean
-  text?: string
-  truncated?: boolean
-  error?: string
-  ms: number
-  provider?: string
-}

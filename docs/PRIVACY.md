@@ -16,7 +16,7 @@ The tray's **Open logs folder** item and the **About** dialog show the exact pat
 
 | What | Where | Contents |
 |---|---|---|
-| Settings, session history, study plan, reminders, pet position | `userData/bloop.json` | Your focus/distract lists, up to 1,000 past sessions (start/end, score, top focus apps and top distractions), the last AI plan, the cached next 10 deadlines (title, course code and date, from your calendar link and/or Brightspace), the calendar URL you entered, your Brightspace address and, while logged in, your Brightspace display name, course count and last sync time and your custom AI instructions, if any. Check model results are not stored |
+| Settings, session history, study plan, reminders, pet position | `userData/bloop.json` | Your focus/distract lists, up to 1,000 past sessions (start/end, score, top focus apps and top distractions), the last AI plan, the cached next 10 deadlines (title, course code and date, from your calendar link and/or Brightspace), the calendar URL you entered, your Brightspace address and, while logged in, your Brightspace display name, course count and last sync time |
 | API keys (Anthropic, OpenRouter) | `userData/bloop.json`, key `aiKeys` | Encrypted with the OS secure store (macOS Keychain, Windows DPAPI, Linux Secret Service). Bloop won't save a key when encryption is unavailable. Keys are never sent to the app's windows, never logged and are removed from error messages |
 | Brightspace login cookies | `userData/Partitions/brightspace/` | A separate browser profile used only by the **Log in to Brightspace** window. It holds the cookies your school's Brightspace (and its sign-in provider) set, like any browser would. Bloop never sees or stores your password. **Log out** deletes this profile's cookies, storage and cache |
 | Bloop model | `userData/models/` | The `.gguf` file (about 530 MB), downloaded by the installer or from Settings, or imported. It is kept when you reset data; delete it in Settings → AI |
@@ -41,8 +41,6 @@ Bloop only connects to the network in the cases below. In each case you either s
 | You confirm **Pull … with Ollama?** | Your Ollama address, which then downloads from `ollama.com` | The model name |
 | You press **Generate plan** or **Test** | The AI that is selected (see below) | The plan prompt with Bloop's instructions (system prompt); **Test** sends only a one-line test prompt |
 | You send a message in **Chat with Bloop** | The AI that is selected (see below) | Bloop's instructions, the recent turns of that conversation (about the last 6,000 characters, 2,500 for the on-device models) and your new message. With **Share my study stats with Bloop** on, also today's date, the session state and score, today's focus minutes and the titles and dates of your next 3 deadlines |
-| You press **Run checks** (Settings → AI → Check model) | The AI that is selected | 5 built-in test prompts with made-up deadlines and focus history, plus Bloop's instructions. Nothing of yours. With a cloud provider the card says so before you click |
-| You press **Send** under **Try a prompt** | The AI that is selected | The text you typed (up to 2000 characters), with Bloop's instructions unless you untick them. With a cloud provider, only when you press **Send** |
 | You have saved an OpenRouter key | `openrouter.ai/api/v1/models` (public list, cached for 24 h) | Nothing personal. Without a key, Bloop never contacts OpenRouter |
 | You click a help link | Your web browser opens it. Only `https://` links are allowed | — |
 
@@ -82,7 +80,7 @@ Delete one chat with its trash button, all of them with **Delete all chats**, or
 
 ## How to delete your data
 
-- **Settings → Reset data → Reset everything…** deletes everything in `bloop.json`: settings (including your custom instructions), history, plan, deadline cache, calendar URL and the saved API keys. It also deletes all chats and the log files, and logs you out of Brightspace. It does not delete the downloaded Bloop model; use **Delete** in Settings → AI for that.
+- **Settings → Reset data → Reset everything…** deletes everything in `bloop.json`: settings, history, plan, deadline cache, calendar URL and the saved API keys. It also deletes all chats and the log files, and logs you out of Brightspace. It does not delete the downloaded Bloop model; use **Delete** in Settings → AI for that.
 - **Brightspace**: **Log out** in Settings → Deadlines deletes the login profile's cookies and the cached Brightspace items.
 - **Chats**: **Delete all chats** in the chat window's list (after a confirmation) deletes the `userData/chats/` folder; the trash button removes one conversation. **Settings → Reset data → Reset everything…** deletes all chats too.
 - **Settings → AI → Bloop model → Delete** removes the downloaded or imported model.

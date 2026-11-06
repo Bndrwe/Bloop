@@ -756,7 +756,7 @@ were built without one, so a tuned model sees a system message at inference that
 generic default system prompt, so there was a mismatch either way). TODO for the next data build: add
 `{"role":"system","content": DEFAULT_SYSTEM_PROMPT}` as the first message of every row (or of a share of rows, so the model also works without it),
 read the text from `src/shared/ai.ts` the same way `render_prompts.cjs` reads `buildPrompt`, and re-run `validate.py`. Don't hand-edit the jsonl files.
-Settings → AI → Check model (and `npm run model:check -- --gguf <file>`) scores a build with and without it (`--no-system`).
+`npm run model:check -- --gguf <file>` scores a build with and without it (`--no-system`).
 
 ## Regenerate / validate
 

@@ -180,28 +180,18 @@ async function defaultGenerateText(prompt: string, opts?: CompleteOptions): Prom
   return generateText(prompt, opts)
 }
 
-/** The user's instructions (Settings → AI → Advanced), or the default if they can't be read. */
-async function defaultSystemPrompt(): Promise<string> {
-  try {
-    const [{ effectiveSystemPrompt }, store] = await Promise.all([import('./ai/prompts'), import('./store')])
-    return effectiveSystemPrompt(store.getAiSettings())
-  } catch {
-    return DEFAULT_SYSTEM_PROMPT
-  }
-}
-
 export async function generatePlan(
   deadlines: Deadline[],
   stats: Stats,
   settings: Settings,
   generate: GenerateText = defaultGenerateText,
-  /** The system prompt; default: the one saved in AiSettings (or DEFAULT_SYSTEM_PROMPT). */
+  /** The system prompt; default: DEFAULT_SYSTEM_PROMPT. */
   system?: string
 ): Promise<Result<StudyPlan>> {
   let text: string
   try {
     text = await generate(buildPrompt(deadlines, stats, settings, new Date()), {
-      system: system ?? (await defaultSystemPrompt()),
+      system: system ?? DEFAULT_SYSTEM_PROMPT,
       jsonSchema: PLAN_JSON_SCHEMA,
       maxTokens: 2048,
       timeoutMs: 180_000

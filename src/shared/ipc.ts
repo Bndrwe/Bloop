@@ -63,11 +63,6 @@ export const IPC = {
   aiPullOllama: 'ai:ollama-pull',
   aiSetApiKey: 'ai:set-api-key',
   aiTest: 'ai:test',
-  aiSetSystemPrompt: 'ai:set-system-prompt',
-  aiCheck: 'ai:check',
-  aiCheckCancel: 'ai:check-cancel',
-  aiCheckProgress: 'ai:check-progress',
-  aiTry: 'ai:try',
   openExternal: 'app:open-external',
 
   // Chat with Bloop (window.studyPet.chat) — handlers live in src/main/chat.ts
