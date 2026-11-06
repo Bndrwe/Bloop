@@ -117,6 +117,9 @@ const api: StudyPetApi = {
     return () => ipcRenderer.removeListener(IPC.brightspaceStatusPush, l)
   },
 
+  markCurrentPage: (study) => inv(IPC.contentMark, study === true),
+  getRememberedPages: () => inv(IPC.contentList),
+  forgetRememberedPages: (id) => inv(IPC.contentForget, typeof id === 'string' ? str(id, 128) : undefined),
   openExternal: (url) => inv(IPC.openExternal, str(url, 2048)),
   ai,
   chat

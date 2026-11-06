@@ -1,7 +1,7 @@
 // Pomodoro session engine + focus nudges. No electron imports: everything platform-specific is
 // injected via SessionDeps, so it can be driven with a fake clock in tests.
 import { EventEmitter } from 'node:events'
-import type { ActiveSample, AppStatus, CurrentActivity, PetMood, PetState, SessionPhase, SessionRecord, Settings } from '@shared/types'
+import type { ActiveSample, AppStatus, ContentJudgement, CurrentActivity, PetMood, PetState, SessionPhase, SessionRecord, Settings } from '@shared/types'
 import { classify, isBrowser, resolveDomain } from './classifier'
 import { computeFocusScore, SCORE_HALF_LIFE_SEC, summarizeSession } from './score'
 import { localDateKey } from './stats'
@@ -77,6 +77,11 @@ export interface SessionDeps {
   random?: () => number
   /** Front-app names that are Bloop itself (default ["Bloop"]; dev adds "Electron"). */
   selfNames?: string[]
+  /**
+   * "Depends on what's open" sites: the verdict for the page (null = not such a site). Study counts
+   * as focus, not study as distracting, unsure keeps the list category. Must not block.
+   */
+  judge?: (raw: RawActive) => ContentJudgement | null
 }
 
 export const NUDGE_LINES = [
@@ -129,7 +134,7 @@ export function isSiteHidden(raw: RawActive | null): boolean {
 }
 
 export class SessionEngine extends EventEmitter {
-  private readonly d: Required<Omit<SessionDeps, 'log'>> & { log: (m: string) => void }
+  private readonly d: Required<Omit<SessionDeps, 'log' | 'judge'>> & { log: (m: string) => void; judge?: SessionDeps['judge'] }
 
   private phase: SessionPhase = 'idle'
   private pausedPhase: 'focus' | 'break' | null = null
@@ -495,7 +500,7 @@ export class SessionEngine extends EventEmitter {
     const settings = this.d.getSettings()
     const t = this.d.now()
     const app = raw?.app || 'Unknown'
-    const category = raw ? classify(raw, settings) : 'neutral'
+    const { category, content } = raw ? this.categorize(raw, settings) : { category: 'neutral' as const, content: null }
     const domain = raw ? resolveDomain(raw) : undefined
     const s: StoredSample = {
       t,
@@ -510,7 +515,7 @@ export class SessionEngine extends EventEmitter {
     // time spent distracted: start any distraction streak afresh instead of counting the gap.
     this.checkGap(t)
     this.samples.push(s)
-    this.current = this.activity(raw, app, domain, category)
+    this.current = this.activity(raw, app, domain, category, content)
     const score = this.sessionScore(t)
     // Privacy: the persistent log must not record activity, so per-sample lines need BLOOP_TRACE=1.
     if (trace()) this.d.log(`sample app="${app}"${domain ? ` domain=${domain}` : ''} category=${category} score=${score}`)
@@ -545,8 +550,36 @@ export class SessionEngine extends EventEmitter {
     this.lastSeenAt = t
   }
 
-  private activity(raw: RawActive | null, app: string, domain: string | undefined, category: ActiveSample['category']): CurrentActivity {
+  /** The lists' category, adjusted by the page's content on "depends on what's open" sites. */
+  private categorize(raw: RawActive, settings: Settings): { category: ActiveSample['category']; content: ContentJudgement | null } {
+    const base = classify(raw, settings)
+    let content: ContentJudgement | null = null
+    if (this.d.judge) {
+      try {
+        content = this.d.judge(raw)
+      } catch (e) {
+        this.d.log(`content judge failed: ${(e as Error).message}`)
+      }
+    }
+    if (!content) return { category: base, content: null }
+    const category = content.verdict === 'study' ? 'focus' : content.verdict === 'not-study' ? 'distract' : base
+    return { category, content }
+  }
+
+  /** Take a sample right away (e.g. after "This is study" so the panel and pet update at once). */
+  sampleNow(): void {
+    void this.doSample()
+  }
+
+  private activity(
+    raw: RawActive | null,
+    app: string,
+    domain: string | undefined,
+    category: ActiveSample['category'],
+    content: ContentJudgement | null = null
+  ): CurrentActivity {
     const a: CurrentActivity = { app, domain, category }
+    if (content) a.content = { ...content }
     if (isSiteHidden(raw)) {
       a.siteHidden = true
       if (!this.loggedSiteHidden) {
@@ -589,13 +622,13 @@ export class SessionEngine extends EventEmitter {
     const r = raw as RawActive
     const settings = this.d.getSettings()
     const app = r.app || 'Unknown'
-    const category = classify(r, settings)
+    const { category, content } = this.categorize(r, settings)
     const domain = resolveDomain(r)
     this.checkGap(t)
     ws.lastPresentAt = t
     ws.samples.push({ t, app, title: r.title ?? '', url: r.url, domain, category, durationSec: tm.sampleSec })
     while (ws.samples.length > 0 && t - (ws.samples[0] as StoredSample).t > WATCH_KEEP_MS) ws.samples.shift()
-    ws.current = this.activity(r, app, domain, category)
+    ws.current = this.activity(r, app, domain, category, content)
     if (trace()) this.d.log(`watch sample app="${app}"${domain ? ` domain=${domain}` : ''} category=${category} score=${this.watchScore(t)}`)
     this.updateMood(category, t)
     this.emitStatus()

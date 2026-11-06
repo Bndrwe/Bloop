@@ -235,6 +235,29 @@ function titlePatternScore(pattern: string, title: string): number {
   return re.test(title.toLowerCase()) ? main.length : 0
 }
 
+/**
+ * The site's domain when it is on the "Depends on what's open" list (Settings.contentDomains), else
+ * undefined. A more specific focus/distract pattern (e.g. "youtube.com/feed") beats the content
+ * pattern; ties go to the content list.
+ */
+export function contentSite(
+  input: ClassifyInput,
+  lists: ClassifyLists & { contentDomains?: string[] }
+): string | undefined {
+  const patterns = lists.contentDomains ?? []
+  if (!patterns.length) return undefined
+  const domain = resolveDomain(input)
+  if (!domain) return undefined
+  const path = domainFromUrl(input.url) ? pathFromUrl(input.url as string) : '/'
+  const content = best(patterns, (p) => domainPatternScore(p, domain, path))
+  if (content === 0) return undefined
+  const other = Math.max(
+    best(lists.focusDomains, (p) => domainPatternScore(p, domain, path)),
+    best(lists.distractDomains, (p) => domainPatternScore(p, domain, path))
+  )
+  return content >= other ? domain : undefined
+}
+
 export function classify(input: ClassifyInput, lists: ClassifyLists): Category {
   const domain = resolveDomain(input)
   if (domain) {

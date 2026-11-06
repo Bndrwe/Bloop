@@ -38,6 +38,10 @@ export const IPC = {
   isPanelOpen: 'win:panel-open',
   panelOpenPush: 'win:panel-open-push',
 
+  contentMark: 'content:mark',
+  contentList: 'content:list',
+  contentForget: 'content:forget',
+
   getDeadlines: 'deadlines:get',
   refreshDeadlines: 'deadlines:refresh',
   getPlan: 'plan:get',

@@ -420,6 +420,8 @@ export const DEFAULT_LIMITS: ClientLimits = {
 export interface SyncResult {
   user: { id: string; name: string }
   courseCount: number
+  /** Active courses (label + name), kept as study signals for content judging. */
+  courses: { label: string; name: string }[]
   items: Deadline[]
   versions: { lp: string; le: string }
   /** Course endpoints that failed for a reason other than 403/404 (timeouts, 5xx…). */
@@ -679,7 +681,7 @@ export class BrightspaceClient {
       })
     )
     const items = mergeDeadlines([lists.flat()], this.now(), this.limits.keep)
-    return { user, courseCount: courses.length, items, versions, failures }
+    return { user, courseCount: courses.length, courses: courses.map((c) => ({ label: c.label, name: c.name })), items, versions, failures }
   }
 }
 

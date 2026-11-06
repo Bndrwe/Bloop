@@ -33,7 +33,11 @@ import {
 import { ReminderScheduler } from './reminders'
 import { SessionEngine, type NotifyOptions } from './session'
 import * as store from './store'
-import { sampleActiveWindow } from './tracker'
+import { readPageText, sampleActiveWindow } from './tracker'
+import { AiJudge, pickJudgeProvider } from './contentAi'
+import { ContentService } from './contentService'
+import { EMPTY_CONTEXT, type JudgeContext } from './contentJudge'
+import { registry } from './ai/registry'
 import { clickTrayItem, createTray, trayBounds, trayMenuLabels, updateTray, type TrayActions } from './tray'
 import {
   isNudgeMood,
@@ -145,9 +149,50 @@ function notify(title: string, body: string, opts?: NotifyOptions): void {
   }
 }
 
+// ------------------------------------------------------------------ content judging
+
+// Unclear "depends on what's open" pages: an Ollama model you picked (stays on this computer), or,
+// only with Settings → "Let my cloud AI judge unclear pages" on, your cloud AI (titles only).
+const aiJudge = new AiJudge({
+  provider: () =>
+    pickJudgeProvider({ choice: store.getAiSettings().choice, cloudJudge: store.getSettings().cloudJudge, resolve: () => registry.resolve() }),
+  load: () => store.getJudgeCache(),
+  save: (c) => store.setJudgeCache(c),
+  log,
+  minGapMs: FAST ? 3000 : 10_000
+})
+
+let judgeCtx: { at: number; sig: string; ctx: JudgeContext } = { at: 0, sig: '', ctx: EMPTY_CONTEXT }
+/** Your courses, upcoming deadline titles and focus-list words (re-read at most every 30 s). */
+function judgeContext(): JudgeContext {
+  const now = Date.now()
+  if (now - judgeCtx.at < 30_000) return judgeCtx.ctx
+  const s = store.getSettings()
+  const ctx: JudgeContext = {
+    courses: store.getBrightspaceState()?.courses ?? [],
+    deadlineTitles: (store.getDeadlinesCache()?.items ?? []).map((d) => String(d.summary ?? '')).filter(Boolean),
+    focusWords: [...s.focusApps, ...s.focusDomains.map((d) => d.replace(/^www\./, '').split(/[./]/)[0] ?? '')]
+  }
+  const sig = JSON.stringify(ctx)
+  // same object while nothing changed, so contentJudge's compiled patterns are reused
+  judgeCtx = sig === judgeCtx.sig ? { ...judgeCtx, at: now } : { at: now, sig, ctx }
+  return judgeCtx.ctx
+}
+
+const content = new ContentService({
+  getSettings: () => store.getSettings(),
+  getContext: judgeContext,
+  loadOverrides: () => store.getContentOverrides(),
+  saveOverrides: (list) => store.setContentOverrides(list),
+  ai: aiJudge,
+  readPageText,
+  log
+})
+
 // ------------------------------------------------------------------ engine
 
 const engine = new SessionEngine({
+  judge: (raw) => content.judge(raw),
   getSettings: () => store.getSettings(),
   sample: () => sampleActiveWindow(),
   notify,
@@ -333,6 +378,8 @@ function registerIpc(): void {
     if (engine.isRunning()) engine.stop()
     await logoutBrightspace().catch((e: Error) => log(`brightspace logout on reset failed: ${e.message}`))
     store.resetData()
+    content.reset()
+    aiJudge.clear()
     chatStore.clear()
     clearLogs()
     applyLoginItem(store.getSettings())
@@ -408,6 +455,16 @@ function registerIpc(): void {
   h(IPC.dismissOnboarding, () => {
     store.setOnboardingDismissed(true)
   })
+
+  // "This is study" / "Not study" in the panel: applies to the page in front (main knows which; the
+  // renderer never sees its URL or title).
+  h(IPC.contentMark, (_e, study) => {
+    const raw = content.markCurrent(study === true)
+    if (raw) engine.recordSample(raw) // re-score that page now (the panel is in front)
+    return !!raw
+  })
+  h(IPC.contentList, () => content.list())
+  h(IPC.contentForget, (_e, id) => content.forget(typeof id === 'string' && id ? id : undefined))
 
   h(IPC.getDeadlines, () => getDeadlines())
   h(IPC.refreshDeadlines, async () => {

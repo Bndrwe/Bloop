@@ -5,6 +5,28 @@ import type { ChatApi } from './chat'
 
 export type Category = 'focus' | 'distract' | 'neutral'
 
+/** What Bloop thinks of a "depends on what's open" page (src/main/contentJudge.ts). */
+export type ContentVerdict = 'study' | 'not-study' | 'unsure'
+
+/** The verdict for the page in front, shown in the panel's Now row. Never contains the title or URL. */
+export interface ContentJudgement {
+  verdict: ContentVerdict
+  /** Short human reason, e.g. "matches CHEM 201", "looks like gameplay". */
+  reason: string
+  /** Who decided: your correction, the built-in rules, or the AI. `pending` = the AI is asked. */
+  source: 'override' | 'local' | 'ai' | 'pending'
+}
+
+/** A page you marked with "This is study" / "Not study" (Settings → Remembered pages). */
+export interface ContentOverrideInfo {
+  id: string
+  /** The page title (or site and path), as shown in Settings. Stays on this computer. */
+  label: string
+  study: boolean
+  /** epoch ms */
+  at: number
+}
+
 /** Visual states of the pet. `wave` is used for study reminders. */
 export type PetMood = 'idle' | 'happy' | 'worried' | 'sad' | 'sleeping' | 'celebrate' | 'wave'
 
@@ -40,6 +62,15 @@ export interface Settings {
   distractApps: string[]
   focusDomains: string[]
   distractDomains: string[]
+  /**
+   * "Depends on what's open": sites judged by the page itself (a lecture on YouTube is study).
+   * When the page can't be judged, the focus/distract lists decide as before.
+   */
+  contentDomains: string[]
+  /** macOS: also read the page's headings and description from Chrome/Safari (needs "Allow JavaScript from Apple Events"). */
+  readPageText: boolean
+  /** Option B: let the cloud AI (Auto / a cloud pick) judge unclear pages. Sends only titles, site and course names. */
+  cloudJudge: boolean
   /** Seconds continuously on a distraction before the pet speaks up (0 = right away). It looks worried at once. */
   nudgeAfterSec: number
   /** Seconds continuously on a distraction before the first reminder (bubble + system notification). */
@@ -123,6 +154,8 @@ export interface PetState {
 export type CurrentActivity = Pick<ActiveSample, 'app' | 'domain' | 'category'> & {
   /** A browser is in front but Bloop can read neither its URL nor its title (permissions missing). */
   siteHidden?: boolean
+  /** A "depends on what's open" site: what Bloop made of the page. */
+  content?: ContentJudgement
 }
 
 export interface AppStatus {
@@ -294,6 +327,13 @@ export interface StudyPetApi {
   brightspaceRefresh(): Promise<Result<BrightspaceStatus>>
   /** Fires in every window when the Brightspace status (or its deadlines) change. */
   onBrightspaceStatus(cb: (status: BrightspaceStatus) => void): () => void
+
+  // "depends on what's open" pages
+  /** Remember the page in front as study (true) or not study (false). */
+  markCurrentPage(study: boolean): Promise<boolean>
+  getRememberedPages(): Promise<ContentOverrideInfo[]>
+  /** Forget one remembered page, or all of them when id is omitted. */
+  forgetRememberedPages(id?: string): Promise<ContentOverrideInfo[]>
 
   /** Open an https link in the system browser (help/install/key pages). */
   openExternal(url: string): Promise<void>

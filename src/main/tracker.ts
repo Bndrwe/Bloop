@@ -25,6 +25,41 @@ const URL_SCRIPTS: Record<string, string> = {
   Safari: 'tell application "Safari" to get URL of front document'
 }
 
+/**
+ * Page headings + description, read with JavaScript from Apple Events. Only used when Settings →
+ * "Read page text for better judging" is on, and only on "depends on what's open" sites. Chrome-family
+ * browsers need View → Developer → Allow JavaScript from Apple Events; Safari needs Develop → Allow
+ * JavaScript from Apple Events. No double quotes or backslashes (it sits inside an AppleScript string).
+ */
+const PAGE_TEXT_JS =
+  "(function(){var o=[];var d=document.querySelector('meta[name=description]');if(d&&d.content)o.push(d.content);" +
+  "var h=document.querySelectorAll('h1,h2,h3');for(var i=0;i<h.length&&i<10;i++){var t=(h[i].innerText||'').trim();if(t)o.push(t)}" +
+  "return o.join(' | ').slice(0,1500)})()"
+
+const chromeJs = (app: string): string => `tell application "${app}" to execute active tab of front window javascript "${PAGE_TEXT_JS}"`
+const PAGE_TEXT_SCRIPTS: Record<string, string> = {
+  'Google Chrome': chromeJs('Google Chrome'),
+  'Google Chrome Canary': chromeJs('Google Chrome Canary'),
+  Chromium: chromeJs('Chromium'),
+  'Brave Browser': chromeJs('Brave Browser'),
+  'Microsoft Edge': chromeJs('Microsoft Edge'),
+  Arc: `tell application "Arc" to tell front window to tell active tab to execute javascript "${PAGE_TEXT_JS}"`,
+  Safari: `tell application "Safari" to do JavaScript "${PAGE_TEXT_JS}" in front document`
+}
+
+/**
+ * Best effort: the front tab's description and headings, or null when it can't be read (not macOS,
+ * an unsupported browser, or the browser's "Allow JavaScript from Apple Events" is off). Never prompts
+ * again on its own: the caller stops asking after a null until the setting is turned off and on.
+ */
+export async function readPageText(app: string): Promise<string | null> {
+  const script = PAGE_TEXT_SCRIPTS[app]
+  if (!isMac || !script) return null
+  const r = await runOsascript(script, 2500)
+  if (!r.ok) return null
+  return r.out && r.out !== 'missing value' ? r.out : ''
+}
+
 let loggedTrackerError = false
 const isLinux = process.platform === 'linux'
 /** Failures repeat every sample (a few seconds); log each kind at most once per 10 minutes. */

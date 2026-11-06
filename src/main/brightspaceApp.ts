@@ -231,6 +231,7 @@ export function refreshBrightspace(opts: { afterLogin?: boolean } = {}): Promise
         connected: true,
         user: r.user.name,
         courseCount: r.courseCount,
+        courses: r.courses.map((c) => ({ label: c.label, ...(c.name ? { name: c.name } : {}) })),
         lastSync: Date.now(),
         ...(r.failures ? { error: `Some course items couldn't be loaded (${r.failures}). They'll be retried on the next refresh.` } : {})
       })

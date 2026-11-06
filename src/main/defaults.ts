@@ -53,6 +53,11 @@ export const DEFAULT_SETTINGS: Settings = {
     'twitch.tv',
     'facebook.com'
   ],
+  // Judged by what's on the page. youtube.com and reddit.com stay in the distracting list too: that
+  // is what they count as until the page is judged (or when it can't be).
+  contentDomains: ['youtube.com', 'reddit.com', 'medium.com', 'quora.com', 'vimeo.com'],
+  readPageText: false,
+  cloudJudge: false,
   nudgeAfterSec: 0,
   notifyAfterSec: 60,
   nudgeCooldownSec: 120,
@@ -127,7 +132,7 @@ export function mergeSettings(stored: Partial<Settings> | undefined | null): Set
       if (Object.prototype.hasOwnProperty.call(src, k) && src[k] !== undefined) (s as Record<string, unknown>)[k] = src[k]
     }
   }
-  for (const k of ['focusApps', 'distractApps', 'focusDomains', 'distractDomains'] as const) {
+  for (const k of ['focusApps', 'distractApps', 'focusDomains', 'distractDomains', 'contentDomains'] as const) {
     s[k] = cleanList(s[k], DEFAULT_SETTINGS[k])
   }
   s.reminders = cleanReminders(s.reminders)
@@ -147,7 +152,7 @@ export function mergeSettings(stored: Partial<Settings> | undefined | null): Set
     const ok = k === 'nudgeAfterSec' ? v >= 0 : v > 0
     s[k] = Number.isFinite(v) && ok ? v : DEFAULT_SETTINGS[k]
   }
-  for (const k of ['backgroundEnabled', 'backgroundInteractive', 'showPet', 'showPetForNudges', 'trackWithoutSession'] as const) {
+  for (const k of ['backgroundEnabled', 'backgroundInteractive', 'showPet', 'showPetForNudges', 'trackWithoutSession', 'readPageText', 'cloudJudge'] as const) {
     if (typeof s[k] !== 'boolean') s[k] = DEFAULT_SETTINGS[k]
   }
   s.backgroundIntensity = clampPercent(s.backgroundIntensity, DEFAULT_SETTINGS.backgroundIntensity)
@@ -179,4 +184,4 @@ export function migrateSettings(stored: Partial<Settings> | undefined | null, fr
 }
 
 // Guard the shared defaults against accidental mutation (mergeSettings hands out copies).
-for (const k of ['focusApps', 'distractApps', 'focusDomains', 'distractDomains', 'reminders'] as const) Object.freeze(DEFAULT_SETTINGS[k])
+for (const k of ['focusApps', 'distractApps', 'focusDomains', 'distractDomains', 'contentDomains', 'reminders'] as const) Object.freeze(DEFAULT_SETTINGS[k])

@@ -4,6 +4,7 @@ import { DEFAULT_AI_SETTINGS, type AiSettings } from '@shared/ai'
 import { validateAiSettings } from './ai/settings'
 import { DEFAULT_SETTINGS, mergeSettings, migrateSettings, SETTINGS_VERSION } from './defaults'
 import { computeStats } from './stats'
+import type { PersistedJudgeCache } from './contentAi'
 
 export interface DeadlinesCache {
   fetchedAt: number
@@ -21,6 +22,8 @@ export interface BrightspaceState {
   expired?: boolean
   user?: string
   courseCount?: number
+  /** Course labels and names (e.g. "CHEM 201", "Organic Chemistry"): study signals for "depends on what's open" pages. */
+  courses?: { label: string; name?: string }[]
   lastSync?: number
   error?: string
 }
@@ -39,6 +42,8 @@ interface Schema {
   brightspace: BrightspaceState | null
   /** AI provider choice (Settings → AI). */
   ai: AiSettings
+  /** Pages you marked "This is study" / "Not study" (see contentService.ts). */
+  contentOverrides: unknown[]
 }
 
 const DEFAULTS: Schema = {
@@ -51,7 +56,8 @@ const DEFAULTS: Schema = {
   studyPlan: null,
   deadlines: null,
   brightspace: null,
-  ai: DEFAULT_AI_SETTINGS
+  ai: DEFAULT_AI_SETTINGS,
+  contentOverrides: []
 }
 
 const MAX_SESSIONS = 1000
@@ -151,12 +157,33 @@ export function saveAiSettings(patch: Partial<AiSettings>): AiSettings {
   return next
 }
 
+export function getContentOverrides(): unknown {
+  return s().get('contentOverrides')
+}
+export function setContentOverrides(list: unknown[]): void {
+  s().set('contentOverrides', list)
+}
+
+/** AI answers for unclear pages (keys are hashed), in their own file: userData/content-judge.json. */
+let judgeStore: Store<{ cache: PersistedJudgeCache | null }> | null = null
+function js(): Store<{ cache: PersistedJudgeCache | null }> {
+  if (!judgeStore) judgeStore = new Store<{ cache: PersistedJudgeCache | null }>({ name: 'content-judge', defaults: { cache: null }, clearInvalidConfig: true })
+  return judgeStore
+}
+export function getJudgeCache(): PersistedJudgeCache | null {
+  return js().get('cache') ?? null
+}
+export function setJudgeCache(c: PersistedJudgeCache | null): void {
+  js().set('cache', c)
+}
+
 /**
  * Reset ALL data: sessions, study plan, pet position, reminder history, deadline cache,
  * onboarding flag AND settings (back to DEFAULT_SETTINGS). Nothing is kept.
  */
 export function resetData(): void {
   s().clear() // electron-store re-applies DEFAULTS after clear()
+  js().clear()
   s().set('settings', DEFAULT_SETTINGS)
   s().set('settingsVersion', SETTINGS_VERSION)
 }
