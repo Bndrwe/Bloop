@@ -15,7 +15,10 @@ export interface Timing {
   sampleSec: number
   nudgeAfterSec: number
   notifyAfterSec: number
-  cooldownSec: number
+  /** After the first notification, the bubble + notification repeat this often while still distracted. */
+  remindEverySec: number
+  /** A new distraction streak's instant bubble waits at least this long after the previous bubble. */
+  rebubbleSec: number
   /** continuous distraction after which the pet turns sad */
   sadAfterSec: number
   /** speech bubbles auto-clear after this long */
@@ -33,7 +36,8 @@ export function timingFrom(s: Settings, fast = false): Timing {
       sampleSec: 1,
       nudgeAfterSec: Math.max(0, Math.round(s.nudgeAfterSec / 10)),
       notifyAfterSec: Math.max(5, Math.round(s.notifyAfterSec / 10)),
-      cooldownSec: Math.max(5, Math.round(s.nudgeCooldownSec / 10)),
+      remindEverySec: Math.max(5, Math.round(s.nudgeCooldownSec / 10)),
+      rebubbleSec: 3,
       sadAfterSec: 30,
       messageSec: 6,
       doneSec: 6
@@ -45,7 +49,8 @@ export function timingFrom(s: Settings, fast = false): Timing {
     sampleSec: Math.max(1, s.sampleIntervalSec),
     nudgeAfterSec: Math.max(0, s.nudgeAfterSec),
     notifyAfterSec: s.notifyAfterSec,
-    cooldownSec: s.nudgeCooldownSec,
+    remindEverySec: Math.max(1, s.nudgeCooldownSec),
+    rebubbleSec: 30,
     sadAfterSec: 300,
     messageSec: 6,
     doneSec: 6
@@ -70,6 +75,8 @@ export interface SessionDeps {
   fast?: boolean
   log?: (msg: string) => void
   random?: () => number
+  /** Front-app names that are Bloop itself (default ["Bloop"]; dev adds "Electron"). */
+  selfNames?: string[]
 }
 
 export const NUDGE_LINES = [
@@ -141,7 +148,12 @@ export class SessionEngine extends EventEmitter {
   private sampling = false
   private streakStart: number | null = null
   private lastNudgeAt = -Infinity
-  private notifiedThisStreak = false
+  /** the streak's instant bubble has been shown (or skipped) */
+  private bubbledThisStreak = false
+  /** reminders (bubble + notification) sent in this streak */
+  private remindersThisStreak = 0
+  /** time of the last sample of the current mode, Bloop's own windows included (gap detection) */
+  private lastSeenAt: number | null = null
   private pendingWelcome = false
 
   private pet: PetState = { mood: 'idle', message: null, messageId: 0 }
@@ -160,6 +172,7 @@ export class SessionEngine extends EventEmitter {
       clearTimeout: (h) => clearTimeout(h as ReturnType<typeof setTimeout>),
       fast: false,
       random: Math.random,
+      selfNames: ['Bloop'],
       log: (m) => console.log(`[bloop] ${m}`),
       ...deps
     } as SessionEngine['d']
@@ -304,6 +317,7 @@ export class SessionEngine extends EventEmitter {
     this.watch = null // starting a session switches from always-on watching to the session
     this.resetStreak()
     this.lastNudgeAt = -Infinity
+    this.lastSeenAt = null
     this.d.log('session start')
     this.enterPhase('focus')
     this.say("let's do this! I'll keep you company 📚", 'happy')
@@ -417,7 +431,8 @@ export class SessionEngine extends EventEmitter {
 
   private resetStreak(): void {
     this.streakStart = null
-    this.notifiedThisStreak = false
+    this.bubbledThisStreak = false
+    this.remindersThisStreak = 0
   }
 
   /** Called every second while a session is active. Public so tests can drive it. */
@@ -475,6 +490,7 @@ export class SessionEngine extends EventEmitter {
   recordSample(raw: RawActive | null): void {
     const mode = this.sampleMode()
     if (!mode) return
+    if (raw && this.isSelf(raw)) return this.recordSelfSample(mode)
     if (mode === 'watch') return this.recordWatchSample(raw)
     const settings = this.d.getSettings()
     const t = this.d.now()
@@ -492,8 +508,7 @@ export class SessionEngine extends EventEmitter {
     }
     // A long gap since the previous sample (laptop asleep, lid closed, process suspended) is not
     // time spent distracted: start any distraction streak afresh instead of counting the gap.
-    const prev = this.samples[this.samples.length - 1]
-    if (prev && t - prev.t > 3 * this.timing.sampleSec * 1000) this.resetStreak()
+    this.checkGap(t)
     this.samples.push(s)
     this.current = this.activity(raw, app, domain, category)
     const score = this.sessionScore(t)
@@ -502,6 +517,32 @@ export class SessionEngine extends EventEmitter {
     else if (this.samples.length === 1) this.d.log(`first sample: category=${category} score=${score}`)
     this.updateMood(category, t)
     this.emitStatus()
+  }
+
+  /** Bloop's own panel / settings / chat in front. */
+  private isSelf(raw: RawActive): boolean {
+    const a = raw.app.trim().toLowerCase()
+    return !!a && this.d.selfNames.some((n) => n.toLowerCase() === a)
+  }
+
+  /**
+   * Bloop's own window is in front (e.g. the panel was clicked). It is not a new activity: the
+   * previous app keeps its category, the pet keeps its mood, a distraction streak keeps running,
+   * and the time counts toward neither focus nor distraction in the score (the sample is skipped).
+   */
+  private recordSelfSample(mode: 'session' | 'watch'): void {
+    const t = this.d.now()
+    this.lastSeenAt = t
+    if (mode === 'watch' && this.watch) this.watch.lastPresentAt = t
+  }
+
+  /**
+   * A long gap since the previous sample (laptop asleep, lid closed, process suspended) is not
+   * time spent distracted: start any distraction streak afresh instead of counting the gap.
+   */
+  private checkGap(t: number): void {
+    if (this.lastSeenAt !== null && t - this.lastSeenAt > 3 * this.timing.sampleSec * 1000) this.resetStreak()
+    this.lastSeenAt = t
   }
 
   private activity(raw: RawActive | null, app: string, domain: string | undefined, category: ActiveSample['category']): CurrentActivity {
@@ -531,12 +572,14 @@ export class SessionEngine extends EventEmitter {
       if (w) this.d.log('watching: fresh start (new day or back after a long break)')
       else this.d.log('watching for distractions (no session)')
       w = this.watch = { startedAt: t, day: localDateKey(t), samples: [], current: null, lastPresentAt: t }
+      this.lastSeenAt = null
       this.resetStreak()
       this.pendingWelcome = false
     }
     const ws = w as WatchState
     if (away) {
       // Locked, asleep or no window: not distracted, and nothing to show.
+      this.lastSeenAt = t
       ws.current = null
       this.resetStreak()
       if (this.pet.mood === 'worried' || this.pet.mood === 'sad' || this.pet.mood === 'happy') this.setMood('idle')
@@ -548,8 +591,7 @@ export class SessionEngine extends EventEmitter {
     const app = r.app || 'Unknown'
     const category = classify(r, settings)
     const domain = resolveDomain(r)
-    const prev = ws.samples[ws.samples.length - 1]
-    if (prev && t - prev.t > 3 * tm.sampleSec * 1000) this.resetStreak()
+    this.checkGap(t)
     ws.lastPresentAt = t
     ws.samples.push({ t, app, title: r.title ?? '', url: r.url, domain, category, durationSec: tm.sampleSec })
     while (ws.samples.length > 0 && t - (ws.samples[0] as StoredSample).t > WATCH_KEEP_MS) ws.samples.shift()
@@ -566,20 +608,31 @@ export class SessionEngine extends EventEmitter {
       const streak = (t - this.streakStart) / 1000
       // Unhappy right away; sad after a long streak.
       const mood: PetMood = streak >= tm.sadAfterSec ? 'sad' : 'worried'
-      const cooldownOk = t - this.lastNudgeAt >= tm.cooldownSec * 1000
-      if (streak >= tm.nudgeAfterSec && cooldownOk) {
+      // Reminders: bubble + notification at notifyAfterSec, then every remindEverySec.
+      const due = tm.notifyAfterSec + this.remindersThisStreak * tm.remindEverySec
+      if (streak >= due) {
+        // after a clock jump, skip the reminders that were missed instead of sending them all
+        this.remindersThisStreak = Math.floor((streak - tm.notifyAfterSec) / tm.remindEverySec) + 1
+        this.bubbledThisStreak = true
         this.lastNudgeAt = t
         this.pendingWelcome = true
-        this.d.log(`nudge (distracted ${Math.round(streak)}s)`)
+        this.d.log(`nudge + notification (distracted ${Math.round(streak)}s)`)
         this.say(this.pick(NUDGE_LINES), mood)
-      } else {
-        this.setMood(mood)
-      }
-      if (streak >= tm.notifyAfterSec && !this.notifiedThisStreak) {
-        this.notifiedThisStreak = true
-        this.d.log('nudge notification')
         this.notifyFrom('drift', { dur: formatDur(streak) })
+        return
       }
+      // The instant bubble: once per streak, unless one was shown moments ago (quick tab flips).
+      if (!this.bubbledThisStreak && streak >= tm.nudgeAfterSec) {
+        this.bubbledThisStreak = true
+        if (t - this.lastNudgeAt >= tm.rebubbleSec * 1000) {
+          this.lastNudgeAt = t
+          this.pendingWelcome = true
+          this.d.log(`nudge (distracted ${Math.round(streak)}s)`)
+          this.say(this.pick(NUDGE_LINES), mood)
+          return
+        }
+      }
+      this.setMood(mood)
       return
     }
     // focus or neutral ends a distraction streak

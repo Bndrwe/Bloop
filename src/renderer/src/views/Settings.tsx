@@ -477,7 +477,10 @@ export function SettingsView(): JSX.Element {
       <div className="grid2">
         <section className="card enter">
           <h2>Nudges</h2>
-          <p className="section-sub muted">Bloop looks worried as soon as you open a distracting app or site.</p>
+          <p className="section-sub muted">
+            Bloop looks worried as soon as you open a distracting app or site. While you stay there, it reminds you with a
+            bubble and a notification.
+          </p>
           <label className="row-toggle row-toggle--first">
             <span className="row-toggle-text">
               <span>Watch without a session</span>
@@ -501,14 +504,14 @@ export function SettingsView(): JSX.Element {
             onChange={(n) => update({ nudgeAfterSec: n })}
           />
           <NumberField
-            label="Notification after"
+            label="First reminder after"
             unit="sec"
             hint={asMin(settings.notifyAfterSec)}
             value={settings.notifyAfterSec}
             onChange={(n) => update({ notifyAfterSec: n })}
           />
           <NumberField
-            label="Quiet time between nudges"
+            label="Remind again every"
             unit="sec"
             hint={asMin(settings.nudgeCooldownSec)}
             value={settings.nudgeCooldownSec}

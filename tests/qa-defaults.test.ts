@@ -12,7 +12,8 @@ describe('DEFAULT_SETTINGS sanity', () => {
     const d = DEFAULT_SETTINGS
     expect(d.nudgeAfterSec).toBeLessThan(d.notifyAfterSec)
     expect(d.nudgeAfterSec).toBe(0)
-    expect(d.notifyAfterSec).toBe(120)
+    expect(d.notifyAfterSec).toBe(60)
+    expect(d.nudgeCooldownSec).toBe(120)
     expect(d.trackWithoutSession).toBe(true)
     for (const k of ['notifyAfterSec', 'nudgeCooldownSec', 'focusMinutes', 'breakMinutes', 'sampleIntervalSec'] as const) {
       expect(d[k]).toBeGreaterThan(0)

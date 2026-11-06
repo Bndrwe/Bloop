@@ -139,30 +139,56 @@ describe('always-on watching (no session)', () => {
     expect(st.score).toBe(100)
   })
 
-  it('YouTube: worried + a nudge bubble on the first sample, notification at notifyAfterSec (120 s)', async () => {
+  it('YouTube timeline: bubble at 0 s; bubble + notification at 60, 180, 300 s; nothing in between', async () => {
     const h = make()
-    await h.run(2) // first sample
-    let st = h.engine.getStatus()
+    const bubbles: number[] = []
+    let lastId = h.engine.getStatus().pet.messageId
+    let sec = 0
+    const notesAt: number[] = []
+    const tick = async (n: number) => {
+      for (let i = 0; i < n; i++) {
+        const before = h.notes.length
+        await h.run(1)
+        sec++
+        const st = h.engine.getStatus()
+        if (st.pet.messageId !== lastId) {
+          lastId = st.pet.messageId
+          expect(NUDGE_LINES).toContain(st.pet.message)
+          bubbles.push(sec)
+        }
+        if (h.notes.length > before) notesAt.push(sec)
+      }
+    }
+    await tick(2) // first sample on the first tick (1 s)
+    const st = h.engine.getStatus()
     expect(st.pet.mood).toBe('worried')
-    expect(NUDGE_LINES).toContain(st.pet.message)
     expect(st.current).toMatchObject({ domain: 'youtube.com', category: 'distract' })
-    expect(h.notes).toHaveLength(0)
-    await h.run(10)
+    await tick(10)
     expect(h.engine.getStatus().pet.message).toBeNull() // the bubble clears after a few seconds
     expect(h.engine.getStatus().pet.mood).toBe('worried') // still unhappy
-    await h.run(100)
-    expect(h.notes).toHaveLength(0)
-    const before = h.engine.getStatus().pet.messageId
-    await h.run(10) // ~122 s: notification + second bubble (cooldown 120 s)
+    await tick(310)
+    // the streak starts at the first sample (1 s): 0 s -> 1, 60 s -> 61, 180 s -> 181, 300 s -> 301
+    expect(bubbles).toEqual([1, 61, 181, 301])
+    expect(notesAt).toEqual([61, 181, 301])
+    expect(new Set(h.notes.map((n) => n.title)).size).toBe(3) // a new message each time
+    expect(h.logs.filter((l) => l.startsWith('nudge + notification'))).toHaveLength(3)
+    expect(h.engine.getStatus().pet.mood).toBe('sad') // past sadAfterSec (5 min)
+    expect(h.engine.getStatus().watching).toBe(true)
+    expect(h.engine.getStatus().phase).toBe('idle')
+  })
+
+  it('returning to focus resets the reminder cycle', async () => {
+    const h = make()
+    await h.run(70) // first reminder at ~62 s
     expect(h.notes).toHaveLength(1)
-    expect(h.notes[0].title).toBe('Bloop misses you 🐾')
-    expect(h.logs).toContain('nudge notification')
-    expect(h.engine.getStatus().pet.messageId).toBeGreaterThan(before)
-    st = h.engine.getStatus()
-    expect(st.score).toBeGreaterThan(40)
-    expect(st.score).toBeLessThan(60)
-    expect(st.watching).toBe(true)
-    expect(st.phase).toBe('idle')
+    h.setRaw(CODE)
+    await h.run(4)
+    expect(WELCOME_LINES).toContain(h.engine.getStatus().pet.message)
+    h.setRaw(YT)
+    await h.run(58)
+    expect(h.notes).toHaveLength(1)
+    await h.run(4) // 60 s into the new streak
+    expect(h.notes).toHaveLength(2)
   })
 
   it('never records watching time as a session', async () => {
@@ -287,7 +313,7 @@ describe('always-on watching (no session)', () => {
 })
 
 describe('immediate reaction during a session', () => {
-  it('first distracting sample: worried + bubble right away, notification only after 120 s', async () => {
+  it('first distracting sample: worried + bubble right away, notification only after 60 s', async () => {
     const h = make()
     h.setRaw(CODE)
     h.engine.start()
@@ -298,13 +324,15 @@ describe('immediate reaction during a session', () => {
     expect(st.pet.mood).toBe('worried')
     expect(NUDGE_LINES).toContain(st.pet.message)
     expect(st.score).toBeGreaterThan(90)
-    await h.run(110)
-    expect(h.notes.filter((n) => n.title.startsWith('Bloop misses'))).toHaveLength(0)
-    await h.run(12)
-    expect(h.notes.filter((n) => n.title.startsWith('Bloop misses'))).toHaveLength(1)
+    await h.run(56)
+    expect(h.notes).toHaveLength(0)
+    await h.run(4)
+    expect(h.notes).toHaveLength(1)
+    await h.run(120)
+    expect(h.notes).toHaveLength(2)
   })
 
-  it('a return within the cooldown is worried at once, but no second bubble yet', async () => {
+  it('a quick tab flip is worried at once, without a second instant bubble within 30 s', async () => {
     const h = make()
     h.setRaw(CODE)
     h.engine.start()
@@ -328,6 +356,59 @@ describe('immediate reaction during a session', () => {
     expect(live).toBeGreaterThan(55)
     expect(live).toBeLessThan(75)
     expect(h.engine.stop()?.finalScore).toBe(live)
+  })
+})
+
+describe("Bloop's own window in front (panel, settings, chat)", () => {
+  const BLOOP: RawActive = { app: 'Bloop', title: 'Bloop' }
+  for (const mode of ['watching', 'session'] as const) {
+    it(`${mode}: does not cheer up the pet, keeps the streak and the reminders going`, async () => {
+      const h = make()
+      if (mode === 'session') h.engine.start()
+      await h.run(10) // YouTube
+      expect(h.engine.getStatus().pet.mood).toBe('worried')
+      const score = h.engine.getStatus().score
+      h.setRaw(BLOOP) // the panel was clicked
+      await h.run(30)
+      let st = h.engine.getStatus()
+      expect(st.pet.mood).toBe('worried')
+      expect(st.current).toMatchObject({ domain: 'youtube.com', category: 'distract' })
+      expect(WELCOME_LINES).not.toContain(st.pet.message)
+      // Bloop time is skipped in the score: it only decays, no new focus or distraction
+      expect(Math.abs((st.score as number) - (score as number))).toBeLessThanOrEqual(3)
+      h.setRaw(YT) // back to the browser: same streak, so the 60 s reminder comes on time
+      await h.run(22) // ~62 s after the first YouTube sample
+      expect(h.notes).toHaveLength(1)
+      st = h.engine.getStatus()
+      expect(st.pet.mood).toBe('worried')
+    })
+  }
+  it('dev builds: "Electron" can be listed as Bloop too (selfNames)', async () => {
+    let raw: RawActive = YT
+    const engine = new SessionEngine({
+      now: () => T0,
+      setInterval: () => 0,
+      getSettings: () => DEFAULT_SETTINGS,
+      sample: async () => raw,
+      notify: () => {},
+      saveSession: () => {},
+      log: () => {},
+      selfNames: ['Bloop', 'Electron']
+    })
+    engine.recordSample(raw)
+    raw = { app: 'Electron', title: '' }
+    engine.recordSample(raw)
+    expect(engine.getStatus().current?.domain).toBe('youtube.com')
+    expect(engine.getStatus().pet.mood).toBe('worried')
+  })
+  it('the panel open but not focused (browser in front on YouTube): worried', async () => {
+    const h = make()
+    h.setRaw(CODE)
+    await h.run(10)
+    expect(h.engine.getStatus().pet.mood).toBe('happy')
+    h.setRaw(YT)
+    await h.run(2)
+    expect(h.engine.getStatus().pet.mood).toBe('worried')
   })
 })
 
@@ -381,10 +462,13 @@ describe('YouTube is distracting by default', () => {
   })
 })
 
-describe('settings v2 migration and defaults', () => {
+describe('settings migrations (v2, v3) and defaults', () => {
   it('moves the old defaults to the new ones and keeps custom values', () => {
-    const old = { ...DEFAULT_SETTINGS, nudgeAfterSec: 60, notifyAfterSec: 180, sampleIntervalSec: 5 }
-    expect(mergeSettings(migrateSettings(old, 0))).toMatchObject({ nudgeAfterSec: 0, notifyAfterSec: 120, sampleIntervalSec: 2 })
+    const old = { ...DEFAULT_SETTINGS, nudgeAfterSec: 60, notifyAfterSec: 180, nudgeCooldownSec: 120, sampleIntervalSec: 5 }
+    expect(mergeSettings(migrateSettings(old, 0))).toMatchObject({ nudgeAfterSec: 0, notifyAfterSec: 60, nudgeCooldownSec: 120, sampleIntervalSec: 2 })
+    // v2 -> v3: the v2 default 120 s moves to 60 s
+    expect(mergeSettings(migrateSettings({ ...DEFAULT_SETTINGS, notifyAfterSec: 120 }, 2)).notifyAfterSec).toBe(60)
+    expect(mergeSettings(migrateSettings({ ...DEFAULT_SETTINGS, notifyAfterSec: 90 }, 2)).notifyAfterSec).toBe(90)
     const custom = { ...DEFAULT_SETTINGS, nudgeAfterSec: 30, notifyAfterSec: 300, sampleIntervalSec: 10 }
     expect(mergeSettings(migrateSettings(custom, 0))).toMatchObject({ nudgeAfterSec: 30, notifyAfterSec: 300, sampleIntervalSec: 10 })
   })

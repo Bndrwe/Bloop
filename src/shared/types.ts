@@ -42,9 +42,9 @@ export interface Settings {
   distractDomains: string[]
   /** Seconds continuously on a distraction before the pet speaks up (0 = right away). It looks worried at once. */
   nudgeAfterSec: number
-  /** Seconds continuously on a distraction before a macOS notification is sent. */
+  /** Seconds continuously on a distraction before the first reminder (bubble + system notification). */
   notifyAfterSec: number
-  /** Minimum seconds between nudges. */
+  /** "Remind again every": after the first notification, the bubble + notification repeat this often while still distracted. */
   nudgeCooldownSec: number
   focusMinutes: number
   breakMinutes: number

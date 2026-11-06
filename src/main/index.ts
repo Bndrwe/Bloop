@@ -152,7 +152,10 @@ const engine = new SessionEngine({
   sample: () => sampleActiveWindow(),
   notify,
   saveSession: (rec) => store.addSession(rec),
-  fast: FAST
+  fast: FAST,
+  // Bloop's own windows in front (panel, settings, chat) are not a new activity. In dev the
+  // front app is "Electron".
+  selfNames: app.isPackaged ? ['Bloop', app.getName()] : ['Bloop', app.getName(), 'Electron']
 })
 
 // ------------------------------------------------------------------ pet visibility (hide / show)

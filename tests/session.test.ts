@@ -87,11 +87,12 @@ describe('SessionEngine', () => {
     // the first distracting sample: unhappy and a bubble right away
     expect(engine.getStatus().pet.mood).toBe('worried')
     expect(engine.getStatus().pet.message).not.toBeNull()
-    advance(63, { app: 'Arc', url: 'https://youtube.com/' })
+    advance(56, { app: 'Arc', url: 'https://youtube.com/' })
     expect(engine.getStatus().pet.mood).toBe('worried')
     expect(notes.filter((n) => n.includes('misses'))).toHaveLength(0)
-    advance(130, { app: 'Arc', url: 'https://youtube.com/' })
+    advance(10, { app: 'Arc', url: 'https://youtube.com/' }) // ~66 s: first reminder
     expect(notes.filter((n) => n.includes('misses'))).toHaveLength(1)
+    advance(130, { app: 'Arc', url: 'https://youtube.com/' }) // ~196 s: second reminder
     advance(5, { app: 'Code' })
     expect(engine.getStatus().pet.mood).toBe('happy')
     expect(engine.getStatus().pet.message).toMatch(/welcome|spirit|track|there you are|woohoo/i)

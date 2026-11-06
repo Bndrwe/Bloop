@@ -86,7 +86,7 @@ describe('timingFrom', () => {
   })
   it('fast mode: minutes become seconds with floors, thresholds / 10', () => {
     const t = timingFrom({ ...DEFAULT_SETTINGS, focusMinutes: 1, breakMinutes: 1, nudgeAfterSec: 60, notifyAfterSec: 180, nudgeCooldownSec: 120 }, true)
-    expect(t).toMatchObject({ focusSec: 5, breakSec: 3, sampleSec: 1, nudgeAfterSec: 6, notifyAfterSec: 18, cooldownSec: 12, sadAfterSec: 30 })
+    expect(t).toMatchObject({ focusSec: 5, breakSec: 3, sampleSec: 1, nudgeAfterSec: 6, notifyAfterSec: 18, remindEverySec: 12, sadAfterSec: 30 })
   })
 })
 
@@ -272,24 +272,22 @@ describe('nudges, cooldown, notify threshold, sad state', () => {
     expect(h.notes).toHaveLength(0) // notification only after notifyAfterSec
   })
 
-  it('respects the cooldown: next nudge >= cooldown later, and one system notification per streak', async () => {
-    const h = make(cfg)
-    const spoken: string[] = []
-    h.engine.on('status', (s) => {
-      if (s.pet.message && !spoken.includes(`${s.pet.messageId}`)) spoken.push(`${s.pet.messageId}`)
-    })
+  it('reminders: bubble + notification at notifyAfterSec, then every nudgeCooldownSec while distracted', async () => {
+    const h = make(cfg) // first bubble 60 s, first reminder 180 s, then every 120 s
     h.setRaw(YT)
     h.engine.start()
-    await h.run(65) // first nudge ~60s
-    const afterFirst = h.engine.getStatus().pet.messageId
-    await h.run(100) // 165s: cooldown (120s) not yet over
-    expect(h.engine.getStatus().pet.messageId).toBe(afterFirst)
-    await h.run(30) // ~195s: second nudge, streak >= 180 -> notification
-    expect(h.engine.getStatus().pet.messageId).toBeGreaterThan(afterFirst)
-    expect(h.notes.filter((n) => n.title.startsWith('Bloop misses you'))).toHaveLength(1)
-    expect(h.notes[0].body).toMatch(/3 minutes|\d+ seconds/)
-    await h.run(240) // third nudge at ~315s must not notify again in the same streak
-    expect(h.notes.filter((n) => n.title.startsWith('Bloop misses you'))).toHaveLength(1)
+    await h.run(65)
+    expect(h.notes).toHaveLength(0)
+    await h.run(110) // 175 s
+    expect(h.notes).toHaveLength(0)
+    await h.run(10) // 185 s
+    expect(h.notes).toHaveLength(1)
+    await h.run(110) // 295 s
+    expect(h.notes).toHaveLength(1)
+    await h.run(10) // 305 s
+    expect(h.notes).toHaveLength(2)
+    await h.run(120) // 425 s
+    expect(h.notes).toHaveLength(3)
   })
 
   it('goes sad after sadAfterSec of continuous distraction, even between nudges', async () => {

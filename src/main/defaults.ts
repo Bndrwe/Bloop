@@ -54,7 +54,7 @@ export const DEFAULT_SETTINGS: Settings = {
     'facebook.com'
   ],
   nudgeAfterSec: 0,
-  notifyAfterSec: 120,
+  notifyAfterSec: 60,
   nudgeCooldownSec: 120,
   focusMinutes: 25,
   breakMinutes: 5,
@@ -156,20 +156,25 @@ export function mergeSettings(stored: Partial<Settings> | undefined | null): Set
 }
 
 /** Bump when a default changes in a way saved settings should follow (see migrateSettings). */
-export const SETTINGS_VERSION = 2
+export const SETTINGS_VERSION = 3
 
 /**
  * One-time upgrade of saved settings. Settings files store every value, so a value equal to an
  * old default means "never changed": move it to the new default and keep anything custom.
  * v2: Bloop reacts right away (nudge 60 → 0 s), notifies sooner (180 → 120 s) and samples
- * every 2 s instead of 5 s.
+ * every 2 s instead of 5 s. v3: first reminder after 60 s (120 → 60 s).
  */
 export function migrateSettings(stored: Partial<Settings> | undefined | null, fromVersion: number): Partial<Settings> | undefined | null {
-  if (!stored || typeof stored !== 'object' || fromVersion >= 2) return stored
+  if (!stored || typeof stored !== 'object' || fromVersion >= SETTINGS_VERSION) return stored
   const next: Partial<Settings> = { ...stored }
-  if (Number(next.nudgeAfterSec) === 60) next.nudgeAfterSec = 0
-  if (Number(next.notifyAfterSec) === 180) next.notifyAfterSec = 120
-  if (Number(next.sampleIntervalSec) === 5) next.sampleIntervalSec = 2
+  if (fromVersion < 2) {
+    if (Number(next.nudgeAfterSec) === 60) next.nudgeAfterSec = 0
+    if (Number(next.notifyAfterSec) === 180) next.notifyAfterSec = 120
+    if (Number(next.sampleIntervalSec) === 5) next.sampleIntervalSec = 2
+  }
+  // v3: the first reminder (bubble + notification) comes after 1 min, then every
+  // nudgeCooldownSec ("Remind again every", default 120 s, unchanged).
+  if (Number(next.notifyAfterSec) === 120) next.notifyAfterSec = 60
   return next
 }
 
