@@ -27,7 +27,7 @@ export const DEFAULT_SETTINGS: Settings = {
     'Xcode',
     'Obsidian'
   ],
-  distractApps: ['Messages', 'Discord', 'Spotify', 'Steam', 'WhatsApp', 'FaceTime'],
+  distractApps: ['Messages', 'Discord', 'Spotify', 'Steam', 'WhatsApp', 'FaceTime', 'YouTube'],
   focusDomains: [
     'brightspace',
     'docs.google.com',
@@ -53,12 +53,12 @@ export const DEFAULT_SETTINGS: Settings = {
     'twitch.tv',
     'facebook.com'
   ],
-  nudgeAfterSec: 60,
-  notifyAfterSec: 180,
+  nudgeAfterSec: 0,
+  notifyAfterSec: 120,
   nudgeCooldownSec: 120,
   focusMinutes: 25,
   breakMinutes: 5,
-  sampleIntervalSec: 5,
+  sampleIntervalSec: 2,
   reminders: [],
   launchAtLogin: false,
   icalUrl: '',
@@ -68,7 +68,8 @@ export const DEFAULT_SETTINGS: Settings = {
   backgroundSpeed: DEFAULT_BACKGROUND_SPEED,
   backgroundInteractive: true,
   showPet: true,
-  showPetForNudges: true
+  showPetForNudges: true,
+  trackWithoutSession: true
 }
 
 const MAX_LIST_LENGTH = 500
@@ -142,14 +143,34 @@ export function mergeSettings(stored: Partial<Settings> | undefined | null): Set
     'sampleIntervalSec'
   ] as const) {
     const v = Number(s[k])
-    s[k] = Number.isFinite(v) && v > 0 ? v : DEFAULT_SETTINGS[k]
+    // "Pet speaks up after" may be 0 (right away); every other timing must be positive.
+    const ok = k === 'nudgeAfterSec' ? v >= 0 : v > 0
+    s[k] = Number.isFinite(v) && ok ? v : DEFAULT_SETTINGS[k]
   }
-  for (const k of ['backgroundEnabled', 'backgroundInteractive', 'showPet', 'showPetForNudges'] as const) {
+  for (const k of ['backgroundEnabled', 'backgroundInteractive', 'showPet', 'showPetForNudges', 'trackWithoutSession'] as const) {
     if (typeof s[k] !== 'boolean') s[k] = DEFAULT_SETTINGS[k]
   }
   s.backgroundIntensity = clampPercent(s.backgroundIntensity, DEFAULT_SETTINGS.backgroundIntensity)
   s.backgroundSpeed = clampPercent(s.backgroundSpeed, DEFAULT_SETTINGS.backgroundSpeed)
   return s
+}
+
+/** Bump when a default changes in a way saved settings should follow (see migrateSettings). */
+export const SETTINGS_VERSION = 2
+
+/**
+ * One-time upgrade of saved settings. Settings files store every value, so a value equal to an
+ * old default means "never changed": move it to the new default and keep anything custom.
+ * v2: Bloop reacts right away (nudge 60 → 0 s), notifies sooner (180 → 120 s) and samples
+ * every 2 s instead of 5 s.
+ */
+export function migrateSettings(stored: Partial<Settings> | undefined | null, fromVersion: number): Partial<Settings> | undefined | null {
+  if (!stored || typeof stored !== 'object' || fromVersion >= 2) return stored
+  const next: Partial<Settings> = { ...stored }
+  if (Number(next.nudgeAfterSec) === 60) next.nudgeAfterSec = 0
+  if (Number(next.notifyAfterSec) === 180) next.notifyAfterSec = 120
+  if (Number(next.sampleIntervalSec) === 5) next.sampleIntervalSec = 2
+  return next
 }
 
 // Guard the shared defaults against accidental mutation (mergeSettings hands out copies).

@@ -116,7 +116,9 @@ export function updateTray(actions: TrayActions, s: AppStatus): void {
   const scoreText = s.score === null ? '—' : `${s.score}`
   const tip =
     s.phase === 'idle'
-      ? 'Bloop — no session running'
+      ? s.watching
+        ? `Bloop — no session, watching for distractions · focus score ${scoreText}`
+        : 'Bloop — no session running'
       : `Bloop — ${s.phase === 'paused' ? 'paused' : s.phase} · focus score ${scoreText}`
   tray.setToolTip(tip)
   // the countdown next to the menu-bar icon (mac only)

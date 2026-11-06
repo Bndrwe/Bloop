@@ -8,10 +8,13 @@ import type { Settings } from '../src/shared/types'
 const bad = (v: unknown): Partial<Settings> => v as Partial<Settings>
 
 describe('DEFAULT_SETTINGS sanity', () => {
-  it('has sensible numbers (nudge < notify, positive timings)', () => {
+  it('has sensible numbers (nudge < notify, positive timings, the pet speaks up right away)', () => {
     const d = DEFAULT_SETTINGS
     expect(d.nudgeAfterSec).toBeLessThan(d.notifyAfterSec)
-    for (const k of ['nudgeAfterSec', 'notifyAfterSec', 'nudgeCooldownSec', 'focusMinutes', 'breakMinutes', 'sampleIntervalSec'] as const) {
+    expect(d.nudgeAfterSec).toBe(0)
+    expect(d.notifyAfterSec).toBe(120)
+    expect(d.trackWithoutSession).toBe(true)
+    for (const k of ['notifyAfterSec', 'nudgeCooldownSec', 'focusMinutes', 'breakMinutes', 'sampleIntervalSec'] as const) {
       expect(d[k]).toBeGreaterThan(0)
     }
   })

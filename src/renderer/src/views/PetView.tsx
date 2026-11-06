@@ -163,7 +163,7 @@ export function PetView(): JSX.Element {
             >
               {badgeText(status?.score, panelOpen)}
             </span>
-            <span className="pv-badge-phase">{phaseLabel(phase)}</span>
+            <span className="pv-badge-phase">{phaseLabel(phase, status?.watching)}</span>
             {showTimer && <span className="pv-badge-time">{mmss(remaining)}</span>}
           </div>
         )}

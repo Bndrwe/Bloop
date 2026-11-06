@@ -264,6 +264,11 @@
   padding: 0 var(--s1);
   min-width: 0;
 }
+.now-hint {
+  margin: calc(-1 * var(--s1)) 0 0;
+  padding: 0 var(--s1);
+  color: var(--paper);
+}
 .now-name {
   font-weight: 500;
   overflow: hidden;

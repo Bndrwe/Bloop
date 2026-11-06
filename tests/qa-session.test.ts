@@ -232,9 +232,14 @@ describe('pause / resume timing', () => {
     await h.run(25)
     h.engine.pause()
     h.engine.resume()
+    const spoken: string[] = []
+    h.engine.on('status', (s) => {
+      if (s.pet.message && !spoken.includes(s.pet.message)) spoken.push(s.pet.message)
+    })
     await h.run(10) // 25s + 10s would be >30s if the streak had survived
     expect(h.notes).toHaveLength(0)
-    expect(h.engine.getStatus().pet.mood).not.toBe('worried')
+    expect(spoken.filter((m) => NUDGE_LINES.includes(m))).toHaveLength(0)
+    expect(h.engine.getStatus().pet.mood).toBe('worried') // still unhappy, just no bubble yet
   })
 
   it('samples are not taken while paused', async () => {
@@ -251,12 +256,13 @@ describe('pause / resume timing', () => {
 describe('nudges, cooldown, notify threshold, sad state', () => {
   const cfg = { nudgeAfterSec: 60, notifyAfterSec: 180, nudgeCooldownSec: 120, focusMinutes: 60, sampleIntervalSec: 5 }
 
-  it('nudges at the threshold (worried), not before', async () => {
+  it('looks worried at once; with a 60 s threshold the bubble waits until then', async () => {
     const h = make(cfg)
     h.setRaw(YT)
     h.engine.start()
     await h.run(55)
-    expect(h.engine.getStatus().pet.mood).not.toBe('worried')
+    expect(h.engine.getStatus().pet.mood).toBe('worried')
+    expect(NUDGE_LINES).not.toContain(h.engine.getStatus().pet.message)
     const id = h.engine.getStatus().pet.messageId
     await h.run(10)
     const st = h.engine.getStatus()
@@ -324,10 +330,13 @@ describe('nudges, cooldown, notify threshold, sad state', () => {
     h.setRaw(FINDER) // neutral
     await h.run(6)
     h.setRaw(YT)
+    const id = h.engine.getStatus().pet.messageId
     await h.run(25)
-    expect(h.engine.getStatus().pet.mood).not.toBe('worried')
-    await h.run(10)
     expect(h.engine.getStatus().pet.mood).toBe('worried')
+    expect(h.engine.getStatus().pet.messageId).toBe(id) // no bubble yet
+    await h.run(10)
+    expect(h.engine.getStatus().pet.messageId).toBeGreaterThan(id)
+    expect(NUDGE_LINES).toContain(h.engine.getStatus().pet.message)
   })
 
   it('does not cheer if no nudge happened before refocusing', async () => {
@@ -490,7 +499,7 @@ describe('stop / save', () => {
   })
 
   it('done -> idle after doneSec, and a new session can start immediately from done', async () => {
-    const h = make()
+    const h = make({ trackWithoutSession: false })
     h.engine.start()
     await h.run(5)
     h.engine.stop()

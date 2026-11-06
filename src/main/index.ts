@@ -339,7 +339,7 @@ function registerIpc(): void {
     broadcast(engine.getStatus())
   })
 
-  h(IPC.openSettings, () => windows.openSettings())
+  h(IPC.openSettings, (_e, section) => windows.openSettings(section === 'permissions' ? 'permissions' : undefined))
   h(IPC.togglePanel, () => windows.togglePanel())
   h(IPC.closePanel, () => windows.closePanel())
   h(IPC.closeWindow, (e) => {
@@ -548,6 +548,9 @@ function startApp(): void {
   if (icalUrl) void refreshDeadlines(icalUrl)
   // Brightspace login: sync shortly after launch (only if connected) and every 2 hours
   startBrightspace(broadcastBrightspace)
+
+  // Always-on watching (Settings → "Watch without a session") needs the 1 s ticker from launch.
+  engine.startTicker()
 
   // dev/demo: auto-start a session for headless verification
   if (process.env['BLOOP_AUTOSTART'] === '1') setTimeout(() => engine.start(), 1500)

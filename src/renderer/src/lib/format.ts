@@ -35,7 +35,9 @@ export function scoreText(score: number | null | undefined): string {
 
 export { badgeText, panelToggleLabel } from '@shared/petBadge'
 
-export function phaseLabel(phase: SessionPhase): string {
+/** `watching`: no session, but Bloop is watching for distractions (shown instead of "Idle"). */
+export function phaseLabel(phase: SessionPhase, watching = false): string {
+  if (phase === 'idle' && watching) return 'Watching'
   switch (phase) {
     case 'focus':
       return 'Focus'

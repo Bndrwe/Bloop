@@ -573,14 +573,16 @@ export function Panel(): JSX.Element {
         <ScoreRing score={status.score} />
 
         <div className="hero-status">
-          <span className={`tag ${PHASE_TAG[phase] ?? ''}`}>{phaseLabel(phase)}</span>
+          <span className={`tag ${PHASE_TAG[phase] ?? ''}`}>{phaseLabel(phase, status.watching)}</span>
           {timed ? (
             <span className="hero-time" aria-label={`${mmss(remaining)} ${phase === 'break' ? 'left of your break' : 'left in this round'}`}>
               <span className="num">{mmss(remaining)}</span>
               <span className="faint">left</span>
             </span>
           ) : (
-            <span className="hero-time muted">{phase === 'done' ? 'Nice work.' : 'Ready when you are.'}</span>
+            <span className="hero-time muted">
+              {phase === 'done' ? 'Nice work.' : status.watching ? 'No session running.' : 'Ready when you are.'}
+            </span>
           )}
           <Pomodoros n={status.pomodorosCompleted} />
           {timed && (
@@ -605,9 +607,21 @@ export function Panel(): JSX.Element {
             <span className={`chip chip--${current.category}`}>{current.category}</span>
           </>
         ) : (
-          <span className="faint">Nothing tracked yet</span>
+          <span className="faint">{status.watching ? 'Watching for distractions' : 'Nothing tracked yet'}</span>
         )}
       </div>
+      {current?.siteHidden && (
+        <p className="note now-hint enter" role="note">
+          <Icon name="alert" size={13} />
+          <span>
+            Bloop can’t see which site this is. Allow browser access in{' '}
+            <button className="link-btn" onClick={() => void window.studyPet.openSettings('permissions')}>
+              Settings → Permissions
+            </button>
+            .
+          </span>
+        </p>
+      )}
 
       <hr className="zigzag enter" />
 

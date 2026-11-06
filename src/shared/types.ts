@@ -40,7 +40,7 @@ export interface Settings {
   distractApps: string[]
   focusDomains: string[]
   distractDomains: string[]
-  /** Seconds continuously on a distraction before the pet gets worried + speaks. */
+  /** Seconds continuously on a distraction before the pet speaks up (0 = right away). It looks worried at once. */
   nudgeAfterSec: number
   /** Seconds continuously on a distraction before a macOS notification is sent. */
   notifyAfterSec: number
@@ -68,6 +68,8 @@ export interface Settings {
   showPet: boolean
   /** While the pet is hidden, a nudge shows it for a few seconds (else notifications only). */
   showPetForNudges: boolean
+  /** Watch for distractions (mood, bubbles, notifications) even when no focus session is running. */
+  trackWithoutSession: boolean
 }
 
 export interface NamedDuration {
@@ -117,10 +119,22 @@ export interface PetState {
   messageId: number
 }
 
+/** What the panel shows under "Now". */
+export type CurrentActivity = Pick<ActiveSample, 'app' | 'domain' | 'category'> & {
+  /** A browser is in front but Bloop can read neither its URL nor its title (permissions missing). */
+  siteHidden?: boolean
+}
+
 export interface AppStatus {
   phase: SessionPhase
-  /** Live focus score 0-100, null when no non-neutral data yet. */
+  /**
+   * Live focus score 0-100. Starts at 100 when tracking starts (a session, or always-on watching)
+   * and is never null while tracking; in `done` it is the session's final score (null if nothing
+   * was measured); null when idle and not watching.
+   */
   score: number | null
+  /** No session is running but Bloop is watching for distractions (Settings → trackWithoutSession). */
+  watching: boolean
   /** epoch ms when the current focus/break phase ends (null when idle/paused). */
   phaseEndsAt: number | null
   /** Seconds left in the current phase (frozen while paused). */
@@ -131,7 +145,7 @@ export interface AppStatus {
   pausedPhase: 'focus' | 'break' | null
   pomodorosCompleted: number
   sessionStartedAt: number | null
-  current: Pick<ActiveSample, 'app' | 'domain' | 'category'> | null
+  current: CurrentActivity | null
   pet: PetState
 }
 
@@ -232,7 +246,8 @@ export interface StudyPetApi {
   resetData(): Promise<void>
 
   // windows
-  openSettings(): Promise<void>
+  /** `permissions` scrolls Settings to the Permissions section. */
+  openSettings(section?: 'permissions'): Promise<void>
   togglePanel(): Promise<void>
   closePanel(): Promise<void>
   closeWindow(): Promise<void>

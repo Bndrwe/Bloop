@@ -477,10 +477,26 @@ export function SettingsView(): JSX.Element {
       <div className="grid2">
         <section className="card enter">
           <h2>Nudges</h2>
+          <p className="section-sub muted">Bloop looks worried as soon as you open a distracting app or site.</p>
+          <label className="row-toggle row-toggle--first">
+            <span className="row-toggle-text">
+              <span>Watch without a session</span>
+              <span className="faint field-help">Watch for distractions even when no focus session is running.</span>
+            </span>
+            <span className="toggle">
+              <input
+                type="checkbox"
+                checked={settings.trackWithoutSession}
+                onChange={(e) => update({ trackWithoutSession: e.target.checked })}
+              />
+              <span />
+            </span>
+          </label>
           <NumberField
             label="Pet speaks up after"
             unit="sec"
-            hint={asMin(settings.nudgeAfterSec)}
+            min={0}
+            hint={settings.nudgeAfterSec === 0 ? 'right away' : asMin(settings.nudgeAfterSec)}
             value={settings.nudgeAfterSec}
             onChange={(n) => update({ nudgeAfterSec: n })}
           />

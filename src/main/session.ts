@@ -1,9 +1,11 @@
 // Pomodoro session engine + focus nudges. No electron imports: everything platform-specific is
 // injected via SessionDeps, so it can be driven with a fake clock in tests.
 import { EventEmitter } from 'node:events'
-import type { ActiveSample, AppStatus, PetMood, PetState, SessionPhase, SessionRecord, Settings } from '@shared/types'
-import { classify, resolveDomain } from './classifier'
-import { computeFocusScore, summarizeSession } from './score'
+import type { ActiveSample, AppStatus, CurrentActivity, PetMood, PetState, SessionPhase, SessionRecord, Settings } from '@shared/types'
+import { classify, isBrowser, resolveDomain } from './classifier'
+import { computeFocusScore, SCORE_HALF_LIFE_SEC, summarizeSession } from './score'
+import { localDateKey } from './stats'
+import { stripBrowserSuffix } from './titleDomain'
 import type { RawActive } from './tracker'
 import { NotificationPicker, type NotifyKind } from './notifications'
 
@@ -29,7 +31,7 @@ export function timingFrom(s: Settings, fast = false): Timing {
       focusSec: Math.max(5, s.focusMinutes),
       breakSec: Math.max(3, s.breakMinutes),
       sampleSec: 1,
-      nudgeAfterSec: Math.max(3, Math.round(s.nudgeAfterSec / 10)),
+      nudgeAfterSec: Math.max(0, Math.round(s.nudgeAfterSec / 10)),
       notifyAfterSec: Math.max(5, Math.round(s.notifyAfterSec / 10)),
       cooldownSec: Math.max(5, Math.round(s.nudgeCooldownSec / 10)),
       sadAfterSec: 30,
@@ -41,7 +43,7 @@ export function timingFrom(s: Settings, fast = false): Timing {
     focusSec: s.focusMinutes * 60,
     breakSec: s.breakMinutes * 60,
     sampleSec: Math.max(1, s.sampleIntervalSec),
-    nudgeAfterSec: s.nudgeAfterSec,
+    nudgeAfterSec: Math.max(0, s.nudgeAfterSec),
     notifyAfterSec: s.notifyAfterSec,
     cooldownSec: s.nudgeCooldownSec,
     sadAfterSec: 300,
@@ -91,6 +93,34 @@ export const WELCOME_LINES = [
 
 type StoredSample = ActiveSample & { durationSec: number }
 
+/**
+ * Always-on watching (no session running). Its samples only feed the live score and the pet:
+ * they are never saved to history and never leave this process.
+ */
+interface WatchState {
+  /** epoch ms watching (re)started: the score's fresh-start prior is dated here */
+  startedAt: number
+  /** local YYYY-MM-DD it started; a new day starts a fresh score */
+  day: string
+  samples: StoredSample[]
+  current: CurrentActivity | null
+  /** last sample where someone was at the computer (not locked / asleep / unknown) */
+  lastPresentAt: number
+}
+
+/** After this long away (locked, asleep, no window), always-on watching starts a fresh score. */
+export const WATCH_RESET_AFTER_MS = 30 * 60_000
+/** Watch samples older than this weigh < 1/2^18 in the score and are dropped. */
+const WATCH_KEEP_MS = 3 * 3600_000
+/** Front "apps" that mean nobody is at the computer (macOS lock screen / screen saver, Windows lock). */
+const AWAY_APPS = /^(loginwindow|screensaverengine|lockapp|windows default lock screen)$/i
+
+/** A browser is in front but neither its URL nor a usable title could be read. */
+export function isSiteHidden(raw: RawActive | null): boolean {
+  if (!raw || !isBrowser(raw.app) || raw.url) return false
+  return !stripBrowserSuffix(raw.title ?? '')
+}
+
 export class SessionEngine extends EventEmitter {
   private readonly d: Required<Omit<SessionDeps, 'log'>> & { log: (m: string) => void }
 
@@ -102,14 +132,15 @@ export class SessionEngine extends EventEmitter {
   private pomodoros = 0
   private sessionStartedAt: number | null = null
   private samples: StoredSample[] = []
-  private current: AppStatus['current'] = null
+  private current: CurrentActivity | null = null
   private finalScore: number | null = null
+  private watch: WatchState | null = null
+  private loggedSiteHidden = false
 
   private lastSampleAt = 0
   private sampling = false
   private streakStart: number | null = null
   private lastNudgeAt = -Infinity
-  private nudgedThisStreak = false
   private notifiedThisStreak = false
   private pendingWelcome = false
 
@@ -142,6 +173,16 @@ export class SessionEngine extends EventEmitter {
     return this.phase === 'focus' || this.phase === 'break' || this.phase === 'paused'
   }
 
+  /** Always-on watching: no session (idle or the short "done" screen) and the setting is on. */
+  isWatching(): boolean {
+    return (this.phase === 'idle' || this.phase === 'done') && this.d.getSettings().trackWithoutSession !== false
+  }
+
+  /** Start the 1 s ticker (always-on watching needs it without a session). Safe to call twice. */
+  startTicker(): void {
+    if (!this.ticker) this.ticker = this.d.setInterval(() => this.tick(), 1000)
+  }
+
   getStatus(): AppStatus {
     const now = this.d.now()
     const running = this.phase === 'focus' || this.phase === 'break'
@@ -151,19 +192,25 @@ export class SessionEngine extends EventEmitter {
         : this.phase === 'paused'
           ? this.pausedRemainingSec
           : 0
+    const watching = this.isWatching()
     let score: number | null = null
-    if (this.isRunning()) score = computeFocusScore(this.samples, now)
+    if (this.isRunning()) score = this.sessionScore(now)
     else if (this.phase === 'done') score = this.finalScore
+    else if (watching) score = this.watch ? this.watchScore(now) : 100
+    let current: CurrentActivity | null = null
+    if (this.isRunning()) current = this.current
+    else if (watching) current = this.watch?.current ?? null
     return {
       phase: this.phase,
       score,
+      watching,
       phaseEndsAt: running ? this.phaseEndsAt : null,
       remainingSec,
       phaseTotalSec: this.phase === 'idle' ? 0 : this.phaseTotalSec,
       pausedPhase: this.phase === 'paused' ? this.pausedPhase : null,
       pomodorosCompleted: this.pomodoros,
       sessionStartedAt: this.sessionStartedAt,
-      current: this.isRunning() ? this.current : null,
+      current: current ? { ...current } : null,
       pet: { ...this.pet }
     }
   }
@@ -202,7 +249,27 @@ export class SessionEngine extends EventEmitter {
   private baseMood(): PetMood {
     if (this.phase === 'break') return 'sleeping'
     if (this.phase === 'focus') return this.current?.category === 'focus' ? 'happy' : 'idle'
+    if (this.isWatching()) return this.watch?.current?.category === 'focus' ? 'happy' : 'idle'
     return 'idle'
+  }
+
+  /** Live session score: starts at 100 (fresh-start prior at the session start). */
+  private sessionScore(now: number): number | null {
+    return computeFocusScore(this.samples, now, SCORE_HALF_LIFE_SEC, this.sessionStartedAt === null ? null : { t: this.sessionStartedAt })
+  }
+
+  private watchScore(now: number): number | null {
+    if (!this.watch) return null
+    return computeFocusScore(this.watch.samples, now, SCORE_HALF_LIFE_SEC, { t: this.watch.startedAt })
+  }
+
+  /** Stop always-on watching (setting turned off, or a session starts). */
+  private endWatch(): void {
+    if (!this.watch) return
+    this.watch = null
+    this.resetStreak()
+    this.pendingWelcome = false
+    this.d.log('watching stopped')
   }
 
   private readonly notes = new NotificationPicker(() => this.d.random())
@@ -234,12 +301,13 @@ export class SessionEngine extends EventEmitter {
     this.pomodoros = 0
     this.current = null
     this.finalScore = null
+    this.watch = null // starting a session switches from always-on watching to the session
     this.resetStreak()
     this.lastNudgeAt = -Infinity
     this.d.log('session start')
     this.enterPhase('focus')
     this.say("let's do this! I'll keep you company 📚", 'happy')
-    if (!this.ticker) this.ticker = this.d.setInterval(() => this.tick(), 1000)
+    this.startTicker()
     void this.doSample()
   }
 
@@ -280,12 +348,10 @@ export class SessionEngine extends EventEmitter {
   stop(): SessionRecord | null {
     if (!this.isRunning() || this.sessionStartedAt === null) return null
     const now = this.d.now()
-    if (this.ticker) {
-      this.d.clearInterval(this.ticker)
-      this.ticker = null
-    }
+    // The ticker keeps running: always-on watching takes over after the session (if enabled).
     const summary = summarizeSession(this.samples)
-    this.finalScore = computeFocusScore(this.samples, now)
+    // The score the student saw (with the fresh-start prior); null if nothing was measured.
+    this.finalScore = summary.focusSec + summary.distractSec > 0 ? this.sessionScore(now) : null
     const rec: SessionRecord = {
       id: `${this.sessionStartedAt.toString(36)}-${Math.floor(this.d.random() * 1e6).toString(36)}`,
       start: this.sessionStartedAt,
@@ -308,6 +374,8 @@ export class SessionEngine extends EventEmitter {
     this.phaseEndsAt = null
     this.pausedPhase = null
     this.resetStreak()
+    this.pendingWelcome = false
+    this.watch = null // watching (if on) starts a fresh score after the session
     if (rec.completed) {
       const n = rec.pomodorosCompleted
       this.say(`we did it! ${n} pomodoro${n === 1 ? '' : 's'} done 🎉`, 'celebrate')
@@ -349,13 +417,19 @@ export class SessionEngine extends EventEmitter {
 
   private resetStreak(): void {
     this.streakStart = null
-    this.nudgedThisStreak = false
     this.notifiedThisStreak = false
   }
 
   /** Called every second while a session is active. Public so tests can drive it. */
   tick(): void {
     const now = this.d.now()
+    const watching = this.isWatching()
+    if (!watching && this.watch && !this.isRunning()) {
+      // trackWithoutSession was turned off
+      this.endWatch()
+      if (this.phase === 'idle') this.setMood('idle')
+    }
+    const sampleDue = now - this.lastSampleAt >= this.timing.sampleSec * 1000 - 50
     if (this.phase === 'focus' && this.phaseEndsAt !== null && now >= this.phaseEndsAt) {
       this.pomodoros++
       this.d.log(`pomodoro #${this.pomodoros} complete`)
@@ -368,14 +442,21 @@ export class SessionEngine extends EventEmitter {
       this.enterPhase('focus')
       this.say("I'm awake! let's focus 💪", 'happy')
       void this.doSample()
-    } else if (this.phase === 'focus' && now - this.lastSampleAt >= this.timing.sampleSec * 1000 - 50) {
+    } else if ((this.phase === 'focus' || watching) && sampleDue) {
       void this.doSample()
     }
-    this.emitStatus()
+    if (this.phase !== 'idle' || watching) this.emitStatus()
+  }
+
+  /** What samples are for right now: the running focus phase, always-on watching, or nothing. */
+  private sampleMode(): 'session' | 'watch' | null {
+    if (this.phase === 'focus') return 'session'
+    return this.isWatching() ? 'watch' : null
   }
 
   private async doSample(): Promise<void> {
-    if (this.phase !== 'focus' || this.sampling) return
+    const mode = this.sampleMode()
+    if (!mode || this.sampling) return
     this.sampling = true
     this.lastSampleAt = this.d.now()
     let raw: RawActive | null = null
@@ -386,13 +467,15 @@ export class SessionEngine extends EventEmitter {
     } finally {
       this.sampling = false
     }
-    if (this.phase !== 'focus') return // phase changed while sampling
+    if (this.sampleMode() !== mode) return // phase changed while sampling
     this.recordSample(raw)
   }
 
   /** Classify + store one sample and update mood/nudges. Public for tests. */
   recordSample(raw: RawActive | null): void {
-    if (this.phase !== 'focus') return
+    const mode = this.sampleMode()
+    if (!mode) return
+    if (mode === 'watch') return this.recordWatchSample(raw)
     const settings = this.d.getSettings()
     const t = this.d.now()
     const app = raw?.app || 'Unknown'
@@ -412,11 +495,66 @@ export class SessionEngine extends EventEmitter {
     const prev = this.samples[this.samples.length - 1]
     if (prev && t - prev.t > 3 * this.timing.sampleSec * 1000) this.resetStreak()
     this.samples.push(s)
-    this.current = { app, domain, category }
-    const score = computeFocusScore(this.samples, t)
+    this.current = this.activity(raw, app, domain, category)
+    const score = this.sessionScore(t)
     // Privacy: the persistent log must not record activity, so per-sample lines need BLOOP_TRACE=1.
     if (trace()) this.d.log(`sample app="${app}"${domain ? ` domain=${domain}` : ''} category=${category} score=${score}`)
     else if (this.samples.length === 1) this.d.log(`first sample: category=${category} score=${score}`)
+    this.updateMood(category, t)
+    this.emitStatus()
+  }
+
+  private activity(raw: RawActive | null, app: string, domain: string | undefined, category: ActiveSample['category']): CurrentActivity {
+    const a: CurrentActivity = { app, domain, category }
+    if (isSiteHidden(raw)) {
+      a.siteHidden = true
+      if (!this.loggedSiteHidden) {
+        this.loggedSiteHidden = true
+        this.d.log("a browser is in front but its URL and title can't be read (Screen Recording / Automation not allowed?)")
+      }
+    }
+    return a
+  }
+
+  /**
+   * Always-on watching: same reactions as a focus session (mood, bubble, notification), its own
+   * live score with a fresh-start prior, and nothing is saved to history.
+   */
+  private recordWatchSample(raw: RawActive | null): void {
+    const t = this.d.now()
+    const tm = this.timing
+    const away = !raw || AWAY_APPS.test(raw.app.trim())
+    let w = this.watch
+    const stale =
+      !w || w.day !== localDateKey(t) || (!away && t - w.lastPresentAt > WATCH_RESET_AFTER_MS)
+    if (stale) {
+      if (w) this.d.log('watching: fresh start (new day or back after a long break)')
+      else this.d.log('watching for distractions (no session)')
+      w = this.watch = { startedAt: t, day: localDateKey(t), samples: [], current: null, lastPresentAt: t }
+      this.resetStreak()
+      this.pendingWelcome = false
+    }
+    const ws = w as WatchState
+    if (away) {
+      // Locked, asleep or no window: not distracted, and nothing to show.
+      ws.current = null
+      this.resetStreak()
+      if (this.pet.mood === 'worried' || this.pet.mood === 'sad' || this.pet.mood === 'happy') this.setMood('idle')
+      this.emitStatus()
+      return
+    }
+    const r = raw as RawActive
+    const settings = this.d.getSettings()
+    const app = r.app || 'Unknown'
+    const category = classify(r, settings)
+    const domain = resolveDomain(r)
+    const prev = ws.samples[ws.samples.length - 1]
+    if (prev && t - prev.t > 3 * tm.sampleSec * 1000) this.resetStreak()
+    ws.lastPresentAt = t
+    ws.samples.push({ t, app, title: r.title ?? '', url: r.url, domain, category, durationSec: tm.sampleSec })
+    while (ws.samples.length > 0 && t - (ws.samples[0] as StoredSample).t > WATCH_KEEP_MS) ws.samples.shift()
+    ws.current = this.activity(r, app, domain, category)
+    if (trace()) this.d.log(`watch sample app="${app}"${domain ? ` domain=${domain}` : ''} category=${category} score=${this.watchScore(t)}`)
     this.updateMood(category, t)
     this.emitStatus()
   }
@@ -426,23 +564,21 @@ export class SessionEngine extends EventEmitter {
     if (category === 'distract') {
       if (this.streakStart === null) this.streakStart = t
       const streak = (t - this.streakStart) / 1000
+      // Unhappy right away; sad after a long streak.
+      const mood: PetMood = streak >= tm.sadAfterSec ? 'sad' : 'worried'
       const cooldownOk = t - this.lastNudgeAt >= tm.cooldownSec * 1000
       if (streak >= tm.nudgeAfterSec && cooldownOk) {
         this.lastNudgeAt = t
-        this.nudgedThisStreak = true
         this.pendingWelcome = true
-        const mood: PetMood = streak >= tm.sadAfterSec ? 'sad' : 'worried'
         this.d.log(`nudge (distracted ${Math.round(streak)}s)`)
         this.say(this.pick(NUDGE_LINES), mood)
-        if (streak >= tm.notifyAfterSec && !this.notifiedThisStreak) {
-          this.notifiedThisStreak = true
-          this.d.log('nudge notification')
-          this.notifyFrom('drift', { dur: formatDur(streak) })
-        }
-      } else if (streak >= tm.sadAfterSec) {
-        this.setMood('sad')
-      } else if (!this.nudgedThisStreak && this.pet.mood === 'happy') {
-        this.setMood('idle')
+      } else {
+        this.setMood(mood)
+      }
+      if (streak >= tm.notifyAfterSec && !this.notifiedThisStreak) {
+        this.notifiedThisStreak = true
+        this.d.log('nudge notification')
+        this.notifyFrom('drift', { dur: formatDur(streak) })
       }
       return
     }

@@ -76,7 +76,7 @@ const api: StudyPetApi = {
   },
   resetData: () => inv(IPC.resetData),
 
-  openSettings: () => inv(IPC.openSettings),
+  openSettings: (section) => inv(IPC.openSettings, section === 'permissions' ? 'permissions' : undefined),
   togglePanel: () => inv(IPC.togglePanel),
   closePanel: () => inv(IPC.closePanel),
   closeWindow: () => inv(IPC.closeWindow),

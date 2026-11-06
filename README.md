@@ -102,8 +102,10 @@ There are no prebuilt installers (`.dmg`, `.exe`, AppImage) yet. You can build t
 - **Pet overlay**: a frameless, transparent, always-on-top window (~180×180) in the top-right of your screen, above the taskbar on Windows. Drag it anywhere and it remembers where you left it. Hover to see your score and session timer. Click it to open a compact panel; right-click it for **Hide pet / Open panel / Settings… / Quit Bloop**.
 - **Hide the pet**: press **Ctrl+Shift+B** (**⌘⇧B** on a Mac) anywhere, use the eye button in the panel header, the tray's **Hide pet**, the pet's right-click menu, or **Settings → Show the pet on screen**. The same shortcut, or the tray's **Show pet**, brings it back. While it's hidden Bloop keeps tracking, running sessions and sending notifications, and a nudge pops the pet up for about 8 seconds (turn off **Pop up for nudges while hidden** for notifications only). The panel still opens from the tray, next to the tray icon or in the top-right corner. Opening Bloop again (from the app menu, Start menu or `bloop`) always brings the pet back.
 - **Moods**: idle (gentle bob), happy (focused), worried (drifting), sad (distracted for a while), sleeping (break or paused), celebrate (session done), wave (study reminder).
-- **Focus tracking**: during a session it samples the frontmost app every 5 s. If a browser is in front (Chrome, Arc, Safari, Brave, Edge), it also works out the current site. On macOS it reads the tab URL; on Windows it infers the site from the window title. Each sample is classified as **focus**, **distract** or **neutral** using lists you can edit.
-- **Nudges**: after 60 s on a distracting app or site the pet gets worried and says something encouraging. After 3 min you also get a system notification. It never nags more than once every 2 minutes, and it cheers when you come back.
+- **Focus tracking**: it samples the frontmost app every 2 s, during a session and (by default) even when no session is running. If a browser is in front (Chrome, Arc, Safari, Brave, Edge), it also works out the current site. On macOS it reads the tab URL; on Windows it infers the site from the window title. Each sample is classified as **focus**, **distract** or **neutral** using lists you can edit.
+- **Always on**: with **Settings → Watch without a session** (on by default), Bloop reacts to distractions even when no session is running. The panel says *Watching for distractions* and the pet's hover badge shows a live score. This time is never saved as a session or counted in your stats, and like everything else it never leaves your computer. The score starts fresh each day and after 30 minutes away. Starting a session switches to the session's own score.
+- **Nudges**: the moment you open a distracting app or site the pet looks worried and says something encouraging. After 2 min you also get a system notification. Speech bubbles repeat at most once every 2 minutes, the pet turns sad after 5 min, and it cheers when you come back. Change the timings in **Settings → Nudges**.
+- **Can't see the site?** If a browser is in front but Bloop can read neither its URL nor its title, the panel says so and links to **Settings → Permissions**.
 - **Pomodoro sessions**: 25 min focus / 5 min break by default (configurable). The pet sleeps during breaks and wakes you up when it's time to work.
 - **Study reminders**: recurring study blocks (days of the week + time). The pet waves and a notification offers to start a session.
 - **History**: every session is saved with its start/end, duration, final score, top focus apps and top distractions. The panel shows today's average and a 7-day mini chart.
@@ -308,7 +310,7 @@ Common causes:
 
 ## How scoring works
 
-Each sample (every 5 s) gets a category:
+Each sample (every 2 s) gets a category:
 
 1. **Browser in front with a known URL**: the domain decides. Patterns match the exact host or any subdomain, so `brightspace` matches `purdue.brightspace.com` and `youtube.com` matches `m.youtube.com`. When several patterns match, the longest one wins. A browser on an unknown site is **neutral**.
 2. **Any other app**: matched against the focus and distract app lists (case-insensitive).
@@ -321,7 +323,9 @@ weight(sample) = 0.5 ^ (age_in_seconds / 600)        # 10-minute half-life
 score = 100 × Σ weight·duration(focus) / Σ weight·duration(focus + distract)
 ```
 
-So a distraction 10 minutes ago counts half as much as one right now, and you can always win your score back. If you haven't spent any time on a focus or distract app yet, the score is shown as "—".
+So a distraction 10 minutes ago counts half as much as one right now, and you can always win your score back.
+
+**The score starts at 100.** When tracking starts (a session, or always-on watching), Bloop credits 2 minutes of focus that fade with the same half-life. One distracting sample barely moves the score; from a fresh start, YouTube brings it to about 66 after 1 min, 37 after 3 min and 25 after 5 min, and it climbs back once you return to work. With tracking off and no session, the score is shown as "—".
 
 The defaults (all editable in Settings):
 
@@ -344,7 +348,7 @@ Without colour, state is shown by **fill, outline, dashes, weight and words**:
 | Score 70+ / 40–69 / under 40 | heavy solid arc / thin arc / thin grey arc in the panel ring, plus a tilted sticker reading *on track* (solid white) / *wobbly* (outlined) / *drifting* (dashed) |
 | Score next to the pet | a black coin with a white solid dot / half dot / empty ring inside (reads on any wallpaper) |
 | Last-7-days bars | solid white (70+), white outline (40–69), hatched (under 40), grey stub (no focus), with a key under the chart; today is bold and underlined |
-| Session phase | solid tag (Focus, Done), outlined (Break), dashed (Paused), grey (Idle) |
+| Session phase | solid tag (Focus, Done), outlined (Break), dashed (Paused), grey (Idle, or Watching when Bloop watches without a session) |
 | Permissions | solid badge with a check (allowed), dashed badge with an alert (needs attention) |
 
 The pet is black-and-white line art: a white body with a crisp black ink outline, black eyes with white highlights, and hatch-mark blush. Around the drawing is a flat white "sticker cut" edge (an SVG morphology filter, not a blur). On light wallpapers you see the black line; on dark wallpapers you see the white edge. Speech bubbles are white balloons with black ink, like a comic.

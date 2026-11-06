@@ -302,7 +302,7 @@ Or just run the installer on this Mac.
 - macOS: **System Settings → Notifications → Bloop**, turn on **Allow notifications**, and check Focus / Do Not Disturb isn't on.
 - Windows: turn off Focus Assist / Do not disturb, check **Settings → System → Notifications**, and make sure the Bloop Start menu shortcut exists (re-run the installer to recreate it).
 - Linux: a notification daemon must be running (most desktops have one).
-- Bloop only notifies after about 3 minutes on a distracting app or site, and at most once every 2 minutes. The pet's speech bubble appears first, after about a minute.
+- Bloop notifies after about 2 minutes on a distracting app or site, and at most once every 2 minutes. The pet looks worried and speaks up right away (Settings → Nudges).
 
 **Ollama isn't found, or Use Local shows no models.**
 - Install [Ollama](https://ollama.com/download) and open it; Bloop says "Ollama is installed but not running" if it's closed. Then press **Refresh** in **Settings → AI → Use Local**.

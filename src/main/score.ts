@@ -16,13 +16,43 @@ export interface SummarySample extends ScoreSample {
   domain?: string
 }
 
+/** Default half-life of the score's recency weighting, in seconds. */
+export const SCORE_HALF_LIFE_SEC = 600
+
+/** Seconds of virtual focus credited at the start of tracking (the "fresh start"). */
+export const FRESH_START_SEC = 120
+
+/**
+ * A "fresh start" prior: a virtual focus credit dated `t` that decays like any sample. It makes
+ * the score start at 100 and fall gradually while distracted, instead of dropping to 0 on the
+ * first distracting sample.
+ */
+export interface ScorePrior {
+  /** epoch ms the credit is dated (tracking start) */
+  t: number
+  /** seconds of focus credited (default FRESH_START_SEC) */
+  focusSec?: number
+}
+
 /**
  * Recency-weighted focus score: each sample is weighted by 0.5^(age / halfLife),
- * score = 100 * focus / (focus + distract). Neutral time is ignored. null when no non-neutral data.
+ * score = 100 * focus / (focus + distract). Neutral time is ignored. With a prior the score is
+ * 100 at the start and never null; without one it is null when there is no non-neutral data.
  */
-export function computeFocusScore(samples: ScoreSample[], now: number, halfLifeSec = 600): number | null {
+export function computeFocusScore(
+  samples: ScoreSample[],
+  now: number,
+  halfLifeSec = SCORE_HALF_LIFE_SEC,
+  prior?: ScorePrior | null
+): number | null {
   let focus = 0
   let total = 0
+  if (prior) {
+    const ageSec = Math.max(0, (now - prior.t) / 1000)
+    const d = (prior.focusSec ?? FRESH_START_SEC) * Math.pow(0.5, ageSec / halfLifeSec)
+    focus += d
+    total += d
+  }
   for (const s of samples) {
     if (s.category === 'neutral') continue
     const ageSec = Math.max(0, (now - s.t) / 1000)
@@ -31,7 +61,7 @@ export function computeFocusScore(samples: ScoreSample[], now: number, halfLifeS
     total += d
     if (s.category === 'focus') focus += d
   }
-  if (total <= 0) return null
+  if (total <= 0) return prior ? 100 : null
   return Math.round((100 * focus) / total)
 }
 

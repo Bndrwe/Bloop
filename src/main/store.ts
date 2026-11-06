@@ -2,7 +2,7 @@ import Store from 'electron-store'
 import type { Deadline, SessionRecord, Settings, Stats, StudyPlan } from '@shared/types'
 import { DEFAULT_AI_SETTINGS, type AiSettings } from '@shared/ai'
 import { validateAiSettings } from './ai/settings'
-import { DEFAULT_SETTINGS, mergeSettings } from './defaults'
+import { DEFAULT_SETTINGS, mergeSettings, migrateSettings, SETTINGS_VERSION } from './defaults'
 import { computeStats } from './stats'
 
 export interface DeadlinesCache {
@@ -27,6 +27,8 @@ export interface BrightspaceState {
 
 interface Schema {
   settings: Settings
+  /** Which settings migrations have run (see migrateSettings). */
+  settingsVersion: number
   sessions: SessionRecord[]
   petPosition: { x: number; y: number } | null
   onboardingDismissed: boolean
@@ -41,6 +43,7 @@ interface Schema {
 
 const DEFAULTS: Schema = {
   settings: DEFAULT_SETTINGS,
+  settingsVersion: 0,
   sessions: [],
   petPosition: null,
   onboardingDismissed: false,
@@ -55,7 +58,14 @@ const MAX_SESSIONS = 1000
 
 let store: Store<Schema> | null = null
 function s(): Store<Schema> {
-  if (!store) store = new Store<Schema>({ name: 'bloop', defaults: DEFAULTS, clearInvalidConfig: true })
+  if (!store) {
+    store = new Store<Schema>({ name: 'bloop', defaults: DEFAULTS, clearInvalidConfig: true })
+    const v = Number(store.get('settingsVersion')) || 0
+    if (v < SETTINGS_VERSION) {
+      store.set('settings', mergeSettings(migrateSettings(store.get('settings'), v)))
+      store.set('settingsVersion', SETTINGS_VERSION)
+    }
+  }
   return store
 }
 
@@ -148,4 +158,5 @@ export function saveAiSettings(patch: Partial<AiSettings>): AiSettings {
 export function resetData(): void {
   s().clear() // electron-store re-applies DEFAULTS after clear()
   s().set('settings', DEFAULT_SETTINGS)
+  s().set('settingsVersion', SETTINGS_VERSION)
 }
