@@ -109,7 +109,7 @@ There are no prebuilt installers (`.dmg`, `.exe`, AppImage) yet. You can build t
 - **History**: every session is saved with its start/end, duration, final score, top focus apps and top distractions. The panel shows today's average and a 7-day mini chart.
 - **Tray icon**, in this order: a status line (Focus score, or just "Bloop"), **Start session** (or **Pause** / **Resume** and **Stop session** while one runs), **Show panel**, **Hide pet** / **Show pet** (with the shortcut in brackets), **Settings…**, **Chat with Bloop**, **About Bloop** (with the version), **Open logs folder** and **Quit Bloop**. On macOS it sits in the menu bar; on Windows it sits in the system tray near the clock.
 - **Chat with Bloop**: a chat window for study questions, saved on this computer. See [Chat with Bloop](#chat-with-bloop).
-- **Stretch features**: Brightspace deadlines (log in to Brightspace, or paste the iCal link), and an AI weekly study plan generated on-device (Ollama) or by a cloud model.
+- **Stretch features**: Brightspace deadlines (log in to Brightspace, or paste the iCal link), and an AI weekly study plan made by a cloud AI you already use or by Ollama on your computer.
 
 ## Screenshots
 
@@ -139,7 +139,7 @@ There are no prebuilt installers (`.dmg`, `.exe`, AppImage) yet. You can build t
 | ![YouTube: the pet is sad and a notification says Bloop misses you](docs/demo/still-05.png) | ![Break: the pet sleeps, no nudges](docs/demo/still-06.png) |
 | *Drifting off: a nudge, then a notification* | *Breaks are guilt-free: the pet naps* |
 | ![The AI study plan in the panel](docs/demo/still-07.png) | ![Panel close-up with the score ring and 7-day chart](docs/demo/still-08.png) |
-| *A study plan for the week, written on-device* | *Today's score, focus time and the last 7 days* |
+| *A study plan for the week* | *Today's score, focus time and the last 7 days* |
 
 ![Every pet mood](docs/demo/still-10.png)
 
@@ -237,7 +237,7 @@ The prompt goes over stdin (Gemini uses an argument for short prompts), tools ar
 Talk to Bloop about your studies: "Plan my evening", "I can't focus, help", "Quiz me on CHEM 201". Open it from the tray (**Chat with Bloop**) or the **Chat with Bloop** button in the panel.
 
 - Bloop answers with whichever AI is set up in Settings → AI (an Ollama model or a cloud provider you turned on). The header shows which one ("via …"). If nothing is ready, the chat offers **Set up AI in Settings → AI**. Chat never downloads or pulls a model.
-- **Share my study stats with Bloop** (on by default for on-device models, off for cloud providers) adds today's date, your session and score, today's focus minutes and your next 3 deadlines to each message, so Bloop's advice fits your day. Turn it on or off with the switch under the message box.
+- **Share my study stats with Bloop** (on by default for Ollama models, off for cloud providers) adds today's date, your session and score, today's focus minutes and your next 3 deadlines to each message, so Bloop's advice fits your day. Turn it on or off with the switch under the message box.
 - Enter sends, Shift+Enter adds a line, **Stop** cancels a reply (replies time out after 2 minutes). Failed replies show **Retry**.
 - Conversations are saved on this computer only, in `userData/chats/` (one file per chat, at most 200 chats). Rename or delete them in the list (the trash button deletes one chat), or use **Delete all chats** (after a confirmation). **Settings → Reset data → Reset everything…** removes them too.
 - With a cloud provider, each message (and the recent conversation) is sent to that vendor, and the chat window says so under the message box. See [docs/PRIVACY.md](docs/PRIVACY.md#chat-with-bloop).
