@@ -99,6 +99,14 @@ There are no prebuilt installers (`.dmg`, `.exe`, AppImage) yet. You can build t
 
 ## What it does
 
+Bloop is a focus app with three core areas (see [docs/PRODUCT.md](docs/PRODUCT.md)):
+
+1. **A live focus score** that judges what's actually on screen. A lecture on YouTube counts as study, gameplay doesn't. See [Depends on what's open](#depends-on-whats-open).
+2. **Brightspace deadlines and an AI weekly study plan**: log in to Brightspace (or paste the iCal link) to see what's due, then get a week of study blocks from Ollama on your computer or a cloud AI you already use.
+3. **Reminders when you're not focused**: the pet reacts right away, then a bubble and a notification after 1 min and every 2 min after that.
+
+Chat with Bloop is an extra. The details:
+
 - **Pet overlay**: a frameless, transparent, always-on-top window (~180×180) in the top-right of your screen, above the taskbar on Windows. Drag it anywhere and it remembers where you left it. Hover to see your score and session timer. Click it to open a compact panel; right-click it for **Hide pet / Open panel / Settings… / Quit Bloop**.
 - **Hide the pet**: press **Ctrl+Shift+B** (**⌘⇧B** on a Mac) anywhere, use the eye button in the panel header, the tray's **Hide pet**, the pet's right-click menu, or **Settings → Show the pet on screen**. The same shortcut, or the tray's **Show pet**, brings it back. While it's hidden Bloop keeps tracking, running sessions and sending notifications, and a nudge pops the pet up for about 8 seconds (turn off **Pop up for nudges while hidden** for notifications only). The panel still opens from the tray, next to the tray icon or in the top-right corner. Opening Bloop again (from the app menu, Start menu or `bloop`) always brings the pet back.
 - **Moods**: idle (gentle bob), happy (focused), worried (drifting), sad (distracted for a while), sleeping (break or paused), celebrate (session done), wave (study reminder).
@@ -110,8 +118,8 @@ There are no prebuilt installers (`.dmg`, `.exe`, AppImage) yet. You can build t
 - **Study reminders**: recurring study blocks (days of the week + time). The pet waves and a notification offers to start a session.
 - **History**: every session is saved with its start/end, duration, final score, top focus apps and top distractions. The panel shows today's average and a 7-day mini chart.
 - **Tray icon**, in this order: a status line (Focus score, or just "Bloop"), **Start session** (or **Pause** / **Resume** and **Stop session** while one runs), **Show panel**, **Hide pet** / **Show pet** (with the shortcut in brackets), **Settings…**, **Chat with Bloop**, **About Bloop** (with the version), **Open logs folder** and **Quit Bloop**. On macOS it sits in the menu bar; on Windows it sits in the system tray near the clock.
-- **Chat with Bloop**: a chat window for study questions, saved on this computer. See [Chat with Bloop](#chat-with-bloop).
-- **Stretch features**: Brightspace deadlines (log in to Brightspace, or paste the iCal link), and an AI weekly study plan made by a cloud AI you already use or by Ollama on your computer.
+- **Panel**: score and status (with whether reminders are on), what's in front now, then upcoming deadlines and the AI study plan, then today's stats.
+- **Chat with Bloop** (extra): a chat window for study questions, saved on this computer. Open it from the chat button in the panel header, **Ask Bloop about this plan** under the study plan, or the tray. See [Chat with Bloop](#chat-with-bloop).
 
 ## Screenshots
 
@@ -228,7 +236,7 @@ The prompt goes over stdin (Gemini uses an argument for short prompts), tools ar
 
 ## Chat with Bloop
 
-Talk to Bloop about your studies: "Plan my evening", "I can't focus, help", "Quiz me on CHEM 201". Open it from the tray (**Chat with Bloop**) or the **Chat with Bloop** button in the panel.
+Talk to Bloop about your studies: "Plan my evening", "I can't focus, help", "Quiz me on CHEM 201". Open it from the tray (**Chat with Bloop**), the chat button in the panel header, or **Ask Bloop about this plan** under the study plan.
 
 - Bloop answers with whichever AI is set up in Settings → AI (an Ollama model or a cloud provider you turned on). The header shows which one ("via …"). If nothing is ready, the chat offers **Set up AI in Settings → AI**. Chat never downloads or pulls a model.
 - **Share my study stats with Bloop** (on by default for Ollama models, off for cloud providers) adds today's date, your session and score, today's focus minutes and your next 3 deadlines to each message, so Bloop's advice fits your day. Turn it on or off with the switch under the message box.
@@ -309,9 +317,10 @@ Common causes:
 
 Each sample (every 2 s) gets a category:
 
-1. **Browser in front with a known URL**: the domain decides. Patterns match the exact host or any subdomain, so `brightspace` matches `purdue.brightspace.com` and `youtube.com` matches `m.youtube.com`. When several patterns match, the longest one wins. A browser on an unknown site is **neutral**.
-2. **Any other app**: matched against the focus and distract app lists (case-insensitive).
-3. Everything else is **neutral**.
+1. **A "depends on what's open" site** (see below): the page decides when it can be judged; otherwise the lists below.
+2. **Browser in front with a known URL**: the domain decides. Patterns match the exact host or any subdomain, so `brightspace` matches `purdue.brightspace.com` and `youtube.com` matches `m.youtube.com`. When several patterns match, the longest one wins. A browser on an unknown site is **neutral**.
+3. **Any other app**: matched against the focus and distract app lists (case-insensitive).
+4. Everything else is **neutral**.
 
 The score ignores neutral time and measures the share of the remaining time you spent focused, with recent minutes counting more:
 
@@ -330,6 +339,17 @@ The defaults (all editable in Settings):
 - **Focus sites**: brightspace, docs.google.com, overleaf, github, chatgpt, claude.ai, canvas/instructure, khanacademy, wikipedia, stackoverflow, scholar.google.com
 - **Distracting apps**: Messages, Discord, Spotify, Steam, WhatsApp, FaceTime
 - **Distracting sites**: youtube, instagram, tiktok, twitter/x, reddit, netflix, twitch, facebook
+- **Depends on what's open**: youtube.com, reddit.com, medium.com, quora.com, vimeo.com
+
+### Depends on what's open
+
+Some sites are study tools sometimes. For the sites on **Settings → Websites → Depends on what's open**, Bloop judges the page, not just the domain:
+
+- **On your computer** (always): the page title and link (a YouTube search, a subreddit, an article slug) are scored against your Brightspace course codes and names, your upcoming deadline titles, your focus list, a study vocabulary (lecture, tutorial, problem set, exam review, derivation, Khan Academy, Crash Course, 3Blue1Brown, The Organic Chemistry Tutor, MIT OpenCourseWare…) and an entertainment vocabulary (vlog, prank, reaction, gameplay, let's play, highlights, trailer, music video, compilation, memes, mukbang, ASMR, Shorts, live stream…). The result is **study**, **not study** or **unsure**, with a reason like "matches CHEM 201" or "looks like gameplay".
+- **Unsure pages** keep the list's answer (YouTube with no readable title stays distracting). If you picked an Ollama model, it is asked in the background with just the title, the site and your course names (at most one question every 10 s, answers cached for 30 days). **Let my cloud AI judge unclear pages** (off by default) does the same with your cloud AI; it sends only those three things, never the link or page text.
+- **Read page text for better judging** (macOS, off by default) also reads the page's headings and description from Chrome or Safari once you allow "JavaScript from Apple Events" in the browser. If that's off, Bloop quietly uses the title and link.
+- **Study** counts as focus (the pet stays happy, no reminders); **not study** counts as distracting (worried right away, reminders at 1 min, then every 2 min).
+- The panel's Now row shows the verdict, like *Counts as study · matches CHEM 201*, with **This is study** and **Not study** to correct it. Corrections are remembered per page (link and title) and win over everything. Clear them in **Settings → Websites → Remembered pages**.
 
 ## Design
 
@@ -450,4 +470,4 @@ The pet is drawn by one component that takes a `mood` prop. Skins live in `src/r
 
 ## Privacy
 
-All tracking data (samples, sessions, settings) is stored as JSON in the app's user-data folder via `electron-store`. Nothing is uploaded. If you log in to Brightspace, Bloop talks only to your school's Brightspace, keeps the login cookies in a separate browser profile in the same folder (never your password), and **Log out** deletes them. The AI study plan and Chat with Bloop are the only features that can send your data anywhere: with Ollama it stays on your computer, and with a cloud option it goes to that provider only when you click **Generate plan** or send a chat message. Chats are stored only on this computer in `userData/chats/`. Ollama model pulls happen only after you confirm them.
+All tracking data (samples, sessions, settings) is stored as JSON in the app's user-data folder via `electron-store`. Nothing is uploaded. If you log in to Brightspace, Bloop talks only to your school's Brightspace, keeps the login cookies in a separate browser profile in the same folder (never your password), and **Log out** deletes them. The AI study plan, Chat with Bloop and (only if you turn it on) **Let my cloud AI judge unclear pages** are the only features that can send your data anywhere: with Ollama it stays on your computer, and with a cloud option it goes to that provider only when you click **Generate plan**, send a chat message, or, with page judging on, when an unclear page is in front (its title, the site and your course names only). Chats are stored only on this computer in `userData/chats/`. Ollama model pulls happen only after you confirm them.

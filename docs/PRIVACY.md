@@ -16,13 +16,24 @@ The tray's **Open logs folder** item and the **About** dialog show the exact pat
 
 | What | Where | Contents |
 |---|---|---|
-| Settings, session history, study plan, reminders, pet position | `userData/bloop.json` | Your focus/distract lists, up to 1,000 past sessions (start/end, score, top focus apps and top distractions), the last AI plan, the cached next 10 deadlines (title, course code and date, from your calendar link and/or Brightspace), the calendar URL you entered, your Brightspace address and, while logged in, your Brightspace display name, course count and last sync time |
+| Settings, session history, study plan, reminders, pet position | `userData/bloop.json` | Your focus/distract lists, up to 1,000 past sessions (start/end, score, top focus apps and top distractions), the last AI plan, the cached next 10 deadlines (title, course code and date, from your calendar link and/or Brightspace), the calendar URL you entered, your Brightspace address and, while logged in, your Brightspace display name, course count, course codes and names, and last sync time |
 | API keys (Anthropic, OpenRouter) | `userData/bloop.json`, key `aiKeys` | Encrypted with the OS secure store (macOS Keychain, Windows DPAPI, Linux Secret Service). Bloop won't save a key when encryption is unavailable. Keys are never sent to the app's windows, never logged and are removed from error messages |
 | Brightspace login cookies | `userData/Partitions/brightspace/` | A separate browser profile used only by the **Log in to Brightspace** window. It holds the cookies your school's Brightspace (and its sign-in provider) set, like any browser would. Bloop never sees or stores your password. **Log out** deletes this profile's cookies, storage and cache |
 | Chats with Bloop | `userData/chats/` | One JSON file per conversation (title, times, your messages and Bloop's replies, and which AI wrote each reply) plus `index.json`, the list. At most 200 conversations, 500 messages each, 8 KB per message. Message text is never written to the log |
+| Remembered pages | `userData/bloop.json`, key `contentOverrides` | Only the pages you mark with **This is study** / **Not study** in the panel: the page title (or site and path), a short form of its link (for YouTube the video id) and your choice, at most 300. Forget them in **Settings → Websites → Remembered pages** |
+| AI answers for unclear pages | `userData/content-judge.json` | Only when an AI judges pages (see "Judging what's on the page" below): a hashed key of the site and title, the yes/no answer and its short reason, at most 500, each dropped after 30 days |
 | Log | `logs/main.log` (+ `main.old.log`, up to 2 MB each) | App events, errors and notification titles. Activity samples (app name and website domain) are written only when Bloop is started with `BLOOP_TRACE=1`. Notification text is not logged |
 
-Activity tracking (front app, browser tab URL on macOS, window title on Windows) is read from the OS every 5 seconds during a session, classified on the spot, and kept only as the per-session summary above. Full URLs and window titles are not stored in `bloop.json`.
+Activity tracking (front app, browser tab URL on macOS, window title on Windows) is read from the OS every 2 seconds, classified on the spot, and kept only as the per-session summary above. Full URLs and window titles are not stored in `bloop.json`, except for pages you mark yourself (Remembered pages). The log records content verdicts and their reasons ("study, matches CHEM 201"), never the page title or URL.
+
+## Judging what's on the page
+
+Some sites depend on what's open: a lecture on YouTube is study, gameplay is not. For the sites on **Settings → Websites → Depends on what's open** (by default youtube.com, reddit.com, medium.com, quora.com, vimeo.com), Bloop judges the page itself:
+
+- **On your computer, always**: the page title and link are checked against your course codes and names, your upcoming deadline titles, your focus list and a built-in list of study and entertainment words. Nothing is sent anywhere. The course names come from your Brightspace sync and are kept in `bloop.json` while you're logged in.
+- **Read page text for better judging** (macOS, off by default): Bloop also reads the page's description and headings from Chrome-family browsers or Safari, using "Allow JavaScript from Apple Events", which you turn on in the browser. This text is only used on your computer and is never sent to any AI. If the browser setting is off, Bloop quietly uses the title and link.
+- **Your Ollama model** (only if you picked one in Settings → AI): pages the rules can't decide are asked to it. With the default address this stays on your computer.
+- **Let my cloud AI judge unclear pages** (off by default): only when you turn this on, pages the rules can't decide are asked to the cloud provider Auto (or your cloud pick) uses. **Sent: the page title, the site name (like youtube.com) and your course codes and names. Never the link, the page text, other apps or sites, or anything else.** At most one request every 10 seconds, and each page is asked once (answers are cached for 30 days).
 
 ## When Bloop uses the network
 
@@ -37,6 +48,8 @@ Bloop only connects to the network in the cases below. In each case you either s
 | You confirm **Pull … with Ollama?** | Your Ollama address, which then downloads from `ollama.com` | The model name |
 | You press **Generate plan** or **Test** | The AI that is selected (see below) | The plan prompt with Bloop's instructions (system prompt); **Test** sends only a one-line test prompt |
 | You send a message in **Chat with Bloop** | The AI that is selected (see below) | Bloop's instructions, the recent turns of that conversation (about the last 6,000 characters) and your new message. With **Share my study stats with Bloop** on, also today's date, the session state and score, today's focus minutes and the titles and dates of your next 3 deadlines |
+| You picked an Ollama model and a "depends on what's open" page is unclear | Your Ollama address | The page title, the site name and your course codes and names. At most one request every 10 s |
+| You turned on **Let my cloud AI judge unclear pages** and a cloud provider is in use | That provider (see below) | For a page on a "depends on what's open" site that the local rules can't decide: its title, the site name and your course codes and names. At most one request every 10 s |
 | You have saved an OpenRouter key | `openrouter.ai/api/v1/models` (public list, cached for 24 h) | Nothing personal. Without a key, Bloop never contacts OpenRouter |
 | You click a help link | Your web browser opens it. Only `https://` links are allowed | — |
 
@@ -65,7 +78,7 @@ Delete one chat with its trash button, all of them with **Delete all chats**, or
 **Settings → Deadlines → Log in to Brightspace** opens your school's own sign-in page in a separate window. When Brightspace shows its home page, the window closes and Bloop reads your upcoming work through Brightspace's API, as you.
 
 - **What is read**: your name (to show "Connected as …"), the names and codes of your active courses, and the titles and due dates of your assignments, quizzes and calendar events. Not grades, submissions, files, messages or classmates. Requests are read-only (`GET`), at most 4 at a time, for at most 40 courses, with a 15 s timeout and a 5 MB limit per response.
-- **What is kept**: the next 10 upcoming items (title with course code, date) in `bloop.json`, the same cache the calendar link uses, so the panel, exam reminders and the study plan work offline. Your school's address, your display name, course count and last sync time are kept so Settings can show "Connected as …".
+- **What is kept**: the next 10 upcoming items (title with course code, date) in `bloop.json`, the same cache the calendar link uses, so the panel, exam reminders and the study plan work offline. Your school's address, your display name, course count and last sync time are kept so Settings can show "Connected as …". Your course codes and names are kept to recognise study pages (see "Judging what's on the page").
 - **Your password**: never seen or stored by Bloop. You type it into your school's page; Bloop only keeps the session cookies that page sets, in a separate browser profile (`userData/Partitions/brightspace/`) that Bloop's own windows never use. The cookies are encrypted at rest where Electron supports it (macOS Keychain, Windows DPAPI, Linux keyring).
 - **Where it goes**: only to your school's Brightspace address. Nothing is sent to Bloop's developers or anyone else.
 - **The study plan and chat**: deadline titles (with the course code, e.g. "CHEM 201: Midterm 2") and dates go into the plan prompt only when you press **Generate plan**, and only to the AI you chose (see above). Chat with stats sharing on includes your next 3.
@@ -75,7 +88,9 @@ Delete one chat with its trash button, all of them with **Delete all chats**, or
 
 ## How to delete your data
 
-- **Settings → Reset data → Reset everything…** deletes everything in `bloop.json`: settings, history, plan, deadline cache, calendar URL and the saved API keys. It also deletes all chats and the log files, and logs you out of Brightspace.- **Brightspace**: **Log out** in Settings → Deadlines deletes the login profile's cookies and the cached Brightspace items.
+- **Settings → Reset data → Reset everything…** deletes everything in `bloop.json`: settings, history, plan, deadline cache, calendar URL, remembered pages and the saved API keys. It also deletes the AI page answers, all chats and the log files, and logs you out of Brightspace.
+- **Remembered pages**: **Forget all** (or the × next to one) in Settings → Websites.
+- **Brightspace**: **Log out** in Settings → Deadlines deletes the login profile's cookies and the cached Brightspace items.
 - **Chats**: **Delete all chats** in the chat window's list (after a confirmation) deletes the `userData/chats/` folder; the trash button removes one conversation. **Settings → Reset data → Reset everything…** deletes all chats too.
 - **API key**: clear the field in Settings → AI → Cloud and press Save.
 - **Logs**: delete the log folder above (tray → **Open logs folder**).
