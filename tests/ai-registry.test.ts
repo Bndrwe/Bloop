@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { getPath: () => '/tmp', isPackaged: false } }))
-vi.mock('../src/main/store', () => ({ getAiSettings: () => ({ choice: { kind: 'auto' }, cloudModels: {}, autoCloud: [], ollamaUrl: 'http://127.0.0.1:11434', bloopOfferDismissed: false, bloopEnabled: false }) }))
+vi.mock('../src/main/store', () => ({ getAiSettings: () => ({ choice: { kind: 'auto' }, cloudModels: {}, autoCloud: [], ollamaUrl: 'http://127.0.0.1:11434' }) }))
 vi.mock('../src/main/ai/cloud', () => ({ cloudModule: null, setCloudModelsReader: () => undefined }))
 
 import { DEFAULT_AI_SETTINGS, type AiChoice, type CloudProviderId } from '../src/shared/ai'
@@ -13,10 +13,10 @@ import { buildPrompt, generatePlan, PLAN_JSON_SCHEMA, parsePlan } from '../src/m
 import type { Settings, Stats } from '../src/shared/types'
 
 const prov = (label: string, kind: 'local' | 'cloud', text = 'x'): AiProvider => ({ label, kind, complete: vi.fn(async () => text) })
-const emptyLocal = { bloop: { id: 'b', label: 'B', url: '', sizeBytes: null, downloaded: false, source: null, enabled: false }, ollama: { installed: false, running: false, url: 'u', models: [] } }
+const emptyLocal = { ollama: { installed: false, running: false, url: 'u', models: [] } }
 
 function fakes(local: AiProvider | null, cloud: AiProvider | null) {
-  const l: LocalModule = { status: vi.fn(async () => emptyLocal), provider: vi.fn(async () => new Error('nope')), autoProvider: vi.fn(async () => local) }
+  const l: LocalModule = { status: vi.fn(async () => emptyLocal), provider: vi.fn(async () => local ?? new Error('nope')) }
   const c: CloudModule = {
     status: vi.fn(async () => []),
     provider: vi.fn(async () => prov('Claude CLI', 'cloud')),
@@ -29,31 +29,34 @@ function fakes(local: AiProvider | null, cloud: AiProvider | null) {
 describe('registry', () => {
   const settings = (choice: AiChoice, autoCloud: CloudProviderId[] = []) => () => ({ ...DEFAULT_AI_SETTINGS, choice, autoCloud })
 
-  it('auto: opted-in cloud first, then local, then a setup error', async () => {
-    let f = fakes(prov('Bloop model (on-device)', 'local'), prov('Claude CLI', 'cloud'))
+  it('auto: opted-in cloud only, never a local model, else a setup error', async () => {
+    let f = fakes(prov('Ollama · qwen3.5:0.8b', 'local'), prov('Claude CLI', 'cloud'))
     let r = createRegistry({ local: f.l, cloud: f.c, getSettings: settings({ kind: 'auto' }, ['claude-cli']) })
     expect(((await r.resolve()) as AiProvider).label).toBe('Claude CLI')
     expect(f.c.autoProvider).toHaveBeenCalledWith(['claude-cli'])
-    expect(f.l.autoProvider).not.toHaveBeenCalled()
+    expect(f.l.provider).not.toHaveBeenCalled()
 
-    // not opted in: local wins and cloud is never asked
-    f = fakes(prov('Bloop model (on-device)', 'local'), prov('Claude CLI', 'cloud'))
-    r = createRegistry({ local: f.l, cloud: f.c, getSettings: settings({ kind: 'auto' }) })
-    expect(((await r.resolve()) as AiProvider).label).toBe('Bloop model (on-device)')
-    expect(f.c.autoProvider).not.toHaveBeenCalled()
-
-    // opted in but nothing available: falls through to local
-    f = fakes(prov('Bloop model (on-device)', 'local'), null)
-    r = createRegistry({ local: f.l, cloud: f.c, getSettings: settings({ kind: 'auto' }, ['claude-cli']) })
-    expect(((await r.resolve()) as AiProvider).label).toBe('Bloop model (on-device)')
-
-    // not opted in and no local: friendly error, cloud untouched
-    f = fakes(null, prov('Claude CLI', 'cloud'))
+    // not opted in: nothing ready, even with Ollama ready; cloud is never asked
+    f = fakes(prov('Ollama · qwen3.5:0.8b', 'local'), prov('Claude CLI', 'cloud'))
     r = createRegistry({ local: f.l, cloud: f.c, getSettings: settings({ kind: 'auto' }) })
     expect(((await r.resolve()) as Error).message).toBe(NO_AI_MESSAGE)
     expect(f.c.autoProvider).not.toHaveBeenCalled()
+    expect(f.l.provider).not.toHaveBeenCalled()
     await expect(r.generateText('p')).rejects.toThrow(/Turn on a model in Settings → AI/)
     expect((await r.status()).active).toBeNull()
+
+    // opted in but nothing available: still nothing ready (no local fallback)
+    f = fakes(prov('Ollama · qwen3.5:0.8b', 'local'), null)
+    r = createRegistry({ local: f.l, cloud: f.c, getSettings: settings({ kind: 'auto' }, ['claude-cli']) })
+    expect(((await r.resolve()) as Error).message).toBe(NO_AI_MESSAGE)
+    expect(f.l.provider).not.toHaveBeenCalled()
+  })
+
+  it('an explicit Ollama choice is how Ollama gets used', async () => {
+    const f = fakes(prov('Ollama · qwen3.5:0.8b', 'local'), prov('Claude CLI', 'cloud'))
+    const r = createRegistry({ local: f.l, cloud: f.c, getSettings: settings({ kind: 'local', runtime: 'ollama', model: 'qwen3.5:0.8b' }, ['claude-cli']) })
+    expect(((await r.resolve()) as AiProvider).label).toBe('Ollama · qwen3.5:0.8b')
+    expect(f.c.autoProvider).not.toHaveBeenCalled()
   })
 
   it('routes explicit choices and reports active', async () => {
@@ -61,7 +64,7 @@ describe('registry', () => {
     const r = createRegistry({ local: f.l, cloud: f.c, getSettings: settings({ kind: 'cloud', provider: 'claude-cli' }) })
     expect((await r.status()).active).toEqual({ label: 'Claude CLI', kind: 'cloud' })
     expect(f.c.provider).toHaveBeenCalledWith({ kind: 'cloud', provider: 'claude-cli' })
-    const r2 = createRegistry({ local: f.l, cloud: null, getSettings: settings({ kind: 'local', runtime: 'bloop', model: 'b' }) })
+    const r2 = createRegistry({ local: f.l, cloud: null, getSettings: settings({ kind: 'local', runtime: 'ollama', model: 'b' }) })
     expect((await r2.status()).active).toBeNull()
   })
 })
@@ -73,8 +76,7 @@ describe('AiSettings validation', () => {
       validateAiSettings({
         choice: { kind: 'cloud', provider: 'nope' },
         cloudModels: { anthropic: ' claude-x ', evil: 'y', openrouter: 5 },
-        ollamaUrl: 'javascript:alert(1)',
-        bloopOfferDismissed: 'yes'
+        ollamaUrl: 'javascript:alert(1)'
       })
     ).toEqual({ ...DEFAULT_AI_SETTINGS, cloudModels: { anthropic: 'claude-x' } })
   })
@@ -82,7 +84,7 @@ describe('AiSettings validation', () => {
   it('validates choices', () => {
     expect(validateChoice({ kind: 'local', runtime: 'ollama', model: 'qwen3.5:0.8b' })).toEqual({ kind: 'local', runtime: 'ollama', model: 'qwen3.5:0.8b' })
     expect(validateChoice({ kind: 'local', runtime: 'gpu', model: 'x' })).toBeNull()
-    expect(validateChoice({ kind: 'local', runtime: 'bloop', model: '' })).toBeNull()
+    expect(validateChoice({ kind: 'local', runtime: 'ollama', model: '' })).toBeNull()
     expect(validateChoice({ kind: 'cloud', provider: 'codex-cli', model: '' })).toEqual({ kind: 'cloud', provider: 'codex-cli' })
     expect(validateChoice('auto')).toBeNull()
   })
@@ -117,25 +119,34 @@ describe('plan.ts via a mocked provider', () => {
     expect(parsePlan('```json\n{"blocks":[{"day":0,"time":"08:00","minutes":25,"label":"x"}]}\n```').blocks).toHaveLength(1)
   })
 
-  it('keeps the prompt wording the dataset mirrors', () => {
+  it('keeps the plan prompt wording stable', () => {
     const p = buildPrompt([], stats, settings, new Date(2026, 10, 4, 9))
     expect(p).toContain('You are a friendly study coach inside a desktop "study pet" app for a university student.')
     expect(p).toContain('Reply with ONLY a JSON object, no markdown fences, in exactly this shape:')
   })
 })
 
-describe('bloopEnabled validation', () => {
-  it('defaults to false and only accepts booleans', () => {
-    expect(DEFAULT_AI_SETTINGS.bloopEnabled).toBe(false)
-    expect(validateAiSettings(undefined).bloopEnabled).toBe(false)
-    expect(validateAiSettings({ bloopEnabled: 'yes' }).bloopEnabled).toBe(false)
-    expect(validateAiSettings({ bloopEnabled: 1 }).bloopEnabled).toBe(false)
-    expect(validateAiSettings({ bloopEnabled: true }).bloopEnabled).toBe(true)
-    expect(validateAiSettings({ bloopEnabled: false, choice: { kind: 'local', runtime: 'bloop', model: 'b' } }).bloopEnabled).toBe(false)
+describe('stored local runtime migration', () => {
+  it('a stored choice of a runtime this version no longer has loads as Auto, keeping everything else', () => {
+    // As an older version left it on disk: a local runtime this version no longer has, plus its old flags.
+    const stored: unknown = JSON.parse(
+      '{"choice":{"kind":"local","runtime":"bloop","model":"old-local"},"cloudModels":{"claude-cli":"sonnet"},' +
+        '"autoCloud":["claude-cli"],"ollamaUrl":"http://box:11434","bloopOfferDismissed":true}'
+    )
+    expect(() => validateAiSettings(stored)).not.toThrow()
+    expect(validateAiSettings(stored)).toEqual({
+      choice: { kind: 'auto' },
+      cloudModels: { 'claude-cli': 'sonnet' },
+      autoCloud: ['claude-cli'],
+      ollamaUrl: 'http://box:11434'
+    })
   })
-  it('settings saved before the flag existed keep an explicit Bloop choice on', () => {
-    expect(validateAiSettings({ choice: { kind: 'local', runtime: 'bloop', model: 'b' } }).bloopEnabled).toBe(true)
-    expect(validateAiSettings({ choice: { kind: 'local', runtime: 'ollama', model: 'm' } }).bloopEnabled).toBe(false)
+  it('an Ollama choice is kept', () => {
+    expect(validateAiSettings({ choice: { kind: 'local', runtime: 'ollama', model: 'qwen3.5:0.8b' } }).choice).toEqual({
+      kind: 'local',
+      runtime: 'ollama',
+      model: 'qwen3.5:0.8b'
+    })
   })
 })
 
@@ -146,7 +157,7 @@ describe('autoCloud validation and migration', () => {
     expect(validateAiSettings({}).autoCloud).toEqual([])
   })
   it('settings stored before the field existed migrate to [] and keep everything else', () => {
-    const old = { choice: { kind: 'auto' }, cloudModels: { 'claude-cli': 'sonnet' }, ollamaUrl: 'http://box:11434', bloopOfferDismissed: true, bloopEnabled: true }
+    const old = { choice: { kind: 'auto' }, cloudModels: { 'claude-cli': 'sonnet' }, ollamaUrl: 'http://box:11434' }
     expect(validateAiSettings(old)).toEqual({ ...old, autoCloud: [] })
   })
   it('an old explicit cloud choice still works and does not opt into Auto', () => {

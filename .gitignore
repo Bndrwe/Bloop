@@ -24,15 +24,6 @@ Thumbs.db
 !.vscode/extensions.json
 .idea/
 
-# Bloop model training kit
-ml/.venv/
-ml/out/
-ml/cache/
-*.gguf
-# Written by `npm run model:bundle` next to the (ignored) model; meaningless without it.
-resources/models/bloop-model.json
-*.safetensors
-
 # Python
 __pycache__/
 *.pyc

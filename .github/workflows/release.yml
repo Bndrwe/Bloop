@@ -23,8 +23,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Each runner builds its own native arch: get-windows and node-llama-cpp ship
-          # per-platform prebuilt binaries, so cross-building is unreliable.
+          # Each runner builds its own native arch: get-windows ships per-platform
+          # prebuilt binaries, so cross-building is unreliable.
           - name: mac-arm64
             os: macos-14
             targets: --mac dmg zip --arm64
@@ -41,8 +41,6 @@ jobs:
     timeout-minutes: 60
     env:
       CSC_IDENTITY_AUTO_DISCOVERY: 'false'
-      # The prebuilt @node-llama-cpp/* packages cover runtime; never download or compile llama.cpp here.
-      NODE_LLAMA_CPP_SKIP_DOWNLOAD: 'true'
       SMOKE: smoke-out
     defaults:
       run:
@@ -63,9 +61,6 @@ jobs:
 
       - name: Unit tests
         run: npm test
-
-      - name: Model check
-        run: node scripts/bundle-model.mjs --check
 
       - name: Bundle (electron-vite)
         run: npx electron-vite build

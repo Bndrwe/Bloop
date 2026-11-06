@@ -69,7 +69,7 @@ The installer prints numbered steps as it goes:
 
 1. Checks git, Node.js and npm (and offers to install Node.js if it's missing).
 2. Pulls the latest code, if your copy has no local changes.
-3. Installs the build tools (`npm ci`). This is the slow part the first time; it is skipped on later runs if nothing changed. Meanwhile it downloads the on-device **Bloop model** (532 MB) in the background (see below).
+3. Installs the build tools (`npm ci`). This is the slow part the first time; it is skipped on later runs if nothing changed.
 4. Type-checks and bundles the app.
 5. Packages it with electron-builder for your system.
 6. Installs it, replacing an older copy (it quits a running Bloop first), and deletes the build output to free space.
@@ -80,15 +80,6 @@ The installer prints numbered steps as it goes:
 | macOS | `/Applications/Bloop.app` (or `~/Applications/Bloop.app` if your account can't write to `/Applications`) | Launchpad / Spotlight |
 | Windows | `%LOCALAPPDATA%\Programs\Bloop` (`C:\Users\<you>\AppData\Local\Programs\Bloop`) | Start menu and Desktop; listed in **Settings → Apps → Installed apps** |
 | Linux | `~/.local/opt/bloop/Bloop.AppImage` | the `bloop` command (`~/.local/bin/bloop`) and **Bloop** in your app menu |
-
-**The Bloop model.** The installer also downloads the on-device Bloop model (532 MB, it needs about 200 MB more free disk space while downloading), checks its sha256 and puts it in your data folder:
-
-| macOS | `~/Library/Application Support/bloop/models/` |
-|---|---|
-| Windows | `%APPDATA%\bloop\models\` |
-| Linux | `~/.config/bloop/models/` (or `$XDG_CONFIG_HOME/bloop/models/`) |
-
-Bloop then shows the model as downloaded, but it stays **off** until you choose **Use Bloop model** in **Settings → AI**. If you're offline, short on disk space or the checksum fails, the install still finishes and the app offers the download later. Re-running the installer resumes an interrupted download and does nothing if the verified file is already there. Use `--no-model` (`-NoModel` on Windows) to skip it.
 
 Because you built Bloop on your own computer, the "unidentified developer" warnings that downloaded apps get don't apply: macOS Gatekeeper opens it normally and Windows SmartScreen doesn't step in. Windows Defender may scan it the first time it starts, which can take a few seconds.
 
@@ -101,8 +92,6 @@ Because you built Bloop on your own computer, the "unidentified developer" warni
 | `--clean` | `-Clean` | Delete `node_modules`, `out` and `dist` first. Try this if a build fails strangely |
 | `--no-pull` | `-NoPull` | Don't fetch the latest code; build what you have |
 | `--keep-build` | `-KeepBuild` | Keep the build output in `dist/` |
-| `--no-model` | `-NoModel` | Don't download the 532 MB Bloop model (you can still download it in Settings → AI) |
-| `--model-only` | `-ModelOnly` | Only download and check the Bloop model, then stop (no build, no install) |
 | | `-NoDesktopShortcut` | Don't create a Desktop shortcut |
 
 Example: `./scripts/install.sh --fast`, or on Windows `powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Fast`. With npm, put them after `--`: `npm run install-app -- --fast`.
@@ -220,10 +209,9 @@ Bloop's tray icon depends on your desktop environment; some (like stock GNOME) n
 
 The panel has an **AI study plan** card that writes a week of study blocks from your deadlines and focus history. It only works once you pick where the AI runs, under **Settings → AI**:
 
-- **Use Local → Bloop model.** A small AI model that runs entirely on your computer and works offline. The installer downloads it for you (unless you used `--no-model`), but it stays off until you pick **Use Bloop model**. If it isn't on disk, nothing is fetched automatically: when you choose it (or press Generate with it selected), Bloop asks "Download the Bloop model?" (it says the model is 532 MB) with **Download** and **Not now**. Nothing is fetched until you press **Download**. You need about 532 MB of free disk space, and the download can resume if you cancel. If you already have a `.gguf` file, you can use **Import .gguf…** instead. Some builds ship the model inside the app; there it is off until you pick **Use Bloop model**.
-- **Use Local → Ollama models.** If you already use [Ollama](https://ollama.com/download), open it and pick one of its models from the list (press **Refresh** after pulling one). If Ollama is running but missing the small recommended model, Bloop offers to pull it and only does so after you confirm.
+- **Use Local (Ollama).** Install [Ollama](https://ollama.com/download) and open it, then run `ollama pull qwen3.5:0.8b` in a terminal (about 1 GB; any other model works too). In **Settings → AI → Use Local**, pick the model from the **Ollama models** list (press **Refresh** after pulling one). Everything stays on your computer. If Ollama is running but missing `qwen3.5:0.8b`, Bloop offers to pull it and only does so after you confirm.
 - **Cloud.** Uses a tool or key you already have: the Claude, Codex or Gemini command-line tools, or an Anthropic or OpenRouter API key. With a cloud option, your upcoming deadline titles and focus totals are sent to that provider, and only when you click **Generate plan**.
-- **Auto** (default) uses the first option that is ready. It never downloads anything on its own. See the README's [AI study plan](../README.md#ai-study-plan) section for the exact order.
+- **Auto** (default) uses the first option that is ready. It never downloads or pulls anything on its own. See the README's [AI study plan](../README.md#ai-study-plan) section for the exact order.
 
 The **Test** button in Settings sends a one-line prompt to check your choice works.
 
@@ -248,16 +236,16 @@ It pulls the latest code, rebuilds, quits the running Bloop and replaces it. You
 | Windows | `%APPDATA%\bloop` (`C:\Users\<you>\AppData\Roaming\bloop`) | `%APPDATA%\bloop\logs\main.log` |
 | Linux | `~/.config/bloop` | `~/.config/bloop/logs/main.log` |
 
-Your sessions and settings are in `bloop.json` in the data folder, and a downloaded AI model is in its `models` subfolder. The tray / menu bar icon has **Open logs folder**, and **About Bloop** shows both paths.
+Your sessions and settings are in `bloop.json` in the data folder. The tray / menu bar icon has **Open logs folder**, and **About Bloop** shows both paths.
 
-To clear your history and reset settings without uninstalling, use **Settings → Reset data → Reset everything…** inside Bloop. To remove just the AI model, use **Delete** next to the Bloop model in **Settings → AI**.
+To clear your history and reset settings without uninstalling, use **Settings → Reset data → Reset everything…** inside Bloop.
 
 ### Uninstall
 
 - **macOS / Linux:** in the `StudyPet` folder, run `./scripts/uninstall.sh` (or `npm run uninstall-app`). On Linux the uninstaller is also copied to `~/.local/opt/bloop/uninstall.sh`, so it works even if you deleted the source folder. On macOS without the source folder: quit Bloop and drag it from Applications to the Trash.
 - **Windows:** **Settings → Apps → Installed apps → Bloop → Uninstall**, or `powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1` in the `StudyPet` folder.
 
-The uninstaller removes the app, its shortcuts and menu entries, and launch-at-login, then **asks** before deleting your data folder (including the 532 MB Bloop model, and it says so). Add `--keep-data` / `-KeepData` to keep it (and the model) without asking, or `--purge` / `-Purge` to delete it without asking. Finally, delete the `StudyPet` source folder to free the disk space the build tools used.
+The uninstaller removes the app, its shortcuts and menu entries, and launch-at-login, then **asks** before deleting your data folder Add `--keep-data` / `-KeepData` to keep it without asking, or `--purge` / `-Purge` to delete it without asking. Finally, delete the `StudyPet` source folder to free the disk space the build tools used.
 
 ---
 
@@ -309,12 +297,11 @@ Or just run the installer on this Mac.
 - Linux: a notification daemon must be running (most desktops have one).
 - Bloop only notifies after about 3 minutes on a distracting app or site, and at most once every 2 minutes. The pet's speech bubble appears first, after about a minute.
 
-**The Bloop model download fails.**
-- Check your internet connection and that you have about 532 MB of free disk space; Bloop checks for space first.
-- Press **Download…** again. Downloads resume where they stopped.
-- Some school and work networks block the download site (huggingface.co). Try a different network, or download the `.gguf` file elsewhere and use **Import .gguf…**.
-- The button normally reads **Download…** and fetches the stock Qwen3.5 0.8B model (532 MB). Only a build with no download link shows a greyed-out **Download · Not published yet**; in that case use **Import .gguf…**, Ollama, or Cloud instead.
-- You can also skip the model and use Ollama or Cloud.
+**Ollama isn't found, or Use Local shows no models.**
+- Install [Ollama](https://ollama.com/download) and open it; Bloop says "Ollama is installed but not running" if it's closed. Then press **Refresh** in **Settings → AI → Use Local**.
+- Run `ollama pull qwen3.5:0.8b` (or any model) in a terminal, then **Refresh**.
+- If Ollama runs on another address, set it under **Advanced** in the same place.
+- You can also use **Cloud** instead.
 
 **Where are the logs?**
 Use the tray / menu bar icon → **Open logs folder**. Bloop writes everything it prints (lines starting with `[bloop]`, errors and crashes) to `main.log` there; the paths are in [section 7](#where-your-data-lives). The log doesn't record which apps or sites you used unless you start Bloop with `BLOOP_TRACE=1`. To watch it live, start Bloop from a terminal:

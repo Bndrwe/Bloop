@@ -1,17 +1,15 @@
 // Security review v2, checks 4-5: the pet context-menu request is only accepted from the pet window
-// with a strict argument shape; Check model and Try a prompt enforce their caps in main and never
-// download or pull anything.
+// with a strict argument shape; resolving a model never pulls anything.
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { getPath: () => '/tmp', isPackaged: false } }))
 vi.mock('../src/main/store', () => ({ getAiSettings: () => ({}) }))
 vi.mock('../src/main/ai/cloud', () => ({ cloudModule: null, setCloudModelsReader: () => undefined }))
 
-import { DEFAULT_AI_SETTINGS, DEFAULT_SYSTEM_PROMPT } from '../src/shared/ai'
+import { DEFAULT_AI_SETTINGS } from '../src/shared/ai'
 import { parsePetContextMenu } from '../src/main/petVisibility'
-import { runModelCheck } from '../src/main/ai/check'
 import { createRegistry } from '../src/main/ai/registry'
-import type { AiProvider, LocalModule } from '../src/main/ai/types'
+import type { LocalModule } from '../src/main/ai/types'
 
 const PET = true
 const OTHER = false
@@ -54,40 +52,21 @@ describe('pet:context-menu accepts requests only from the pet window (check 4)',
   })
 })
 
-describe('Model check (developer CLI) guards', () => {
-  it('Check model runs one at a time; a second click is refused while one is running', async () => {
-    let release!: (e: Error) => void
-    const pending = new Promise<Error>((r) => (release = r))
-    const first = runModelCheck({ resolve: () => pending.then((e) => e as unknown as AiProvider), system: DEFAULT_SYSTEM_PROMPT })
-    const second = await runModelCheck({ resolve: async () => new Error('not used'), system: DEFAULT_SYSTEM_PROMPT })
-    expect(second.ok).toBe(false)
-    expect(second.error).toMatch(/already running/)
-    release(new Error('no model'))
-    const done = await first
-    expect(done.ok).toBe(false)
-  })
-})
-
-describe('Model check never downloads or pulls (check 5)', () => {
-  it('with nothing installed, the check resolves to a friendly error and call no download or pull', async () => {
+describe('resolving a model never pulls (check 5)', () => {
+  it('with nothing installed, an Ollama choice resolves to a friendly error and no pull runs', async () => {
     const local = {
       status: vi.fn(async () => ({})),
-      provider: vi.fn(async () => new Error('The Bloop model is not on this device yet.')),
+      provider: vi.fn(async () => new Error('model not found: qwen3.5:0.8b')),
       autoProvider: vi.fn(async () => null),
-      downloadBloop: vi.fn(async () => ({ ok: false })),
-      pullOllama: vi.fn(async () => ({ ok: false })),
-      importBloop: vi.fn(async () => ({ ok: false })),
-      verifyBloop: vi.fn(async () => ({ ok: false }))
+      pullOllama: vi.fn(async () => ({ ok: false }))
     }
     const registry = createRegistry({
       local: local as unknown as LocalModule,
       cloud: null,
-      getSettings: () => ({ ...DEFAULT_AI_SETTINGS, choice: { kind: 'local', runtime: 'bloop', model: 'bloop-qwen3.5-0.8b' }, autoCloud: [] }) as never
+      getSettings: () => ({ ...DEFAULT_AI_SETTINGS, choice: { kind: 'local', runtime: 'ollama', model: 'qwen3.5:0.8b' }, autoCloud: [] })
     })
-    const check = await runModelCheck({ resolve: () => registry.resolve(), system: DEFAULT_SYSTEM_PROMPT })
-    expect(check.ok).toBe(false)
-    expect(local.downloadBloop).not.toHaveBeenCalled()
+    expect(await registry.resolve()).toBeInstanceOf(Error)
+    expect(await registry.resolve({ kind: 'auto' })).toBeInstanceOf(Error)
     expect(local.pullOllama).not.toHaveBeenCalled()
-    expect(local.importBloop).not.toHaveBeenCalled()
   })
 })

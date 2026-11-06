@@ -79,7 +79,7 @@ describe('DEFAULT_SYSTEM_PROMPT', () => {
   })
 })
 
-describe('settings: no custom instructions any more', () => {
+describe('settings: the system prompt is not user-editable', () => {
   it('a systemPrompt saved by an older version is dropped', () => {
     expect('systemPrompt' in validateAiSettings({ systemPrompt: 'Mine' })).toBe(false)
   })

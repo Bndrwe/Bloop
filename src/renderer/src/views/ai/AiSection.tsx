@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { AiChoice, AiSettings, AiStatus, CloudProviderId, DownloadProgress, LocalStatus } from '@shared/ai'
+import { ollamaSetupStep, type AiChoice, type AiSettings, type AiStatus, type CloudProviderId, type DownloadProgress, type LocalStatus } from '@shared/ai'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Icon } from '../../lib/Icon'
 import { errMsg } from '../../lib/format'
 import { formatBytes, useAi } from '../../hooks/useAi'
-import { BloopConfirm } from './BloopConfirm'
 import CloudSection from './CloudSection'
 import './ai.css'
 
@@ -69,170 +68,9 @@ function Segmented({ value, onChange }: { value: View; onChange: (v: View) => vo
   )
 }
 
-function BloopGroup({
-  bloop,
-  selected,
-  onSelect,
-  onAskDownload,
-  onEnable,
-  onDisable,
-  busyNote
-}: {
-  bloop: LocalStatus['bloop']
-  selected: boolean
-  onSelect: () => void
-  onAskDownload: () => void
-  onEnable: () => void
-  onDisable: () => void
-  busyNote: (msg: string | null) => void
-}): JSX.Element {
-  const ai = window.studyPet.ai
-  const [askDelete, setAskDelete] = useState(false)
-  const bundled = bloop.source === 'bundled'
-  const on = bundled && bloop.enabled && selected
-  const p = bloop.progress
-  const downloading = p?.state === 'running' || p?.state === 'verifying'
-  const published = Boolean(bloop.url)
-  const tag = bundled ? (
-    on ? <span className="tag">On</span> : <span className="tag tag--muted">Off</span>
-  ) : downloading ? (
-    <span className="tag tag--dashed">Downloading</span>
-  ) : bloop.downloaded ? (
-    <span className="tag">On this device</span>
-  ) : published ? (
-    <span className="tag tag--muted">Not downloaded</span>
-  ) : (
-    <span className="tag tag--muted">Not published yet</span>
-  )
+const OLLAMA_DOWNLOAD_URL = 'https://ollama.com/download'
 
-  const importFile = async (): Promise<void> => {
-    try {
-      const r = await ai.importBloopModelFile()
-      if (!r.ok && r.error !== 'cancelled') busyNote(r.error ?? 'Import failed.')
-      else if (r.ok) {
-        busyNote(null)
-        onSelect()
-      }
-    } catch (e) {
-      busyNote(errMsg(e))
-    }
-  }
-
-  if (bundled) {
-    return (
-      <div className="ai-group">
-        <div className="ai-group-head">
-          <h3>Bloop model</h3>
-          <span className="faint">included with Bloop</span>
-        </div>
-        <div className={`ai-row ai-row--bloop${on ? ' is-selected' : ''}`}>
-          <div className="ai-pick" role="radio" aria-checked={on}>
-            <span className="ai-radio" aria-hidden />
-            <span className="ai-pick-text">
-              <span className="ai-name">{bloop.label}</span>
-              <span className="ai-sub faint">
-                {on ? 'On · runs on this device' : 'Included with Bloop · off'}
-                {bloop.sizeBytes ? <> · <span className="num">{formatBytes(bloop.sizeBytes)}</span></> : null}
-              </span>
-            </span>
-            {tag}
-          </div>
-          <p className="ai-note faint">Runs fully on this device. Nothing leaves your computer.</p>
-          <div className="ai-actions">
-            {on ? (
-              <button type="button" className="btn btn--small" onClick={onDisable}>
-                Turn off
-              </button>
-            ) : (
-              <button type="button" className="btn btn--small btn--primary" onClick={onEnable}>
-                Use Bloop model
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="ai-group">
-      <div className="ai-group-head">
-        <h3>Bloop model</h3>
-        <span className="faint">runs in the app</span>
-      </div>
-      <div className={`ai-row ai-row--bloop${selected ? ' is-selected' : ''}`}>
-        <button
-          type="button"
-          role="radio"
-          aria-checked={selected}
-          className="ai-pick"
-          onClick={() => (bloop.downloaded ? onSelect() : published && !downloading ? onAskDownload() : undefined)}
-        >
-          <span className="ai-radio" aria-hidden />
-          <span className="ai-pick-text">
-            <span className="ai-name">{bloop.label}</span>
-            <span className="ai-sub faint">
-              Writes your study plans on this device. Nothing leaves your computer.
-              {bloop.sizeBytes ? <> · <span className="num">{formatBytes(bloop.sizeBytes)}</span></> : null}
-            </span>
-          </span>
-          {tag}
-        </button>
-        {downloading && p && <Progress p={p} label="Bloop model download" />}
-        {p?.state === 'error' && (
-          <p className="ai-note ai-note--error">
-            <Icon name="alert" size={13} />
-            {p.error ?? 'Download failed.'}
-          </p>
-        )}
-        {p?.state === 'cancelled' && !bloop.downloaded && <p className="ai-note faint">Paused. Download again to resume.</p>}
-        <div className="ai-actions">
-          {downloading ? (
-            <button type="button" className="btn btn--small" onClick={() => void ai.cancelBloopDownload()}>
-              <Icon name="close" size={12} />
-              Cancel
-            </button>
-          ) : !bloop.downloaded ? (
-            <button
-              type="button"
-              className="btn btn--small btn--primary"
-              disabled={!published}
-              title={published ? undefined : 'Not published yet'}
-              onClick={onAskDownload}
-            >
-              <Icon name="download" size={13} />
-              {published ? 'Download…' : 'Download · Not published yet'}
-            </button>
-          ) : null}
-          {!downloading && (
-            <button type="button" className="btn btn--small" onClick={() => void importFile()}>
-              <Icon name="folder" size={13} />
-              Import .gguf…
-            </button>
-          )}
-          {bloop.downloaded && !downloading && (
-            <button type="button" className="btn btn--small btn--danger" onClick={() => setAskDelete(true)}>
-              <Icon name="trash" size={13} />
-              Delete
-            </button>
-          )}
-        </div>
-      </div>
-      <ConfirmDialog
-        open={askDelete}
-        title="Delete the Bloop model?"
-        confirmLabel="Delete"
-        onCancel={() => setAskDelete(false)}
-        onConfirm={() => {
-          setAskDelete(false)
-          void ai.deleteBloopModel()
-        }}
-      >
-        <p>This frees {bloop.sizeBytes ? `about ${formatBytes(bloop.sizeBytes)}` : 'the disk space it uses'}. You can download or import it again later.</p>
-      </ConfirmDialog>
-    </div>
-  )
-}
+const STEP_TITLES: Record<1 | 2 | 3, string> = { 1: 'Install Ollama', 2: 'Get a model', 3: 'Pick a model' }
 
 function OllamaGroup({
   ollama,
@@ -259,6 +97,7 @@ function OllamaGroup({
   const pulling = pull?.state === 'running'
   const hasSuggested = ollama.models.some((m) => sameModel(m.name, SUGGESTED_OLLAMA))
   const selectedModel = settings.choice.kind === 'local' && settings.choice.runtime === 'ollama' ? settings.choice.model : null
+  const step = ollamaSetupStep(ollama)
 
   const refresh = async (): Promise<void> => {
     setRefreshing(true)
@@ -294,36 +133,65 @@ function OllamaGroup({
     <span className="tag tag--muted">Not found</span>
   )
 
-  return (
-    <div className="ai-group">
-      <div className="ai-group-head">
-        <h3>Ollama models</h3>
-        {statusLine}
-        <button type="button" className="btn btn--small btn--ghost ai-refresh" disabled={refreshing} onClick={() => void refresh()}>
-          <Icon name="refresh" size={12} />
-          {refreshing ? 'Checking…' : 'Refresh'}
-        </button>
-      </div>
+  const checkAgain = (
+    <button type="button" className="btn btn--small" disabled={refreshing} onClick={() => void refresh()}>
+      <Icon name="refresh" size={12} />
+      {refreshing ? 'Checking…' : 'Check again'}
+    </button>
+  )
 
-      {!ollama.running && (
-        <p className="ai-note faint">
-          {ollama.installed ? (
-            <>Ollama is installed but not running: open Ollama, then Refresh.</>
-          ) : (
-            <>
-              Use models you already run with Ollama. Install it from{' '}
-              <a href="https://ollama.com/download" target="_blank" rel="noreferrer">
-                ollama.com
-              </a>{' '}
-              and run <code>ollama pull {SUGGESTED_OLLAMA}</code>
-            </>
-          )}
+  const pullProgress = (
+    <>
+      {pulling && pull && <Progress p={pull} label={`Pulling ${pull.model}`} />}
+      {(pullErr || pull?.state === 'error') && (
+        <p className="ai-note ai-note--error">
+          <Icon name="alert" size={13} />
+          {pullErr ?? pull?.error}
         </p>
       )}
+    </>
+  )
 
-      {ollama.running && ollama.models.length === 0 && <p className="ai-note faint">No models installed in Ollama yet.</p>}
-
-      {ollama.models.length > 0 && (
+  const body: Record<1 | 2 | 3, JSX.Element> = {
+    1: ollama.installed ? (
+      <>
+        <p className="ai-note faint">Ollama is installed but not running. Open the Ollama app, then press Check again.</p>
+        <div className="ai-actions">{checkAgain}</div>
+      </>
+    ) : (
+      <>
+        <p className="ai-note faint">Ollama is a free app that runs AI models on your computer. Nothing you write leaves it.</p>
+        <div className="ai-actions">
+          <button type="button" className="btn btn--small btn--primary" onClick={() => void window.studyPet.openExternal(OLLAMA_DOWNLOAD_URL)}>
+            <Icon name="download" size={13} />
+            Download Ollama
+          </button>
+          {checkAgain}
+        </div>
+        <p className="ai-note faint">Already installed? Open the Ollama app, then press Check again.</p>
+      </>
+    ),
+    2: (
+      <>
+        <p className="ai-note faint">
+          Ollama is running but has no models yet. Get <code>{SUGGESTED_OLLAMA}</code>, a small, fast model that works well with Bloop (about 1 GB).
+        </p>
+        <div className="ai-actions">
+          <button type="button" className="btn btn--small btn--primary" disabled={pulling} onClick={() => setAskPull(true)}>
+            <Icon name="download" size={13} />
+            {pulling ? 'Getting it…' : `Get ${SUGGESTED_OLLAMA}…`}
+          </button>
+          {checkAgain}
+        </div>
+        {pullProgress}
+        <p className="ai-note faint">
+          Want a different model? Run <code>ollama pull &lt;name&gt;</code> in a terminal, then press Check again.
+        </p>
+      </>
+    ),
+    3: (
+      <>
+        <p className="ai-note faint">Pick the model Bloop should use. Auto never uses Ollama on its own, so this is how you turn it on.</p>
         <div className="ai-list" role="radiogroup" aria-label="Ollama model">
           {ollama.models.map((m) => {
             const sel = selectedModel != null && sameModel(selectedModel, m.name)
@@ -346,30 +214,55 @@ function OllamaGroup({
             )
           })}
         </div>
-      )}
-
-      {ollama.running && !hasSuggested && (
-        <div className="ai-offer">
-          <div>
-            <strong>Pull {SUGGESTED_OLLAMA} with Ollama?</strong>
-            <span className="faint"> The small Qwen3.5 model Bloop is tuned around, about 1 GB.</span>
-          </div>
-          {pulling && pull ? (
-            <Progress p={pull} label={`Pulling ${pull.model}`} />
-          ) : (
-            <button type="button" className="btn btn--small" onClick={() => setAskPull(true)}>
+        {!hasSuggested && (
+          <div className="ai-actions">
+            <button type="button" className="btn btn--small" disabled={pulling} onClick={() => setAskPull(true)}>
               <Icon name="download" size={13} />
-              Pull…
+              {pulling ? 'Getting it…' : `Get ${SUGGESTED_OLLAMA}…`}
             </button>
-          )}
-          {(pullErr || pull?.state === 'error') && (
-            <p className="ai-note ai-note--error">
-              <Icon name="alert" size={13} />
-              {pullErr ?? pull?.error}
-            </p>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+        {pullProgress}
+        <p className="ai-note faint">
+          Other models: run <code>ollama pull &lt;name&gt;</code> in a terminal, then Refresh.
+        </p>
+      </>
+    )
+  }
+
+  return (
+    <div className="ai-group">
+      <div className="ai-group-head">
+        <h3>Ollama</h3>
+        {statusLine}
+        <button type="button" className="btn btn--small btn--ghost ai-refresh" disabled={refreshing} onClick={() => void refresh()}>
+          <Icon name="refresh" size={12} />
+          {refreshing ? 'Checking…' : 'Refresh'}
+        </button>
+      </div>
+
+      <p className="faint ai-steps__count" aria-live="polite">
+        Setup: step {step} of 3
+      </p>
+      <ol className="ai-steps" aria-label="Ollama setup">
+        {([1, 2, 3] as const).map((n) => {
+          const state = n < step ? 'done' : n === step ? 'current' : 'todo'
+          return (
+            <li key={n} className={`ai-step ai-step--${state}`} {...(state === 'current' ? { 'aria-current': 'step' as const } : {})}>
+              <div className="ai-step__head">
+                <span className="ai-step__num num" aria-hidden>
+                  {state === 'done' ? <Icon name="check" size={11} /> : n}
+                </span>
+                <span className="ai-step__title">
+                  Step {n}: {STEP_TITLES[n]}
+                  {state === 'done' && <span className="visually-hidden"> (done)</span>}
+                </span>
+              </div>
+              {state === 'current' && <div className="ai-step__body">{body[n]}</div>}
+            </li>
+          )
+        })}
+      </ol>
 
       <details className="ai-advanced">
         <summary>Advanced</summary>
@@ -390,15 +283,15 @@ function OllamaGroup({
       <ConfirmDialog
         open={askPull}
         eyebrow="Ollama"
-        title={`Pull ${SUGGESTED_OLLAMA}?`}
-        confirmLabel="Pull"
+        title={`Get ${SUGGESTED_OLLAMA}?`}
+        confirmLabel="Download"
         cancelLabel="Not now"
         onCancel={() => setAskPull(false)}
         onConfirm={() => void doPull()}
       >
         <p>
-          Pull <strong>{SUGGESTED_OLLAMA}</strong> with Ollama? Ollama downloads it (about 1 GB) and keeps it with your other Ollama
-          models. It runs on this device.
+          Ollama downloads <strong>{SUGGESTED_OLLAMA}</strong> (about 1 GB) and keeps it with your other Ollama models. It runs on this
+          device.
         </p>
       </ConfirmDialog>
     </div>
@@ -410,7 +303,6 @@ export function AiSection(): JSX.Element {
   const { status, settings, setSettings, refresh } = useAi()
   const ai = window.studyPet.ai
   const [view, setView] = useState<View | null>(null)
-  const [askBloop, setAskBloop] = useState(false)
   const [note, setNote] = useState<string | null>(null)
   const [test, setTest] = useState<{ busy: boolean; text: string | null; ok: boolean }>({ busy: false, text: null, ok: true })
 
@@ -449,15 +341,6 @@ export function AiSection(): JSX.Element {
     if (v === 'auto') choose({ kind: 'auto' })
   }
 
-  const download = async (): Promise<void> => {
-    setAskBloop(false)
-    if (!status) return
-    const id = status.local.bloop.id
-    const r = await ai.downloadBloopModel(true)
-    if (r.ok) choose({ kind: 'local', runtime: 'bloop', model: id })
-    else if (r.error && !/cancelled/i.test(r.error)) setNote(r.error)
-  }
-
   const runTest = async (): Promise<void> => {
     setTest({ busy: true, text: null, ok: true })
     try {
@@ -481,24 +364,6 @@ export function AiSection(): JSX.Element {
     )
   }
 
-  const bloopSelected = settings.choice.kind === 'local' && settings.choice.runtime === 'bloop'
-  const enableBloop = (): void => {
-    ai.setBloopEnabled(true)
-      .then((s) => {
-        setSettings(s)
-        setNote(null)
-      })
-      .catch((e) => setNote(errMsg(e)))
-  }
-  const disableBloop = (): void => {
-    ai.setBloopEnabled(false)
-      .then((s) => {
-        setSettings(s)
-        setNote(null)
-      })
-      .catch((e) => setNote(errMsg(e)))
-  }
-
   return (
     <section className="card ai-card enter" aria-labelledby="ai-h">
       <div className="section-head">
@@ -506,8 +371,8 @@ export function AiSection(): JSX.Element {
         <Segmented value={view} onChange={onView} />
       </div>
       <p className="section-sub muted">
-        Writes your weekly study plan. {view === 'auto' && 'Auto uses the first ready option from the order below. Cloud models are only used if you turn them on.'}
-        {view === 'local' && 'Runs on this computer. Pick one model.'}
+        Writes your weekly study plan. {view === 'auto' && 'Auto tries the cloud providers you turned on for it, in the order below. To run a model on this computer, pick an Ollama model in Use Local.'}
+        {view === 'local' && 'Runs on this computer with Ollama. Pick one model.'}
         {view === 'cloud' && 'Uses a tool or API key you already have.'}
       </p>
 
@@ -515,15 +380,6 @@ export function AiSection(): JSX.Element {
 
       {view === 'local' && (
         <div className="ai-local">
-          <BloopGroup
-            bloop={status.local.bloop}
-            selected={bloopSelected}
-            onSelect={() => choose({ kind: 'local', runtime: 'bloop', model: status.local.bloop.id })}
-            onAskDownload={() => setAskBloop(true)}
-            onEnable={enableBloop}
-            onDisable={disableBloop}
-            busyNote={setNote}
-          />
           <OllamaGroup
             ollama={status.local.ollama}
             settings={settings}
@@ -564,20 +420,11 @@ export function AiSection(): JSX.Element {
         </span>
       </div>
 
-      <BloopConfirm
-        open={askBloop}
-        bloop={status.local.bloop}
-        onDownload={() => void download()}
-        onNotNow={() => {
-          setAskBloop(false)
-          void ai.dismissBloopOffer()
-        }}
-      />
     </section>
   )
 }
 
-/** The exact providers Auto will try, first to last: ready cloud providers the user turned on, then local. */
+/** The exact providers Auto will try, first to last: the ready cloud providers the user turned on. Never a local model. */
 export function autoOrder(status: AiStatus, settings: AiSettings): string[] {
   const out: string[] = []
   for (const id of settings.autoCloud) {
@@ -587,39 +434,21 @@ export function autoOrder(status: AiStatus, settings: AiSettings): string[] {
     const ml = m ? (c.models.find((x) => x.id === m)?.label ?? m) : ''
     out.push(ml ? `${c.label} (${ml})` : c.label)
   }
-  const { bloop, ollama } = status.local
-  if (bloop.downloaded && bloop.enabled) out.push('Bloop model (on-device)')
-  if (ollama.running && ollama.models.length > 0) out.push('Ollama (on-device)')
   return out
 }
 
 function AutoSummary({ status, settings, onPick }: { status: AiStatus; settings: AiSettings; onPick: (v: View) => void }): JSX.Element {
-  const { bloop, ollama } = status.local
-  const bloopDetail =
-    bloop.source === 'bundled'
-      ? bloop.enabled
-        ? 'included, on'
-        : 'included, off until you turn it on'
-      : bloop.downloaded
-        ? bloop.enabled
-          ? 'on this device'
-          : 'on this device, off until you turn it on'
-        : 'not downloaded'
-  const cloudRows: [string, string, boolean][] = settings.autoCloud.map((id) => {
+  const rows: [string, string, boolean][] = settings.autoCloud.map((id) => {
     const c = status.cloud.find((x) => x.id === id)
     return [c?.label ?? id, c?.available ? 'turned on' : 'turned on, but not available', Boolean(c?.available)]
   })
-  const rows: [string, string, boolean][] = [
-    ...cloudRows,
-    ['Bloop model', bloopDetail, bloop.downloaded && bloop.enabled],
-    ['Ollama', ollama.running ? `${ollama.models.length} model${ollama.models.length === 1 ? '' : 's'}` : ollama.installed ? 'not running' : 'not found', ollama.running && ollama.models.length > 0]
-  ]
   const order = autoOrder(status, settings)
   return (
     <div className="ai-auto">
       <p className="ai-auto__line" aria-live="polite">
         <strong>Auto uses:</strong> {order.length ? order.map((o, i) => `${i + 1}. ${o}`).join(' · ') : 'nothing yet'}
       </p>
+      {rows.length === 0 && <p className="faint">No cloud providers are turned on for Auto yet.</p>}
       <ol className="ai-order">
         {rows.map(([name, detail, ready]) => (
           <li key={name} className={ready ? 'is-ready' : ''}>
@@ -629,14 +458,14 @@ function AutoSummary({ status, settings, onPick }: { status: AiStatus; settings:
           </li>
         ))}
       </ol>
-      <p className="faint ai-auto__note">Cloud models are only used if you turn them on.</p>
+      <p className="faint ai-auto__note">Cloud models are only used if you turn them on. Auto never picks an Ollama model by itself.</p>
       {!status.active && (
         <div className="ai-actions">
-          <button type="button" className="btn btn--small btn--primary" onClick={() => onPick('local')}>
-            Set up Use Local
-          </button>
-          <button type="button" className="btn btn--small" onClick={() => onPick('cloud')}>
+          <button type="button" className="btn btn--small btn--primary" onClick={() => onPick('cloud')}>
             Set up Cloud
+          </button>
+          <button type="button" className="btn btn--small" onClick={() => onPick('local')}>
+            Use Local
           </button>
         </div>
       )}

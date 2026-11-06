@@ -1,6 +1,7 @@
 // Resolves AiSettings.choice into a provider, assembles AiStatus and pushes it to windows.
-// 'auto' = the first available cloud provider the user turned on (AiSettings.autoCloud), then local
-// (Bloop model if turned on, then Ollama). Cloud providers not turned on are never used; no downloads or pulls.
+// 'auto' = the first available cloud provider the user turned on (AiSettings.autoCloud), in order.
+// Auto never falls back to a local model: Ollama runs only when the user picks an Ollama model.
+// Cloud providers not turned on are never used; nothing is pulled.
 import type { AiChoice, AiSettings, AiStatus } from '@shared/ai'
 import * as store from '../store'
 import { onAiChanged } from './events'
@@ -14,7 +15,7 @@ export const cloudModule: CloudModule | null = cloud
 setCloudModelsReader(() => store.getAiSettings().cloudModels)
 
 export const NO_AI_MESSAGE =
-  'Turn on a model in Settings → AI: the Bloop model, an Ollama model, or a cloud provider you already use.'
+  'Turn on a model in Settings → AI: an Ollama model, or a cloud provider you already use.'
 
 export interface RegistryDeps {
   local: LocalModule
@@ -35,23 +36,14 @@ export function createRegistry(deps: RegistryDeps): Registry {
       if (choice.kind === 'cloud') {
         return deps.cloud ? await deps.cloud.provider(choice) : new Error('Cloud providers are not available in this build yet.')
       }
-      // 1. Cloud providers the user turned on, in their order. Not-on providers are never touched.
-      // A failure in one half must not hide a ready option in the other, so errors fall through.
-      let firstErr: Error | null = null
-      const note = (e: unknown): null => {
-        firstErr ??= e instanceof Error ? e : new Error(String(e))
-        return null
-      }
+      // Auto: only the cloud providers the user turned on, in their order. Not-on providers are never
+      // touched, and a local model is never used by Auto.
       const allowed = deps.getSettings().autoCloud ?? []
       if (deps.cloud && allowed.length) {
-        const c = await deps.cloud.autoProvider(allowed).catch(note)
+        const c = await deps.cloud.autoProvider(allowed)
         if (c) return c
       }
-      // 2. Local: the Bloop model (if turned on), then Ollama.
-      const local = await deps.local.autoProvider().catch(note)
-      if (local) return local
-      // 3. Nothing ready: explain a real failure rather than the generic message.
-      return firstErr ?? new Error(NO_AI_MESSAGE)
+      return new Error(NO_AI_MESSAGE)
     } catch (e) {
       return e instanceof Error ? e : new Error(String(e))
     }

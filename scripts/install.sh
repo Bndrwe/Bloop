@@ -10,10 +10,6 @@
 #   macOS: /Applications/Bloop.app (or ~/Applications/Bloop.app if /Applications isn't writable)
 #   Linux: ~/.local/opt/bloop/Bloop.AppImage, plus ~/.local/bin/bloop and an app-menu entry
 #
-# It also downloads the on-device Bloop model (about 532 MB, checked against its sha256) into Bloop's
-# data folder so there is no wait later. The model stays OFF until you choose "Use Bloop model" in
-# Settings → AI. Pass --no-model to skip it; a failed download never fails the install.
-#
 # Uninstall: ./scripts/uninstall.sh   (or npm run uninstall-app)
 
 # Works with the bash 3.2 that ships with macOS. Everything runs inside main(), so bash has read the
@@ -58,12 +54,7 @@ Options:
   --clean        delete dist/, out/ and node_modules/ first (fixes most odd build errors)
   --no-pull      don't `git pull` the latest code first
   --keep-build   keep the build output in dist/ (it is deleted after installing to save space)
-  --no-model     don't download the on-device Bloop model (532 MB; you can download it later in Settings → AI)
-  --model-only   only download and verify the Bloop model, then stop (no build, no install)
   -h, --help     show this help
-
-The Bloop model is downloaded into Bloop's data folder and verified, but it stays OFF until you choose
-"Use Bloop model" in Settings → AI.
 
 Re-run the same command to update. Uninstall with ./scripts/uninstall.sh.
 EOF
@@ -203,7 +194,7 @@ build_app() {
   fi
 
   step "Bundling the app"
-  (cd "$ROOT" && node scripts/bundle-model.mjs --check && npx --no-install electron-vite build)
+  (cd "$ROOT" && npx --no-install electron-vite build)
   ok "bundled into out/"
 
   step "Packaging Bloop for $OS-$NODE_ARCH"
@@ -416,180 +407,24 @@ EOF
   fi
 }
 
-# ------------------------------------------------------------------ Bloop model
+# ------------------------------------------------------------------ old model file cleanup
 
-# The on-device Bloop model. URL, sha256, size and file name come from src/main/ai/local/bloop.ts
-# (through scripts/model-info.mjs), so there is one source of truth. The file goes where the app
-# looks for a downloaded model: <userData>/models/<file>. The app lists it as "downloaded" but keeps
-# it OFF (bloopEnabled) until the user turns it on. Nothing here ever fails the install.
-#
-# TEST ONLY: BLOOP_MODEL_URL_OVERRIDE / BLOOP_MODEL_SHA256_OVERRIDE / BLOOP_MODEL_BYTES_OVERRIDE
-# (read by model-info.mjs) point this at a local server and a small fake file. Never set them normally.
-
-model_dir() {
+# One-time cleanup: earlier installers downloaded an on-device model file into the app's own data
+# folder (<userData>/models/). Delete just that file (and its .part), and the folder if that leaves
+# it empty. Nothing else is touched, and nothing here ever fails the install.
+remove_old_model_file() {
+  local dir f removed=0
   if [[ "$OS" == mac ]]; then
-    printf '%s' "$HOME/Library/Application Support/bloop/models"
+    dir="$HOME/Library/Application Support/bloop/models"
   else
-    printf '%s' "${XDG_CONFIG_HOME:-$HOME/.config}/bloop/models"
+    dir="${XDG_CONFIG_HOME:-$HOME/.config}/bloop/models"
   fi
-}
-
-file_size() { wc -c <"$1" 2>/dev/null | tr -d ' \t' || echo 0; }
-
-sha256_of() {
-  if have shasum; then shasum -a 256 "$1" | awk '{print $1}'
-  elif have sha256sum; then sha256sum "$1" | awk '{print $1}'
-  else node -e 'const h=require("crypto").createHash("sha256");require("fs").createReadStream(process.argv[1]).on("data",d=>h.update(d)).on("end",()=>console.log(h.digest("hex")))' "$1"
-  fi
-}
-
-# Free KB on the filesystem holding $1 (or its nearest existing parent).
-free_kb_at() {
-  local d="$1"
-  while [[ ! -d "$d" && "$d" != / && "$d" != . ]]; do d="$(dirname "$d")"; done
-  df -Pk "$d" 2>/dev/null | awk 'NR==2 {print $4}'
-}
-
-# Never returns non-zero. Quiet progress (no bar) when MODEL_QUIET=1 (background run).
-download_model() {
-  local url sha bytes file
-  url="$(node "$ROOT/scripts/model-info.mjs" --field url 2>/dev/null)" &&
-  sha="$(node "$ROOT/scripts/model-info.mjs" --field sha256 2>/dev/null)" &&
-  bytes="$(node "$ROOT/scripts/model-info.mjs" --field bytes 2>/dev/null)" &&
-  file="$(node "$ROOT/scripts/model-info.mjs" --field file 2>/dev/null)" || {
-    warn "Couldn't read the Bloop model info, so skipping the model. Bloop works without it."; return 0; }
-  if [[ -z "$url" || ! "$sha" =~ ^[0-9a-fA-F]{64}$ || ! "$bytes" =~ ^[0-9]+$ || "$bytes" == 0 || "$file" == */* || -z "$file" ]]; then
-    warn "The Bloop model isn't configured for download, so skipping it."; return 0
-  fi
-  # Only https (plain http is allowed solely for the local test server, BLOOP_TEST_MODE=1).
-  if [[ ! "$url" =~ ^https:// && "${BLOOP_TEST_MODE:-}" != 1 ]]; then
-    warn "The Bloop model URL isn't https, so skipping it."; return 0
-  fi
-  sha="$(printf '%s' "$sha" | tr 'A-F' 'a-f')"
-  have curl || { warn "curl is missing, so skipping the Bloop model. Download it later in Settings → AI."; return 0; }
-
-  local dir dest part mb=$(( bytes / 1000000 ))
-  dir="$(model_dir)"; dest="$dir/$file"; part="$dest.part"
-
-  if [[ -e "$dest.imported" ]]; then
-    ok "a Bloop model you imported is already in place; leaving it alone"; return 0
-  fi
-  if [[ -f "$dest" ]]; then
-    if [[ "$(file_size "$dest")" == "$bytes" && "$(sha256_of "$dest")" == "$sha" ]]; then
-      ok "Bloop model already downloaded and verified ($dest); not downloading again"
-      return 0
-    fi
-    warn "The Bloop model file on disk has the wrong size or checksum; downloading it again."
-  fi
-
-  # Offline (or Hugging Face unreachable): skip quietly.
-  if ! curl -fsIL --max-time 15 -o /dev/null "$url" 2>/dev/null; then
-    warn "Can't reach the model download server (offline?), so skipping the Bloop model."
-    warn "Bloop still works; download it later in Settings → AI, or re-run this installer."
-    return 0
-  fi
-
-  mkdir -p "$dir" 2>/dev/null || { warn "Can't create $dir, so skipping the Bloop model."; return 0; }
-  local have_part=0
-  [[ -f "$part" ]] && have_part="$(file_size "$part")"
-  if (( have_part > bytes )); then rm -f "$part"; have_part=0; fi
-  local free_kb need_kb=$(( (bytes - have_part) / 1024 + 204800 ))
-  free_kb="$(free_kb_at "$dir")"
-  if [[ -n "$free_kb" ]] && (( free_kb < need_kb )); then
-    warn "Not enough free disk space for the Bloop model (needs about $((need_kb / 1024)) MB, $((free_kb / 1024)) MB free), so skipping it."
-    return 0
-  fi
-
-  if (( have_part == bytes )); then
-    info "resuming: the download is already complete, verifying…"
-  else
-    (( have_part > 0 )) && info "resuming the Bloop model download from $((have_part / 1000000)) MB"
-    local flags=(-fL --retry 3 --retry-delay 2 --connect-timeout 20 -C -) rc=0 attempt
-    if [[ "${MODEL_QUIET:-0}" == 1 ]]; then flags+=(-sS); elif [[ -t 1 ]]; then flags+=(--progress-bar); else flags+=(-sS); fi
-    for attempt in 1 2; do
-      curl "${flags[@]}" -o "$part" "$url" || rc=$?
-      # 33: the server won't resume (ignores Range). 416: the .part is bad. Start over once.
-      if [[ "$rc" == 33 || "$rc" == 22 ]] && (( attempt == 1 )) && [[ -f "$part" ]]; then
-        rm -f "$part"; rc=0; continue
-      fi
-      break
-    done
-    if [[ "$rc" != 0 ]]; then
-      warn "The Bloop model download didn't finish (curl error $rc). Bloop works without it."
-      warn "Re-run this installer to resume, or download it in Settings → AI."
-      return 0
-    fi
-  fi
-
-  if [[ "$(file_size "$part")" != "$bytes" ]]; then
-    warn "The Bloop model download has the wrong size ($(file_size "$part") of $bytes bytes); deleting it. Download it later in Settings → AI."
-    rm -f "$part"; return 0
-  fi
-  info "verifying checksum…"
-  if [[ "$(sha256_of "$part")" != "$sha" ]]; then
-    warn "The Bloop model failed its checksum, so I deleted it. Bloop works without it; download it later in Settings → AI."
-    rm -f "$part"; return 0
-  fi
-  mv -f "$part" "$dest" || { warn "Couldn't move the model into place ($dest)."; return 0; }
-  ok "Bloop model downloaded and verified ($mb MB): $dest"
-  info "It is OFF until you choose \"Use Bloop model\" in Settings → AI."
-  return 0
-}
-
-# Starts the download in the background (log in a temp file) so it runs while the app builds.
-MODEL_PID='' MODEL_LOG=''
-start_model_download() {
-  if (( NO_MODEL )); then
-    step "Bloop model"
-    info "Skipping the on-device Bloop model (--no-model). You can download it later in Settings → AI."
-    return 0
-  fi
-  step "Bloop model"
-  local mb
-  # pipefail is on: without "|| true" a failing model-info.mjs would abort the whole install here.
-  mb="$(node "$ROOT/scripts/model-info.mjs" --field bytes 2>/dev/null | awk '{printf "%d", $1 / 1000000}' || true)"
-  info "Downloading the Bloop model (${mb:-532} MB, runs on your computer; turn it on in Settings → AI)… use --no-model to skip"
-  MODEL_LOG="$(mktemp "${TMPDIR:-/tmp}/bloop-model.XXXXXX")"
-  MODEL_PART="$(model_dir)/$(node "$ROOT/scripts/model-info.mjs" --field file 2>/dev/null || echo model).part"
-  MODEL_BYTES="$(node "$ROOT/scripts/model-info.mjs" --field bytes 2>/dev/null || echo 0)"
-  ( MODEL_QUIET=1 download_model ) >"$MODEL_LOG" 2>&1 &
-  MODEL_PID=$!
-  info "(downloading in the background while Bloop builds)"
-}
-
-# Waits for the background download, showing progress, then prints what it said.
-finish_model_download() {
-  [[ -n "$MODEL_PID" ]] || return 0
-  if kill -0 "$MODEL_PID" 2>/dev/null; then
-    step "Finishing the Bloop model download"
-    local last=-1 n=0 cur
-    while kill -0 "$MODEL_PID" 2>/dev/null; do
-      cur="$(file_size "$MODEL_PART" 2>/dev/null || echo 0)"; cur="${cur:-0}"
-      if (( cur != last )); then
-        if [[ -t 1 ]]; then
-          printf '\r    %d / %d MB (%d%%)   ' $((cur / 1000000)) $((MODEL_BYTES / 1000000)) $(( MODEL_BYTES > 0 ? cur * 100 / MODEL_BYTES : 0 ))
-        elif (( n % 10 == 0 )); then
-          printf '    %d / %d MB\n' $((cur / 1000000)) $((MODEL_BYTES / 1000000))
-        fi
-        last=$cur
-      fi
-      n=$((n + 1)); sleep 1
-    done
-    [[ -t 1 ]] && printf '\n'
-  fi
-  wait "$MODEL_PID" 2>/dev/null || true
-  MODEL_PID=''
-  [[ -s "$MODEL_LOG" ]] && sed 's/^/  /' "$MODEL_LOG"
-  rm -f "$MODEL_LOG"
-  return 0
-}
-
-stop_model_download() {
-  if [[ -n "${MODEL_PID:-}" ]] && kill -0 "$MODEL_PID" 2>/dev/null; then
-    kill "$MODEL_PID" 2>/dev/null || true
-    pkill -P "$MODEL_PID" 2>/dev/null || true   # its curl; the .part stays for the next run to resume
-  fi
-  [[ -n "${MODEL_LOG:-}" ]] && rm -f "$MODEL_LOG"
+  for f in "$dir/bloop-qwen3.5-0.8b-q4_k_m.gguf" "$dir/bloop-qwen3.5-0.8b-q4_k_m.gguf.part"; do
+    if [[ -f "$f" ]]; then rm -f "$f" 2>/dev/null && removed=1; fi
+  done
+  (( removed )) || return 0
+  rmdir "$dir" 2>/dev/null || true
+  ok "Removed the old on-device model file (about 530 MB)."
   return 0
 }
 
@@ -668,8 +503,7 @@ EOF
 
 main() {
   ORIG_ARGS=("$@")
-  LAUNCH=1 FAST=0 CLEAN=0 PULL=1 KEEP_BUILD=0 NO_MODEL=0 MODEL_ONLY=0
-  MODEL_PART='' MODEL_BYTES=0
+  LAUNCH=1 FAST=0 CLEAN=0 PULL=1 KEEP_BUILD=0
   local a
   for a in "$@"; do
     case "$a" in
@@ -678,8 +512,7 @@ main() {
       --clean) CLEAN=1 ;;
       --no-pull) PULL=0 ;;
       --keep-build) KEEP_BUILD=1 ;;
-      --no-model) NO_MODEL=1 ;;
-      --model-only) MODEL_ONLY=1 ;;
+      --no-model|--model-only) ;;   # old flags, accepted and ignored so existing command lines still work
       -h|--help) usage; exit 0 ;;
       *) usage >&2; die "Unknown option: $a" ;;
     esac
@@ -700,15 +533,6 @@ main() {
     warn "You're running as root, so Bloop is installed for root only. Run it as your normal user (no sudo)."
   fi
   local t0=$SECONDS
-  trap stop_model_download EXIT
-
-  if (( MODEL_ONLY )); then
-    have node || die "Node.js is needed to read the model info."
-    (( NO_MODEL )) && die "--model-only and --no-model don't go together."
-    step "Bloop model"
-    download_model
-    return 0
-  fi
 
   check_tools
   update_source
@@ -717,12 +541,11 @@ main() {
     rm -rf "$ROOT/dist" "$ROOT/out" "$ROOT/node_modules"
     ok "removed dist/, out/, node_modules/"
   fi
-  start_model_download
   install_deps
   build_app
   if [[ "$OS" == mac ]]; then install_mac; else install_linux; fi
   cleanup_build
-  finish_model_download
+  remove_old_model_file
   launch
   summary
   printf '\n  %sDone in %dm%02ds.%s\n' "$DIM" $(((SECONDS - t0) / 60)) $(((SECONDS - t0) % 60)) "$RST"

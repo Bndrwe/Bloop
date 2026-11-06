@@ -1,5 +1,6 @@
 // Electron hardening helpers (src/main/ai/guard.ts): trusted senders, navigation, window.open,
 // permissions, openExternal URL policy.
+import { readFileSync } from 'node:fs'
 import { describe, expect, it, vi } from 'vitest'
 import {
   denyAllPermissions,
@@ -153,5 +154,15 @@ describe('denyAllPermissions', () => {
       expect(check!(null, p)).toBe(false)
     }
     expect(device!({})).toBe(false)
+  })
+})
+
+describe('Ollama setup guide link', () => {
+  it('opens the Ollama download page through the guarded openExternal, and the URL passes the policy', () => {
+    const src = readFileSync('src/renderer/src/views/ai/AiSection.tsx', 'utf8')
+    const url = /const OLLAMA_DOWNLOAD_URL = '([^']+)'/.exec(src)?.[1]
+    expect(url).toBe('https://ollama.com/download')
+    expect(isSafeExternalUrl(url)).toBe(true)
+    expect(src).toContain('window.studyPet.openExternal(OLLAMA_DOWNLOAD_URL)')
   })
 })

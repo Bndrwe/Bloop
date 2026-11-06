@@ -1,6 +1,6 @@
 // Bloop's built-in instructions (system prompt). Every provider receives it as a real system message
-// where it has one (Anthropic `system`, OpenRouter / Ollama system message, node-llama-cpp
-// `systemPrompt`, Claude CLI `--append-system-prompt-file`), else as a delimited block before the
+// where it has one (Anthropic `system`, OpenRouter / Ollama system message, Claude CLI
+// `--append-system-prompt-file`), else as a delimited block before the
 // prompt on stdin (Codex / Gemini CLIs). The plan prompt from buildPrompt() stays the user message.
 import { DEFAULT_SYSTEM_PROMPT } from '@shared/ai'
 

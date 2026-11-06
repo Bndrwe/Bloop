@@ -1,19 +1,19 @@
 // Shared AI contract: provider ids, settings shape and the renderer-facing API (window.studyPet.ai).
-// Two halves: "Use Local" (Bloop model + Ollama models) and "Cloud" (CLIs + API keys).
+// Two halves: "Use Local" (Ollama models) and "Cloud" (CLIs + API keys).
 
 /** Where a local model runs. */
-export type LocalRuntime = 'bloop' | 'ollama'
+export type LocalRuntime = 'ollama'
 
 /** Cloud providers. CLIs use the user's own logged-in tools; the others use API keys. */
 export type CloudProviderId = 'claude-cli' | 'codex-cli' | 'gemini-cli' | 'anthropic' | 'openrouter'
 
 /**
- * What the user picked. 'auto' = the first ready cloud provider the user turned on (AiSettings.autoCloud),
- * then the local models. Cloud providers that were not turned on are never used by Auto (see main/ai/registry.ts).
+ * What the user picked. 'auto' = the first ready cloud provider the user turned on (AiSettings.autoCloud).
+ * Auto never uses a local model, and cloud providers that were not turned on are never used (see main/ai/registry.ts).
  */
 export type AiChoice =
   | { kind: 'auto' }
-  | { kind: 'local'; runtime: LocalRuntime; model: string } // bloop: catalog id; ollama: model tag e.g. "qwen3.5:0.8b"
+  | { kind: 'local'; runtime: LocalRuntime; model: string } // Ollama model tag, e.g. "qwen3.5:0.8b"
   | { kind: 'cloud'; provider: CloudProviderId; model?: string } // model omitted = provider/CLI default
 
 export interface AiSettings {
@@ -22,28 +22,17 @@ export interface AiSettings {
   cloudModels: Partial<Record<CloudProviderId, string>>
   /**
    * Cloud providers the user allowed for Auto, in priority order. Default []: Auto never sends anything
-   * to a cloud service on its own. The first one that is available (CLI installed / key set) is Auto's
-   * first choice, ahead of the local models.
+   * to a cloud service on its own. The first one that is available (CLI installed / key set) is what
+   * Auto uses; with none available Auto has nothing ready.
    */
   autoCloud: CloudProviderId[]
   /** Ollama base URL. */
   ollamaUrl: string
-  /** User said "Not now" to the Bloop model download offer; don't offer again unprompted. */
-  bloopOfferDismissed: boolean
-  /**
-   * The user explicitly turned the Bloop model on ("Use Bloop model"). Default false. The model
-   * that ships inside the app is never used, not even by 'auto', until this is true.
-   */
-  bloopEnabled: boolean
 }
 
-/** How many built-in prompts "Check model" sends (buildCheckCases in src/main/ai/check.ts). */
-export const CHECK_CASE_COUNT = 5
-
 /**
- * Bloop's default instructions (system prompt). Kept short on purpose: the on-device Bloop model was
- * fine-tuned without a system prompt, and a 0.8B model follows a short one best. The plan prompt
- * itself (buildPrompt in src/main/plan.ts) is the user message and is unchanged.
+ * Bloop's default instructions (system prompt). Kept short on purpose: small local models follow a
+ * short one best. The plan prompt itself (buildPrompt in src/main/plan.ts) is the user message.
  */
 export const DEFAULT_SYSTEM_PROMPT = `You are Bloop, a warm study pet who lives in a desktop app for university students. You speak briefly and kindly.
 
@@ -65,17 +54,15 @@ export const DEFAULT_AI_SETTINGS: AiSettings = {
   choice: { kind: 'auto' },
   cloudModels: {},
   autoCloud: [],
-  ollamaUrl: 'http://127.0.0.1:11434',
-  bloopOfferDismissed: false,
-  bloopEnabled: false
+  ollamaUrl: 'http://127.0.0.1:11434'
 }
 
 /** One selectable model row in the picker. */
 export interface AiModelOption {
-  /** Stable key, e.g. "local:bloop:bloop-qwen3.5-0.8b" or "local:ollama:qwen3.5:0.8b". */
+  /** Stable key, e.g. "local:ollama:qwen3.5:0.8b" or "cloud:claude-cli". */
   key: string
   label: string
-  /** Badge text, e.g. "Bloop", "Ollama", "CLI", "API". */
+  /** Badge text, e.g. "Ollama", "CLI", "API". */
   source: string
   sizeBytes?: number
   ready: boolean
@@ -83,30 +70,7 @@ export interface AiModelOption {
   note?: string
 }
 
-/** Where the Bloop model file comes from: shipped inside the app, downloaded, or imported from disk. */
-export type BloopSource = 'bundled' | 'downloaded' | 'imported'
-
 export interface LocalStatus {
-  bloop: {
-    /** Catalog entry for the built-in Bloop model (fine-tuned Qwen3.5 0.8B). */
-    id: string
-    label: string
-    /** Empty until the fine-tuned GGUF is published. */
-    url: string
-    sizeBytes: number | null
-    /** A model file is available on this device (bundled, downloaded or imported). */
-    downloaded: boolean
-    /** Which file would run: the bundled one first, then userData/models. null = none. */
-    source: BloopSource | null
-    /** AiSettings.bloopEnabled: the user turned the model on. Bundled models never run before this. */
-    enabled: boolean
-    /** From bloop-model.json of a bundled model. */
-    base?: string
-    builtAt?: string
-    path?: string
-    /** Download in progress. */
-    progress?: DownloadProgress
-  }
   ollama: {
     installed: boolean
     running: boolean
@@ -116,6 +80,15 @@ export interface LocalStatus {
     /** Pull in progress. */
     pull?: DownloadProgress & { model: string }
   }
+}
+
+/**
+ * Where the in-app Ollama setup guide is: 1 install or open Ollama, 2 get a model, 3 pick a model.
+ * Picking a model (step 3) is the only way Ollama gets used: Auto never uses it.
+ */
+export function ollamaSetupStep(ollama: Pick<LocalStatus['ollama'], 'running' | 'models'>): 1 | 2 | 3 {
+  if (!ollama.running) return 1
+  return ollama.models.length === 0 ? 2 : 3
 }
 
 export interface DownloadProgress {
@@ -143,7 +116,7 @@ export interface CloudProviderStatus {
 export interface AiStatus {
   /**
    * What a plan generation would use right now, or null if nothing is ready. For 'auto' this is the first
-   * available provider in AiSettings.autoCloud, else the local auto provider.
+   * available provider in AiSettings.autoCloud (never a local model).
    */
   active: { label: string; kind: 'local' | 'cloud' } | null
   local: LocalStatus
@@ -160,20 +133,6 @@ export interface AiApi {
   /** Replace the cloud providers Auto may use, in priority order (unknown ids and duplicates are dropped). */
   setAutoCloud(providers: CloudProviderId[]): Promise<AiSettings>
   setOllamaUrl(url: string): Promise<AiSettings>
-  /** Downloads ONLY when confirmed === true (the user clicked Download in a confirmation). */
-  downloadBloopModel(confirmed: boolean): Promise<{ ok: boolean; error?: string }>
-  cancelBloopDownload(): Promise<void>
-  /** Rejects for the bundled model (it is part of the app). */
-  deleteBloopModel(): Promise<void>
-  /**
-   * "Use Bloop model" / "Turn off". true: verifies a bundled file the first time, sets bloopEnabled and
-   * selects the Bloop model. false: clears bloopEnabled and, if Bloop was selected, goes back to auto.
-   * Never downloads anything. Rejects with a message when the model can't be turned on.
-   */
-  setBloopEnabled(enabled: boolean): Promise<AiSettings>
-  /** Use a .gguf the user picked from disk (opens a file dialog in main). */
-  importBloopModelFile(): Promise<{ ok: boolean; error?: string }>
-  dismissBloopOffer(): Promise<void>
   /** Pulls ONLY when confirmed === true. */
   pullOllamaModel(model: string, confirmed: boolean): Promise<{ ok: boolean; error?: string }>
   /** Store / remove an API key (encrypted with safeStorage in main; never returned). */
@@ -181,60 +140,3 @@ export interface AiApi {
   /** Run a tiny prompt through a choice (default: current) and report. */
   test(choice?: AiChoice): Promise<{ ok: boolean; ms: number; sample?: string; error?: string }>
 }
-
-// ---------------------------------------------------------------- model check
-
-export type CheckCaseKind = 'plan' | 'nudge'
-
-export interface CheckResult {
-  id: string
-  label: string
-  pass: boolean
-  /** Why it failed (or a short detail when it passed). */
-  reason?: string
-}
-
-export interface CheckCaseResult {
-  id: string
-  title: string
-  kind: CheckCaseKind
-  /** Raw model output, truncated to about 4 KB. */
-  output: string
-  truncated: boolean
-  checks: CheckResult[]
-  /** Set when the model call failed or timed out (all checks then fail). */
-  error?: string
-  latencyMs: number
-  /** Rough output speed (chars / 4 per second). null when unknown. */
-  tokensPerSec: number | null
-}
-
-export type CheckVerdict = 'good' | 'ok' | 'poor'
-
-export interface ModelCheckReport {
-  ok: boolean
-  /** A friendly reason when nothing ran (provider not ready, check already running...). */
-  error?: string
-  provider?: { label: string; kind: 'local' | 'cloud' }
-  /** Whether the run used the default instructions or the user's own. */
-  systemPrompt?: 'default' | 'custom'
-  cases: CheckCaseResult[]
-  summary?: {
-    passed: number
-    total: number
-    verdict: CheckVerdict
-    avgLatencyMs: number
-  }
-  cancelled?: boolean
-}
-
-export interface ModelCheckProgress {
-  /** Cases finished so far. */
-  done: number
-  total: number
-  /** The case now running (null when finished). */
-  current: string | null
-  /** The case that just finished. */
-  result?: CheckCaseResult
-}
-

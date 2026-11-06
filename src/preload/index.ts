@@ -22,12 +22,6 @@ const ai: AiApi = {
   setCloudModel: (provider, model) => inv(IPC.aiSetCloudModel, str(provider, 40), str(model, 200)),
   setAutoCloud: (providers) => inv(IPC.aiSetAutoCloud, Array.isArray(providers) ? providers.slice(0, 20).map((p) => str(p, 40)) : []),
   setOllamaUrl: (url) => inv(IPC.aiSetOllamaUrl, str(url, 500)),
-  downloadBloopModel: (confirmed) => inv(IPC.aiDownloadBloop, confirmed === true),
-  cancelBloopDownload: () => inv(IPC.aiCancelBloop),
-  deleteBloopModel: () => inv(IPC.aiDeleteBloop),
-  setBloopEnabled: (enabled) => inv(IPC.aiSetBloopEnabled, enabled === true),
-  importBloopModelFile: () => inv(IPC.aiImportBloop),
-  dismissBloopOffer: () => inv(IPC.aiDismissBloopOffer),
   pullOllamaModel: (model, confirmed) => inv(IPC.aiPullOllama, str(model, 200), confirmed === true),
   setApiKey: (provider, key) => inv(IPC.aiSetApiKey, str(provider, 40), typeof key === 'string' ? key : null),
   test: (choice) => inv(IPC.aiTest, choice)

@@ -36,9 +36,8 @@ npm test            # unit tests (vitest): classifier, focus score, and more
 ```
 build/          app icon and other packaging resources
 docs/           install guide, release notes, and screenshots used in the README
-ml/             kit for fine-tuning the optional Bloop model (Python, Colab or Apple Silicon)
-resources/      files bundled with the app (for example, an optional model in resources/models/)
-scripts/        helper scripts used by npm scripts (model bundling, macOS permission reset)
+resources/      files bundled with the app
+scripts/        helper scripts used by npm scripts (macOS permission reset, installers)
 src/main/       Electron main process: tracking, scoring, sessions, storage, AI, windows, tray
 src/preload/    typed contextBridge API that exposes window.studyPet to the renderer
 src/shared/     types and IPC channel names shared by main, preload and renderer
@@ -50,7 +49,7 @@ The renderer runs sandboxed with `contextIsolation` on and `nodeIntegration` off
 
 ## Building installers locally
 
-Build only the target you need. Each script typechecks, checks the bundled model, compiles, and then packages:
+Build only the target you need. Each script typechecks, compiles, and then packages:
 
 | Command | Output in `dist/` | Where to run it |
 |---|---|---|

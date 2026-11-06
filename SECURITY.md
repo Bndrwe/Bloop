@@ -28,13 +28,12 @@ Security fixes go into the latest code on the main branch. Please update first (
 - the Electron app code in `src/` (main process, preload bridge, renderer) and the build and release configuration
 - the typed IPC between the renderer and the main process, including any way for the renderer to reach things it should not
 - how Bloop stores and uses API keys, and any way they could leak to the UI, logs, or files
-- the model download and import path (checksum verification, file handling)
 - how Bloop runs the Claude, Codex and Gemini command-line tools (argument handling, the temporary working folder)
 - the GitHub Actions release workflow, if a change could let an attacker publish a tampered installer
 
 **Out of scope:**
 
-- vulnerabilities in third-party services (Anthropic, OpenRouter, Hugging Face, Ollama, or the Claude, Codex and Gemini CLIs). Report those to the vendor.
+- vulnerabilities in third-party services (Anthropic, OpenRouter, Ollama, or the Claude, Codex and Gemini CLIs). Report those to the vendor.
 - problems in your operating system or in other apps, unless Bloop's own behaviour makes them worse
 - the "unknown developer" and SmartScreen warnings on the unsigned builds. These are known and documented in [docs/INSTALL.md](docs/INSTALL.md).
 - issues that need someone who already has administrator rights on your machine or who can already read your files

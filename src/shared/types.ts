@@ -269,7 +269,7 @@ export interface StudyPetApi {
   /** Open an https link in the system browser (help/install/key pages). */
   openExternal(url: string): Promise<void>
 
-  /** AI providers: Use Local (Bloop model, Ollama) and Cloud. See src/shared/ai.ts. */
+  /** AI providers: Use Local (Ollama) and Cloud. See src/shared/ai.ts. */
   ai: AiApi
   /** Chat with Bloop: conversations stored in userData/chats. See src/shared/chat.ts. */
   chat: ChatApi

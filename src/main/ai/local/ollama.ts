@@ -115,14 +115,6 @@ export function sameModel(a: string, b: string): boolean {
   return n(a) === n(b)
 }
 
-/** The model 'auto' would use: qwen3.5:0.8b if present, else the smallest. */
-export function pickAutoOllamaModel(models: OllamaModel[]): OllamaModel | null {
-  if (!models.length) return null
-  const pref = models.find((m) => sameModel(m.name, OLLAMA_SUGGESTED_MODEL))
-  if (pref) return pref
-  return [...models].sort((a, b) => (a.sizeBytes ?? Infinity) - (b.sizeBytes ?? Infinity))[0] ?? null
-}
-
 /** Turns a fetch failure into the message the user sees. */
 export function friendlyOllamaError(e: unknown, opts: { installed: boolean; url: string; model?: string }): OllamaError {
   if (e instanceof OllamaError) return e

@@ -10,7 +10,7 @@ export interface ConfirmDialogProps {
   cancelLabel?: string
   onConfirm: () => void
   onCancel: () => void
-  /** Small label above the title, e.g. "On-device". */
+  /** Small label above the title, e.g. "Ollama". */
   eyebrow?: string
   /** Which button gets focus when the dialog opens. Use 'cancel' when confirming is costly (Enter then won't trigger it). */
   initialFocus?: 'confirm' | 'cancel'

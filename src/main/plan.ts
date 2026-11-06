@@ -1,5 +1,5 @@
 // AI study plan. Generation goes through the AI registry (src/main/ai/registry.ts), which picks
-// the user's provider: the Bloop model, an Ollama model or a cloud provider. API keys (including
+// the user's provider: an Ollama model or a cloud provider. API keys (including
 // the .env ANTHROPIC_API_KEY fallback, read by the cloud side) stay in the main process.
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -79,7 +79,7 @@ export function loadEnv(dirs: string[]): string[] {
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
-/** The plan prompt. The dataset in ml/ mirrors this exact text: don't change the wording casually. */
+/** The plan prompt (the user message). Tests pin parts of this wording: don't change it casually. */
 export function buildPrompt(deadlines: Deadline[], stats: Stats, settings: Settings, now: Date): string {
   const dl = deadlines.length
     ? deadlines
@@ -146,14 +146,14 @@ export function parsePlan(text: string, now = Date.now()): StudyPlan {
   }
 }
 
-/** JSON schema the plan must follow (local runtimes enforce it as a grammar / Ollama `format`). */
+/** JSON schema the plan must follow (Ollama enforces it through its `format` option). */
 export const PLAN_JSON_SCHEMA: Record<string, unknown> = {
   type: 'object',
   properties: {
     summary: { type: 'string' },
     blocks: {
       type: 'array',
-      // The prompt asks for 3-10 blocks; the grammar enforces it (Qwen3.5-0.8B otherwise stops after one).
+      // The prompt asks for 3-10 blocks; the schema enforces it (small models otherwise stop after one).
       minItems: 3,
       maxItems: 10,
       items: {

@@ -2,7 +2,7 @@
 import { DEFAULT_AI_SETTINGS, type AiChoice, type AiSettings, type CloudProviderId, type LocalRuntime } from '@shared/ai'
 
 export const CLOUD_PROVIDER_IDS: readonly CloudProviderId[] = ['claude-cli', 'codex-cli', 'gemini-cli', 'anthropic', 'openrouter']
-const LOCAL_RUNTIMES: readonly LocalRuntime[] = ['bloop', 'ollama']
+const LOCAL_RUNTIMES: readonly LocalRuntime[] = ['ollama']
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
 const cleanStr = (v: unknown, max = 200): string | null => {
@@ -11,7 +11,7 @@ const cleanStr = (v: unknown, max = 200): string | null => {
   return s && s.length <= max ? s : null
 }
 
-/** A valid AiChoice, or null. */
+/** A valid AiChoice, or null. Unknown local runtimes (e.g. one this version no longer has) give null. */
 export function validateChoice(raw: unknown): AiChoice | null {
   if (!isObj(raw)) return null
   if (raw.kind === 'auto') return { kind: 'auto' }
@@ -69,15 +69,12 @@ export function validateAiSettings(raw: unknown): AiSettings {
     }
   }
   const autoCloud = validateAutoCloud(r.autoCloud)
+  // A choice this version can't use (bad data, or a local runtime that no longer exists) falls back to Auto.
   const choice = validateChoice(r.choice) ?? { ...DEFAULT_AI_SETTINGS.choice }
-  // Settings saved before bloopEnabled existed: an explicit Bloop choice counts as turned on.
-  const bloopEnabled = typeof r.bloopEnabled === 'boolean' ? r.bloopEnabled : choice.kind === 'local' && choice.runtime === 'bloop'
   return {
     choice,
     cloudModels,
     autoCloud,
-    ollamaUrl: normalizeOllamaUrl(r.ollamaUrl) ?? DEFAULT_AI_SETTINGS.ollamaUrl,
-    bloopOfferDismissed: r.bloopOfferDismissed === true,
-    bloopEnabled
+    ollamaUrl: normalizeOllamaUrl(r.ollamaUrl) ?? DEFAULT_AI_SETTINGS.ollamaUrl
   }
 }

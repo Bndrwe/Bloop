@@ -97,12 +97,10 @@
   padding: 9px var(--s3);
   border: 1px solid var(--hairline);
 }
-.ai-pick--row:hover,
-.ai-row--bloop:hover {
+.ai-pick--row:hover {
   border-color: var(--g3);
 }
-.ai-pick--row.is-selected,
-.ai-row--bloop.is-selected {
+.ai-pick--row.is-selected {
   border-color: var(--paper);
 }
 .ai-pick-text {
@@ -189,21 +187,6 @@
   justify-content: space-between;
   font-size: 11px;
   color: var(--text-2);
-}
-
-.ai-offer {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s2);
-  padding: var(--s3);
-  border: 1px dashed var(--g3);
-  border-radius: var(--r-md);
-}
-.ai-offer strong {
-  font-weight: 500;
-}
-.ai-offer .btn {
-  align-self: flex-start;
 }
 
 .ai-note {
@@ -306,4 +289,72 @@
 .ai-auto__note {
   margin: 0 0 var(--s3);
   font-size: 12px;
+}
+
+/* Ollama setup guide: three numbered steps; the current one is solid white ink, done ones get a check. */
+.ai-steps__count {
+  margin: 0;
+  font-size: 11.5px;
+}
+.ai-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+.ai-step {
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+  padding: var(--s2) var(--s3);
+}
+.ai-step--current {
+  border-color: var(--paper);
+}
+.ai-step__head {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+.ai-step__num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border: 1px solid var(--g3);
+  border-radius: 999px;
+  font-size: 10.5px;
+  color: var(--text-2);
+}
+.ai-step--current .ai-step__num {
+  background: var(--paper);
+  border-color: var(--paper);
+  color: var(--ink);
+}
+.ai-step--done .ai-step__num {
+  border-color: var(--paper);
+  color: var(--paper);
+}
+.ai-step__title {
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+.ai-step--current .ai-step__title {
+  color: var(--paper);
+  font-weight: 500;
+}
+.ai-step__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  margin-top: var(--s2);
+  padding-left: calc(18px + var(--s2));
+}
+/* Running text with inline <code>: a plain block, not the icon + text flex row. */
+.ai-step__body p.ai-note:not(.ai-note--error) {
+  display: block;
+  line-height: 1.5;
 }

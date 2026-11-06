@@ -5,7 +5,6 @@ import { useStatus } from '../hooks/useStatus'
 import { useWindowAwake } from '../hooks/useWindowAwake'
 import { useAi } from '../hooks/useAi'
 import { useBrightspace } from '../hooks/useBrightspace'
-import { BloopConfirm } from './ai/BloopConfirm'
 import { ChatGlyph } from './Chat'
 import { Pet } from '../pet/Pet'
 import { Icon } from '../lib/Icon'
@@ -349,7 +348,6 @@ function AiPlan(): JSX.Element | null {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [note, setNote] = useState<string | null>(null)
-  const [askBloop, setAskBloop] = useState(false)
   const ref = useRef<HTMLElement>(null)
   useBreathe(ref, '.shimmer', loading)
 
@@ -364,19 +362,7 @@ function AiPlan(): JSX.Element | null {
   const ready = status != null && settings != null && planLoaded
   useReveal(ref, ready)
 
-  const bloop = status?.local.bloop
-  const bloopProgress = bloop?.progress
-  const bloopDownloading = bloopProgress?.state === 'running' || bloopProgress?.state === 'verifying'
-  // The user picked the Bloop model but it isn't on disk: Generate offers the download (never automatic).
-  const needsBloop =
-    settings?.choice.kind === 'local' && settings.choice.runtime === 'bloop' && bloop != null && !bloop.downloaded
-
   const generate = async (): Promise<void> => {
-    if (needsBloop) {
-      if (bloop?.url && !bloopDownloading) setAskBloop(true)
-      else if (!bloop?.url) void window.studyPet.openSettings()
-      return
-    }
     setLoading(true)
     setError(null)
     setNote(null)
@@ -389,13 +375,6 @@ function AiPlan(): JSX.Element | null {
     } finally {
       setLoading(false)
     }
-  }
-
-  const downloadBloop = async (): Promise<void> => {
-    setAskBloop(false)
-    setError(null)
-    const r = await window.studyPet.ai.downloadBloopModel(true)
-    if (!r.ok && r.error && !/cancelled/i.test(r.error)) setError(r.error)
   }
 
   const addReminders = async (): Promise<void> => {
@@ -421,20 +400,17 @@ function AiPlan(): JSX.Element | null {
     </h2>
   )
 
-  if (!active && !needsBloop) {
-    const bundledOff = bloop?.source === 'bundled' && !bloop.enabled
+  if (!active) {
     return (
       <section className="card section section--quiet" ref={ref}>
         {title}
         <p className="note">
-          {bundledOff
-            ? 'Turn on the built-in Bloop model in Settings. It runs on this device.'
-            : 'Pick a model on this device or a cloud provider to plan your week.'}
+          Pick an Ollama model on this device or a cloud provider to plan your week.
         </p>
         <div className="controls controls--start">
           <button className="btn btn--small btn--primary" onClick={() => void window.studyPet.openSettings()}>
             <Icon name="gear" size={13} />
-            {bundledOff ? 'Open AI settings' : 'Set up AI in Settings'}
+            Set up AI in Settings
           </button>
         </div>
       </section>
@@ -469,17 +445,8 @@ function AiPlan(): JSX.Element | null {
           )}
         </div>
       )}
-      {!loading && !plan && !error && !needsBloop && (
+      {!loading && !plan && !error && (
         <p className="note">Get a week of study blocks shaped around your deadlines and focus history.</p>
-      )}
-      {needsBloop && (
-        <p className="note">
-          {bloopDownloading && bloopProgress
-            ? `Downloading the Bloop model… ${bloopProgress.totalBytes ? Math.round((bloopProgress.receivedBytes / bloopProgress.totalBytes) * 100) + '%' : ''}`
-            : bloop?.url
-              ? 'The Bloop model isn’t on this device yet.'
-              : 'The Bloop model isn’t published yet. Import a .gguf in Settings.'}
-        </p>
       )}
       {error && (
         <p className="note note--error">
@@ -494,7 +461,7 @@ function AiPlan(): JSX.Element | null {
         </p>
       )}
       <div className="controls controls--start">
-        <button className="btn btn--small" onClick={() => void generate()} disabled={loading || bloopDownloading}>
+        <button className="btn btn--small" onClick={() => void generate()} disabled={loading}>
           {plan ? <Icon name="refresh" size={13} /> : <Icon name="spark" size={13} />}
           {loading ? 'Thinking…' : plan ? 'Regenerate' : 'Generate plan'}
         </button>
@@ -505,17 +472,6 @@ function AiPlan(): JSX.Element | null {
           </button>
         )}
       </div>
-      {bloop && (
-        <BloopConfirm
-          open={askBloop}
-          bloop={bloop}
-          onDownload={() => void downloadBloop()}
-          onNotNow={() => {
-            setAskBloop(false)
-            void window.studyPet.ai.dismissBloopOffer()
-          }}
-        />
-      )}
     </section>
   )
 }

@@ -1,5 +1,5 @@
 // All AI IPC handlers (window.studyPet.ai). Registered from main/index.ts with one call.
-import { BrowserWindow, app, dialog, session, shell, type IpcMain } from 'electron'
+import { BrowserWindow, app, session, shell, type IpcMain } from 'electron'
 import { IPC } from '@shared/ipc'
 import type { AiChoice, AiSettings, AiStatus, CloudProviderId } from '@shared/ai'
 import * as store from '../store'
@@ -89,29 +89,7 @@ export function registerAiIpc(ipcMain: IpcMain, deps: AiIpcDeps): void {
     const choice = validateChoice(raw)
     if (!choice) throw new Error('Unknown AI choice.')
     log(`ai choice: ${JSON.stringify(choice)}`)
-    // Picking the Bloop model is the explicit "use it": same path as the Use Bloop model button.
-    if (choice.kind === 'local' && choice.runtime === 'bloop') return enableBloop(choice)
     return saved(store.saveAiSettings({ choice }))
-  })
-
-  async function enableBloop(choice: AiChoice): Promise<AiSettings> {
-    const v = await localModule.verifyBloop()
-    if (!v.ok) throw new Error(v.error ?? 'The Bloop model could not be verified.')
-    return saved(store.saveAiSettings({ choice, bloopEnabled: true }))
-  }
-
-  // "Use Bloop model" / "Turn off". Nothing is downloaded here.
-  h(IPC.aiSetBloopEnabled, async (_e, enabled) => {
-    if (enabled === true) {
-      const st = (await getAiStatus()).local.bloop
-      if (st.source == null) throw new Error("The Bloop model isn't on this device yet.")
-      return enableBloop({ kind: 'local', runtime: 'bloop', model: st.id })
-    }
-    const cur = store.getAiSettings()
-    const choice: AiChoice = cur.choice.kind === 'local' && cur.choice.runtime === 'bloop' ? { kind: 'auto' } : cur.choice
-    const next = saved(store.saveAiSettings({ choice, bloopEnabled: false }))
-    await localModule.unloadBloop()
-    return next
   })
 
   h(IPC.aiSetCloudModel, (_e, provider, model) => {
@@ -136,31 +114,6 @@ export function registerAiIpc(ipcMain: IpcMain, deps: AiIpcDeps): void {
     const ollamaUrl = normalizeOllamaUrl(url)
     if (!ollamaUrl) throw new Error('That Ollama URL looks wrong. Use something like http://127.0.0.1:11434')
     return saved(store.saveAiSettings({ ollamaUrl }))
-  })
-
-  // Downloads ONLY when the renderer passes confirmed === true (the user clicked Download).
-  h(IPC.aiDownloadBloop, (_e, confirmed) => localModule.downloadBloop(confirmed === true))
-  h(IPC.aiCancelBloop, () => localModule.cancelBloopDownload())
-  h(IPC.aiDeleteBloop, async () => {
-    await localModule.deleteBloop()
-    aiChanged()
-  })
-  h(IPC.aiImportBloop, async (e) => {
-    const win = BrowserWindow.fromWebContents(e.sender)
-    const opts: Electron.OpenDialogOptions = {
-      title: 'Import a Bloop model (.gguf)',
-      properties: ['openFile'],
-      filters: [{ name: 'GGUF model', extensions: ['gguf'] }]
-    }
-    const r = win ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts)
-    const file = r.filePaths[0]
-    if (r.canceled || !file) return { ok: false, error: 'cancelled' }
-    const res = await localModule.importBloop(file)
-    aiChanged()
-    return res
-  })
-  h(IPC.aiDismissBloopOffer, () => {
-    saved(store.saveAiSettings({ bloopOfferDismissed: true }))
   })
 
   // Pulls ONLY when confirmed === true.
@@ -190,6 +143,4 @@ export function registerAiIpc(ipcMain: IpcMain, deps: AiIpcDeps): void {
       return { ok: false, ms: Date.now() - t0, error: (e as Error).message }
     }
   })
-
-  app.on('before-quit', () => void localModule.dispose())
 }

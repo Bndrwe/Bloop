@@ -544,14 +544,5 @@ function startApp(): void {
     g['__bloopTogglePet'] = () => pet.toggle('e2e')
     g['__bloopNudge'] = () => engine.say('hey, back to work?', 'worried')
     g['__bloopSecondInstance'] = () => app.emit('second-instance')
-    // Same import and getLlama options as BloopRuntime: proves the prebuilt llama.cpp binary loads
-    // from app.asar.unpacked without a model or a build step.
-    g['__bloopProbeLlama'] = async () => {
-      const nlc = await import('node-llama-cpp')
-      const llama = await nlc.getLlama({ build: 'never', logLevel: nlc.LlamaLogLevel.error })
-      const r = { gpu: llama.gpu, buildType: llama.buildType, supportsGpuOffloading: llama.supportsGpuOffloading }
-      await llama.dispose()
-      return r
-    }
   }
 }

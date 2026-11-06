@@ -40,4 +40,4 @@ Because you build Bloop on your own computer, macOS and Windows don't show their
 
 ## About the AI model
 
-The installer also downloads the on-device Bloop model (532 MB, the stock Qwen3.5 0.8B model, checked against its checksum) while it builds. The model stays off until you choose **Use Bloop model** in Settings → AI. To skip the download, pass `--no-model` (`-NoModel` on Windows). If you're offline or the download fails, the install still finishes and Settings → AI offers the download later. You can also use Ollama or a cloud option instead, or no AI at all.
+The AI study plan is optional. You can use Ollama or a cloud option instead, or no AI at all.

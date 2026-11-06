@@ -5,13 +5,13 @@
 .DESCRIPTION
   Removes %LOCALAPPDATA%\Programs\Bloop, the Start menu and Desktop shortcuts, the
   Settings > Apps entry and the launch-at-login entry, then asks before deleting your data
-  (%APPDATA%\bloop: settings, history, logs and any downloaded AI model).
+  (%APPDATA%\bloop: settings, history, logs).
 
     powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1
     powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1 -KeepData
     powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1 -Purge
 
-.PARAMETER KeepData  Keep settings, history, logs and the downloaded AI model.
+.PARAMETER KeepData  Keep settings, history and logs.
 .PARAMETER Purge     Delete that data too, without asking.
 #>
 [CmdletBinding()]
@@ -90,11 +90,6 @@ if (-not (Test-Path -LiteralPath $DataDir)) {
 Write-Host ''
 Write-Host 'Your Bloop data (settings, session history, logs):'
 Write-Info "$DataDir  ($(Get-FolderSize $DataDir))"
-$models = Join-Path $DataDir 'models'
-if ((Test-Path -LiteralPath $models) -and @(Get-ChildItem -LiteralPath $models -Filter '*.gguf' -File -ErrorAction SilentlyContinue).Count -gt 0) {
-  Write-Info "This includes the Bloop AI model in $models ($(Get-FolderSize $models)), which the installer downloaded."
-  Write-Info 'Deleting your data deletes the model too (re-installing downloads it again, ~532 MB). -KeepData keeps it.'
-}
 
 $wipe = $false
 if ($Purge) {

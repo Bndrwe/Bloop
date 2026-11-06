@@ -88,7 +88,7 @@ body:
       description: Which option is selected under Settings → AI. Choose "none" if you have not set up AI.
       options:
         - none
-        - Bloop model
+        - Auto
         - Ollama
         - Claude CLI
         - Codex CLI

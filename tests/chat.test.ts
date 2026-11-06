@@ -112,7 +112,7 @@ beforeEach(() => {
 afterEach(() => rmSync(dir, { recursive: true, force: true }))
 
 function provider(kind: 'local' | 'cloud', impl: (p: string, o?: CompleteOptions) => Promise<string>): AiProvider & { complete: ReturnType<typeof vi.fn> } {
-  return { label: kind === 'local' ? 'Bloop model (on-device)' : 'Claude CLI', kind, complete: vi.fn(impl) }
+  return { label: kind === 'local' ? 'Ollama · qwen3.5:0.8b' : 'Claude CLI', kind, complete: vi.fn(impl) }
 }
 function service(p: AiProvider | Error, over: Partial<ConstructorParameters<typeof ChatService>[0]> = {}) {
   const logs: string[] = []
@@ -136,7 +136,7 @@ describe('ChatService.send', () => {
     const r = await svc.send(c.id, '  Plan my evening  ', { shareStats: true }, 1, (t) => thinking.push(t.thinking))
     expect(r.ok).toBe(true)
     if (!r.ok) return
-    expect(r.reply).toMatchObject({ role: 'assistant', content: 'You could start with 25 minutes of chem.', provider: 'Bloop model (on-device)' })
+    expect(r.reply).toMatchObject({ role: 'assistant', content: 'You could start with 25 minutes of chem.', provider: 'Ollama · qwen3.5:0.8b' })
     expect(r.conversation.messages.map((m) => m.role)).toEqual(['user', 'assistant'])
     expect(r.conversation.title).toBe('Plan my evening')
     expect(thinking).toEqual([true, false])

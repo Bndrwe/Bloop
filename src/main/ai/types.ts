@@ -4,7 +4,7 @@ import type { AiChoice, CloudProviderId, CloudProviderStatus, LocalStatus } from
 
 export interface CompleteOptions {
   maxTokens?: number
-  /** JSON schema the output must follow (local runtimes use it as a grammar / format). */
+  /** JSON schema the output must follow (Ollama uses it as `format`). */
   jsonSchema?: Record<string, unknown>
   signal?: AbortSignal
   /** Overall timeout in ms. */
@@ -17,7 +17,7 @@ export interface CompleteOptions {
 }
 
 export interface AiProvider {
-  /** Human label for status lines, e.g. "Bloop model (on-device)", "Claude CLI". */
+  /** Human label for status lines, e.g. "Ollama · qwen3.5:0.8b", "Claude CLI". */
   label: string
   kind: 'local' | 'cloud'
   complete(prompt: string, opts?: CompleteOptions): Promise<string>
@@ -28,8 +28,6 @@ export interface LocalModule {
   status(refresh?: boolean): Promise<LocalStatus>
   /** Provider for a local choice, or an Error explaining why it isn't ready (never downloads). */
   provider(choice: Extract<AiChoice, { kind: 'local' }>): Promise<AiProvider | Error>
-  /** First ready local option for 'auto' (never downloads/pulls), or null. */
-  autoProvider(): Promise<AiProvider | null>
 }
 
 /** Implemented by src/main/ai/cloud/index.ts */

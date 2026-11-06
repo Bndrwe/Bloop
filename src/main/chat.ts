@@ -14,9 +14,9 @@ import {
 import type { AiProvider } from './ai/types'
 import { isChatId, oneLine, type ChatStore } from './chatStore'
 
-/** History budget (characters) for cloud models and Ollama-sized contexts. */
+/** History budget (characters) for cloud models. */
 export const HISTORY_BUDGET_CLOUD = 6000
-/** History budget for the on-device models (4096-token context). */
+/** History budget for local (Ollama) models, which often run with a small context window. */
 export const HISTORY_BUDGET_LOCAL = 2500
 export const CHAT_TIMEOUT_MS = 120_000
 const DEADLINE_TITLE_MAX = 120

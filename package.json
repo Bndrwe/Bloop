@@ -20,16 +20,12 @@
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "test": "vitest run",
-    "build": "npm run typecheck && node scripts/bundle-model.mjs --check && electron-vite build && electron-builder --mac --dir",
-    "build:mac": "npm run typecheck && node scripts/bundle-model.mjs --check && electron-vite build && electron-builder --mac --publish never",
-    "build:win": "npm run typecheck && node scripts/bundle-model.mjs --check && electron-vite build && electron-builder --win --x64 --publish never",
-    "build:linux": "npm run typecheck && node scripts/bundle-model.mjs --check && electron-vite build && electron-builder --linux --x64 --publish never",
+    "build": "npm run typecheck && electron-vite build && electron-builder --mac --dir",
+    "build:mac": "npm run typecheck && electron-vite build && electron-builder --mac --publish never",
+    "build:win": "npm run typecheck && electron-vite build && electron-builder --win --x64 --publish never",
+    "build:linux": "npm run typecheck && electron-vite build && electron-builder --linux --x64 --publish never",
     "build:vite": "electron-vite build",
-    "perms": "bash scripts/mac-permissions.sh",
-    "model:train": "bash ml/run_mac.sh",
-    "model:bundle": "node scripts/bundle-model.mjs",
-    "model:check": "vite-node --config scripts/model-check/vite.config.mjs scripts/model-check/run.ts --",
-    "model:publish": "bash ml/publish.sh"
+    "perms": "bash scripts/mac-permissions.sh"
   },
   "build": {
     "appId": "edu.bloop.app",
@@ -43,16 +39,10 @@
       "out/**/*",
       "package.json",
       "!**/.env*",
-      "!**/*.{pem,p12,pfx,key}",
-      "!node_modules/@node-llama-cpp/*-cuda/**",
-      "!node_modules/@node-llama-cpp/*-cuda-ext/**",
-      "!node_modules/@node-llama-cpp/linux-armv7l/**",
-      "!node_modules/@node-llama-cpp/linux-riscv64/**"
+      "!**/*.{pem,p12,pfx,key}"
     ],
     "asarUnpack": [
-      "node_modules/get-windows/**",
-      "node_modules/node-llama-cpp/**",
-      "node_modules/@node-llama-cpp/**"
+      "node_modules/get-windows/**"
     ],
     "mac": {
       "category": "public.app-category.education",
@@ -84,8 +74,7 @@
       "icon": "build/icon.png",
       "files": [
         "out/**/*",
-        "package.json",
-        "!node_modules/@node-llama-cpp/win-arm64/**"
+        "package.json"
       ]
     },
     "nsis": {
@@ -123,8 +112,7 @@
       },
       "files": [
         "out/**/*",
-        "package.json",
-        "!node_modules/@node-llama-cpp/linux-arm64/**"
+        "package.json"
       ]
     },
     "appImage": {
@@ -186,7 +174,6 @@
     "get-windows": "^9.3.0",
     "lucide-react": "^1.68.0",
     "node-ical": "^0.20.1",
-    "node-llama-cpp": "3.22.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tailwind-merge": "^3.7.0"

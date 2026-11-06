@@ -8,7 +8,7 @@ _Your little study pet._
 
 A small, cute desktop pet that lives in the top-right corner of your screen, watches whether you're focused, keeps a live **focus score**, and gently nudges you when you drift off task.
 
-Built as the MVP for a university AI class project. Everything runs locally: your activity data never leaves your machine. The one optional exception is the AI study plan: with the Bloop model or Ollama it also stays on your computer, and with a cloud provider it sends your upcoming deadlines and focus stats to that provider, only when you click the button.
+Built as the MVP for a university AI class project. Everything runs locally: your activity data never leaves your machine. The one optional exception is the AI study plan: with Ollama it also stays on your computer, and with a cloud provider it sends your upcoming deadlines and focus stats to that provider, only when you click the button.
 
 ## Install
 
@@ -71,11 +71,11 @@ git clone -b claude/practical-davinci-ckp3nc https://github.com/Bndrwe/StudyPet.
 - **Mac:** Bloop has no Dock icon. Look for it in the **menu bar** (top right); the pet sits in the top-right corner of your screen. The first launch walks you through **Screen Recording** and **Automation**; after allowing Screen Recording, click **Restart Bloop**.
 - **Windows:** Bloop is in the Start menu and in the system tray by the clock (it may be under the **^** overflow; drag it out to pin it).
 - **Linux:** open Bloop from your app menu or run `bloop`.
-- Click the pet to open the panel and press **Start**. For AI study plans, open **Settings → AI** and choose **Use Bloop model**. The installer already downloaded and verified the on-device Bloop model (532 MB), but it stays off until you choose that. If you installed with `--no-model` or the download failed, Settings → AI offers it (it asks first).
+- Click the pet to open the panel and press **Start**. For AI study plans, open **Settings → AI** and pick where the AI runs: **Use Local** (Ollama) or **Cloud** (see [AI study plan](#ai-study-plan)).
 
 Already have the repo? From its folder, run `npm run install-app` (macOS/Linux) or `npm run install-app:win` (Windows).
 
-**What the installer does.** It checks git and Node, pulls the latest code, runs `npm ci`, type-checks, bundles the app and packages it with electron-builder for your CPU (Apple Silicon or Intel, x64 or arm64). While it builds, it also downloads the on-device Bloop model (532 MB, checked against its sha256) into your data folder, so there's no wait later. The model is off until you choose **Use Bloop model** in Settings → AI. If you're offline or the download fails, the install still finishes and the app offers the download later; re-running the installer resumes it, and skips it if the verified file is already there. Then it installs the app, quitting a running Bloop first, and starts it:
+**What the installer does.** It checks git and Node, pulls the latest code, runs `npm ci`, type-checks, bundles the app and packages it with electron-builder for your CPU (Apple Silicon or Intel, x64 or arm64). Then it installs the app, quitting a running Bloop first, and starts it:
 
 | | App | Your data | Logs |
 |---|---|---|---|
@@ -85,11 +85,11 @@ Already have the repo? From its folder, run `npm run install-app` (macOS/Linux) 
 
 The tray / menu bar icon has **Open logs folder**. Because you built the app yourself, macOS Gatekeeper and Windows SmartScreen don't block it (Windows Defender may scan it on first start). On Linux, focus tracking needs `xprop` (`sudo apt install x11-utils`) and an X11 session; the installer tells you if anything is missing.
 
-Options: `--no-launch`, `--fast` (skip the type check), `--clean` (delete `node_modules`, `out` and `dist` first; fixes most odd build errors), `--no-pull`, `--keep-build`, `--no-model` (skip the Bloop model download), `--model-only` (only download and verify the Bloop model, then stop). On Windows: `-NoLaunch`, `-Fast`, `-Clean`, `-NoPull`, `-KeepBuild`, `-NoDesktopShortcut`, `-NoModel`, `-ModelOnly`. With npm, pass them after `--`, e.g. `npm run install-app -- --fast`.
+Options: `--no-launch`, `--fast` (skip the type check), `--clean` (delete `node_modules`, `out` and `dist` first; fixes most odd build errors), `--no-pull`, `--keep-build`. On Windows: `-NoLaunch`, `-Fast`, `-Clean`, `-NoPull`, `-KeepBuild`, `-NoDesktopShortcut`. With npm, pass them after `--`, e.g. `npm run install-app -- --fast`.
 
 **Update.** Run the same install command again from the `StudyPet` folder (`./scripts/install.sh`, or `scripts\install.ps1` on Windows). It pulls the latest code, rebuilds, and replaces the app. Your settings and history are kept. On macOS each rebuild is a new unsigned app as far as macOS is concerned, so it may ask for Screen Recording and Automation again; if a permission says "not granted" after an update, run `npm run perms`.
 
-**Uninstall.** `./scripts/uninstall.sh` (or `npm run uninstall-app`) on macOS and Linux; on Windows, Settings → Apps → Installed apps → Bloop → Uninstall, or `powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1`. It removes the app and its shortcuts, then asks before deleting your data, which includes the downloaded Bloop model (532 MB); `--keep-data` (`-KeepData` on Windows) keeps it.
+**Uninstall.** `./scripts/uninstall.sh` (or `npm run uninstall-app`) on macOS and Linux; on Windows, Settings → Apps → Installed apps → Bloop → Uninstall, or `powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1`. It removes the app and its shortcuts, then asks before deleting your data; `--keep-data` (`-KeepData` on Windows) keeps it.
 
 Step-by-step help, permissions and troubleshooting: [docs/INSTALL.md](docs/INSTALL.md).
 
@@ -109,7 +109,7 @@ There are no prebuilt installers (`.dmg`, `.exe`, AppImage) yet. You can build t
 - **History**: every session is saved with its start/end, duration, final score, top focus apps and top distractions. The panel shows today's average and a 7-day mini chart.
 - **Tray icon**, in this order: a status line (Focus score, or just "Bloop"), **Start session** (or **Pause** / **Resume** and **Stop session** while one runs), **Show panel**, **Hide pet** / **Show pet** (with the shortcut in brackets), **Settings…**, **Chat with Bloop**, **About Bloop** (with the version), **Open logs folder** and **Quit Bloop**. On macOS it sits in the menu bar; on Windows it sits in the system tray near the clock.
 - **Chat with Bloop**: a chat window for study questions, saved on this computer. See [Chat with Bloop](#chat-with-bloop).
-- **Stretch features**: Brightspace deadlines (log in to Brightspace, or paste the iCal link), and an AI weekly study plan generated on-device (the Bloop model or Ollama) or by a cloud model.
+- **Stretch features**: Brightspace deadlines (log in to Brightspace, or paste the iCal link), and an AI weekly study plan generated on-device (Ollama) or by a cloud model.
 
 ## Screenshots
 
@@ -158,88 +158,42 @@ All 24 steps are in [`docs/screenshots/journey/`](docs/screenshots/journey/).
 
 | | |
 |:---:|:---:|
-| ![Auto order and Use in Auto switches](docs/screenshots/settings-ai-cloud-auto.png) | ![Use Local: Bloop model and Ollama](docs/screenshots/settings-ai-local.png) |
-| *Auto only uses cloud models you turn on* | *On-device: the Bloop model and Ollama* |
+| ![Auto order and Use in Auto switches](docs/screenshots/settings-ai-cloud-auto.png) |
+|:---:|
+| *Auto only uses cloud models you turn on* |
 
 ## AI study plan
 
 The panel's **AI study plan** card writes a week of study blocks from your deadlines and focus history. Pick where the AI runs in **Settings → AI**:
 
-- **Auto** (default) uses the first option that is ready, in this order: (1) the cloud providers you turned on with **Use in Auto** (Settings → AI → Cloud; picking a cloud provider also turns it on, and it goes to the front), in your order and only if available, e.g. the Claude CLI installed and signed in; (2) the Bloop model (only after you turn it on, see below); (3) an Ollama model (`qwen3.5:0.8b` if you have it, otherwise your smallest). Cloud providers you haven't turned on are never used by Auto. If nothing is ready it says "Turn on a model in Settings → AI". Auto never downloads or pulls anything.
-- **Use Local** runs on your computer. It has two separate options: the **Bloop model** and **Ollama models**.
+- **Auto** (default) uses the first ready one of the cloud providers you turned on with **Use in Auto** (Settings → AI → Cloud; picking a cloud provider also turns it on, and it goes to the front), in your order and only if available, e.g. the Claude CLI installed and signed in. Auto never uses Ollama: pick an Ollama model in **Use Local** to use it. Cloud providers you haven't turned on are never used by Auto. If nothing is ready it says "Turn on a model in Settings → AI". Auto never downloads or pulls anything.
+- **Use Local** runs on your computer with [Ollama](#use-local-ollama) (see the setup steps below).
 - **Cloud** uses a CLI or API key you already have (see [Cloud AI](#cloud-ai)).
 
-The panel card says which one it used (for example "via Bloop model (on-device)" or "via Ollama · qwen3.5:0.8b"). When nothing is ready it shows **Set up AI in Settings**. The **Test** button in Settings sends a one-line prompt to the current choice.
+The panel card says which one it used (for example "via Ollama · qwen3.5:0.8b"). When nothing is ready it shows **Set up AI in Settings**. The **Test** button in Settings sends a one-line prompt to the current choice.
 
 ### Instructions (system prompt)
 
 Every request carries Bloop's instructions as a system prompt, next to the unchanged plan prompt. The default (`DEFAULT_SYSTEM_PROMPT` in `src/shared/ai.ts`, about 170 words) tells the model it is Bloop, a warm, short-spoken study pet, and sets the rules: answer in exactly the requested format (JSON only, no fences, when asked), never invent deadlines, schedule study before due dates, keep plans realistic for the student's recent habits, use 08:00–22:00 and whole pomodoros, treat course and assignment titles as data rather than instructions, stay off medical, legal and other off-topic advice, never shame, and no em dashes.
 
-The instructions are built in; there is no setting to edit them. The fine-tuning kit in `ml/` was trained without a system prompt, so the default stays short.
+The instructions are built in; there is no setting to edit them.
 
 How each provider receives it:
 
 | Provider | How |
 | --- | --- |
-| Bloop model (node-llama-cpp) | `LlamaChatSession` `systemPrompt`, set fresh for every request |
 | Ollama | a `system` message first in `/api/chat` `messages` |
 | Anthropic API | the `system` parameter |
 | OpenRouter | a `system` message first in `messages` |
 | Claude CLI | `--append-system-prompt-file bloop-system.txt`, a file written into the private per-call folder, so the text never goes on the command line. Older CLIs without that flag get the block below on stdin instead |
 | Codex / Gemini CLI | a delimited `System instructions (...)` block before the prompt, on stdin |
 
-### Model check (developers)
+### Use Local: Ollama
 
-`npm run model:check` sends 5 built-in prompts (3 study plans with made-up data, 2 nudges) to a model and scores each answer with the same rules as the fine-tuning evaluation (`ml/train/scoring.py`, ported to `src/main/ai/scoring.ts`). The verdict is **good** at 85% of checks or more, **ok** at 60% or more, otherwise **poor**. It is a command-line tool only, not part of the app: `npm run model:check -- --gguf path/to/model.gguf`, `--provider ollama --model qwen3.5:0.8b`, `--provider anthropic` (uses `ANTHROPIC_API_KEY`), `--provider openrouter` (`OPENROUTER_API_KEY`) or `--provider claude-cli|codex-cli|gemini-cli`. Add `--json` for the full report. It exits 1 on a poor verdict.
+Local AI runs through [Ollama](https://ollama.com/download), so the prompt and the plan stay on your computer and it works offline. Bloop never installs Ollama or downloads a model on its own.
 
-![Settings → AI, Use Local](docs/screenshots/settings-ai-local.png)
-
-### Use Local: the Bloop model
-
-The Bloop model is [Qwen3.5-0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B) (Apache-2.0), packaged as a Q4_K_M GGUF of **532 MB**. Bloop runs it inside the app with [node-llama-cpp](https://node-llama-cpp.withcat.ai), so the prompt and the plan never leave your computer, it works offline, and you don't need Ollama. By default it's the stock model. A fine-tuned build from the kit in `ml/` can replace it (see below).
-
-- **Download from inside Bloop, only when you say so.** Go to **Settings → AI → Use Local → Bloop model → Download…**. Choosing it, or pressing Generate while it's selected, asks first: "Download the Bloop model (~532 MB)? It runs on this device, nothing leaves your computer." with **Download** and **Not now**. Nothing is fetched until you press Download.
-  - The source is [unsloth/Qwen3.5-0.8B-GGUF](https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF) (`Qwen3.5-0.8B-Q4_K_M.gguf`), pinned to a fixed revision.
-  - The file goes to `<userData>/models/`. Downloads resume after a cancel, check free disk space first, and are verified against the file's sha256. **Delete** removes it.
-- **Or bundle it into the app** (off until chosen). If the app was built with a model in `resources/models/`, **Settings → AI → Use Local → Bloop model** shows "included with Bloop · off" and a **Use Bloop model** button.
-  - Nothing runs, not even for Auto, until you press it. **Turn off** switches it back and returns to Auto.
-  - A bundled model can't be deleted from the UI, and it wins over a downloaded one. The first time you turn it on, Bloop checks its sha256 (a few seconds, remembered after that).
-- **Import .gguf…** uses a GGUF file you already have, for example a fine-tuned one, instead of downloading.
-- **How it runs:** the model loads on first use with a 4096-token context, the GGUF's own chat template, thinking turned off, and the plan's JSON schema enforced as a grammar. It unloads after 5 idle minutes, and llama.cpp works on native background threads, so the UI never stalls.
-
-![Download confirmation](docs/screenshots/settings-ai-confirm.png)
-![Bloop model included, off](docs/screenshots/settings-ai-bundled-off.png)
-![Bloop model on](docs/screenshots/settings-ai-bundled-on.png)
-
-**Changing the download source.** The constants at the top of `src/main/ai/local/bloop.ts` define what **Download** fetches:
-
-```ts
-export const BLOOP_MODEL_URL = 'https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF/resolve/6ab461498e2023f6e3c1baea90a8f0fe38ab64d0/Qwen3.5-0.8B-Q4_K_M.gguf'
-export const BLOOP_MODEL_SHA256 = 'bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517' // shasum -a 256 file.gguf
-export const BLOOP_MODEL_BYTES = 532_517_120       // exact size; used for "~X MB" and the disk-space check
-```
-
-The installer reads the same three values (through `scripts/model-info.mjs`), so changing them changes both.
-
-To ship a fine-tuned model instead, point these at your own direct-download link. That can be a public Hugging Face repo, a GitHub Release on a public repo, or any static host. Or skip hosting and bundle it.
-
-**Fine-tuning (optional).** The kit in `ml/` LoRA-tunes Qwen3.5-0.8B on Bloop's study-plan and nudge tasks. It runs on a free Colab T4 or an Apple Silicon Mac; see `docs/BLOOP_MODEL_PLAYBOOK.md`, which is one file with every script and the dataset embedded. To bundle the result:
-
-```bash
-npm run model:bundle -- path/to/bloop-qwen3.5-0.8b-Q4_K_M.gguf   # copies it into resources/models/ + writes bloop-model.json
-npm run build                                                   # packages it; warns, but still succeeds, when no .gguf is there
-```
-
-The `.gguf` and `bloop-model.json` are gitignored, because GitHub rejects files over 100 MB. A bundled model makes the app about **500 MB larger**. The app finds it at `<repo>/resources/models` in dev and at `<process.resourcesPath>/resources/models` when packaged. It is not packed into the asar.
-
-**Packaging note.** `node-llama-cpp` and its prebuilt binaries (`@node-llama-cpp/*`) are listed in `build.asarUnpack` so the native libraries load from `app.asar.unpacked`. A packaged app never tries to compile llama.cpp: it uses the prebuilt binary for the platform (Metal on Apple silicon, CPU or Vulkan/CUDA elsewhere).
-
-### Use Local: Ollama models
-
-If you already use [Ollama](https://ollama.com/download), Bloop can use its models:
-
-1. Install Ollama and open it (it serves on `http://127.0.0.1:11434`).
-2. Pull the same small model the Bloop model uses: `ollama pull qwen3.5:0.8b` (any other model you have works too).
+1. Install Ollama from [ollama.com/download](https://ollama.com/download) and open it. It serves on `http://127.0.0.1:11434`.
+2. Pull a small model: `ollama pull qwen3.5:0.8b` (about 1 GB; any other model you have works too).
 3. In **Settings → AI → Use Local**, pick a model from the **Ollama models** list and press **Refresh** if you just pulled one.
 
 If Ollama is running without `qwen3.5:0.8b`, Bloop offers **Pull qwen3.5:0.8b with Ollama?** and pulls it only after you confirm. If Ollama is installed but closed, Bloop says "Ollama is installed but not running: open Ollama". A different Ollama address can be set under **Advanced**. Requests use `/api/chat` with the plan's JSON schema as `format` and `think: false`, so Qwen3.5 answers directly instead of reasoning at length first. If the server rejects the field, the request is retried once without it.
@@ -260,7 +214,7 @@ The log file says which `.env` the key came from, or where it looked.
 
 ### Cloud AI
 
-Cloud AI lets the study plan run on a model you already pay for. Open the AI settings, choose **Cloud**, and pick a row. Auto only uses a cloud provider you turned on with **Use in Auto** (picking a provider turns it on and puts it first), and then falls back to local models. Cloud providers you haven't turned on are never used automatically.
+Cloud AI lets the study plan run on a model you already pay for. Open the AI settings, choose **Cloud**, and pick a row. Auto only uses a cloud provider you turned on with **Use in Auto** (picking a provider turns it on and puts it first). Cloud providers you haven't turned on are never used automatically.
 
 **Your own CLIs (no key needed in Bloop).** Install the tool, then run it once in Terminal and sign in. Bloop finds it even when the app was launched from the Dock (it asks your login shell for its PATH and also checks Homebrew, `~/.local/bin`, npm, bun, volta, nvm and `%APPDATA%\npm`).
 
@@ -282,7 +236,7 @@ The prompt goes over stdin (Gemini uses an argument for short prompts), tools ar
 
 Talk to Bloop about your studies: "Plan my evening", "I can't focus, help", "Quiz me on CHEM 201". Open it from the tray (**Chat with Bloop**) or the **Chat with Bloop** button in the panel.
 
-- Bloop answers with whichever AI is set up in Settings → AI (the Bloop model, an Ollama model, or a cloud provider you turned on). The header shows which one ("via …"). If nothing is ready, the chat offers **Set up AI in Settings → AI**. Chat never downloads or pulls a model.
+- Bloop answers with whichever AI is set up in Settings → AI (an Ollama model or a cloud provider you turned on). The header shows which one ("via …"). If nothing is ready, the chat offers **Set up AI in Settings → AI**. Chat never downloads or pulls a model.
 - **Share my study stats with Bloop** (on by default for on-device models, off for cloud providers) adds today's date, your session and score, today's focus minutes and your next 3 deadlines to each message, so Bloop's advice fits your day. Turn it on or off with the switch under the message box.
 - Enter sends, Shift+Enter adds a line, **Stop** cancels a reply (replies time out after 2 minutes). Failed replies show **Retry**.
 - Conversations are saved on this computer only, in `userData/chats/` (one file per chat, at most 200 chats). Rename or delete them in the list (the trash button deletes one chat), or use **Delete all chats** (after a confirmation). **Settings → Reset data → Reset everything…** removes them too.
@@ -417,8 +371,6 @@ Other scripts:
 | `npm run build:mac` | Same, but packages a `.dmg` and `.zip` for this Mac's architecture (macOS) |
 | `npm run build:win` | Build an NSIS installer and a portable `.exe` into `dist/` (Windows, x64) |
 | `npm run build:linux` | Build an AppImage and a `.deb` into `dist/` (Linux, x64) |
-| `npm run model:check -- --provider ollama --model qwen3.5:0.8b` | Score a model with the built-in test prompts (see [Model check](#model-check-developers)) |
-| `npm run model:bundle` | Copy a `.gguf` into `resources/models/` so the app ships it (see [Fine-tuning](#use-local-the-bloop-model)) |
 
 ### Building on macOS
 
@@ -461,7 +413,7 @@ src/
                 windows and tray
   renderer/     React UI: pet overlay, panel, settings, onboarding
     src/pet/    the pet component and swappable skins
-scripts/        install/uninstall scripts, model bundling, macOS permissions helper
+scripts/        install/uninstall scripts, macOS permissions helper
 tests/          vitest unit tests (scoring, sessions, AI, security, platform helpers)
 ```
 
@@ -489,4 +441,4 @@ The pet is drawn by one component that takes a `mood` prop. Skins live in `src/r
 
 ## Privacy
 
-All tracking data (samples, sessions, settings) is stored as JSON in the app's user-data folder via `electron-store`. Nothing is uploaded. If you log in to Brightspace, Bloop talks only to your school's Brightspace, keeps the login cookies in a separate browser profile in the same folder (never your password), and **Log out** deletes them. The AI study plan and Chat with Bloop are the only features that can send your data anywhere: with the Bloop model or Ollama it stays on your computer, and with a cloud option it goes to that provider only when you click **Generate plan** or send a chat message. Chats are stored only on this computer in `userData/chats/`. The installer downloads the Bloop model during install (unless you pass `--no-model`); the in-app download and Ollama pulls happen only after you confirm them.
+All tracking data (samples, sessions, settings) is stored as JSON in the app's user-data folder via `electron-store`. Nothing is uploaded. If you log in to Brightspace, Bloop talks only to your school's Brightspace, keeps the login cookies in a separate browser profile in the same folder (never your password), and **Log out** deletes them. The AI study plan and Chat with Bloop are the only features that can send your data anywhere: with Ollama it stays on your computer, and with a cloud option it goes to that provider only when you click **Generate plan** or send a chat message. Chats are stored only on this computer in `userData/chats/`. Ollama model pulls happen only after you confirm them.

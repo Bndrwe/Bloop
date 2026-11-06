@@ -1,6 +1,6 @@
 // QA: the 'auto' provider order across EVERY combination of availability:
-//   Bloop (enabled x downloaded) x Ollama (4 states) x cloud: every autoCloud list (ordered subsets of the 5 providers) x every set of available providers
-// New semantics: opted-in available cloud first (user's order), then local, else a friendly error. Un-opted cloud is never used. Nothing downloads.
+//   Ollama (4 states) x cloud: every autoCloud list (ordered subsets of the 5 providers) x every set of available providers
+// Semantics: the first opted-in available cloud (user's order), else a friendly error. Auto never uses Ollama, and un-opted cloud is never used. Nothing is pulled.
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { getPath: () => '/tmp', isPackaged: false } }))
@@ -11,7 +11,6 @@ import { DEFAULT_AI_SETTINGS, type AiChoice, type CloudProviderId } from '../src
 import { createRegistry, NO_AI_MESSAGE } from '../src/main/ai/registry'
 import { createLocalModule } from '../src/main/ai/local'
 import type { AiProvider, CloudModule } from '../src/main/ai/types'
-import type { BloopManager } from '../src/main/ai/local/bloop'
 
 type OllamaState = 'down' | 'up-empty' | 'up-small' | 'up-suggested'
 const OLLAMA_MODELS: Record<OllamaState, { name: string; sizeBytes?: number }[]> = {
@@ -28,8 +27,6 @@ const perms = (xs: CloudProviderId[]): CloudProviderId[][] => (xs.length <= 1 ? 
 const ALL_LISTS = subsetsOf(IDS).flatMap(perms) // 326 ordered opt-in lists
 
 interface Opts {
-  enabled: boolean
-  downloaded: boolean
   ollama: OllamaState
   /** providers that are available (CLI installed / key set) */
   avail?: CloudProviderId[]
@@ -41,12 +38,6 @@ interface Opts {
 
 function build(opts: Opts) {
   const avail = opts.avail ?? []
-  const bloop = {
-    isDownloaded: () => opts.downloaded,
-    source: () => (opts.downloaded ? 'downloaded' : null),
-    filePath: () => '/models/b.gguf',
-    status: () => ({ id: 'b', label: 'B', url: '', sizeBytes: null, downloaded: opts.downloaded, source: opts.downloaded ? 'downloaded' : null })
-  } as unknown as BloopManager
   // Plain counters instead of vi.fn: the exhaustive test builds >100k registries and vi.fn records stay alive.
   const probe = Object.assign(
     async () => {
@@ -57,10 +48,8 @@ function build(opts: Opts) {
     { calls: 0 }
   )
   const local = createLocalModule({
-    getSettings: () => ({ ...DEFAULT_AI_SETTINGS, bloopEnabled: opts.enabled }),
+    getSettings: () => DEFAULT_AI_SETTINGS,
     onChange: () => undefined,
-    bloop,
-    runtime: { complete: async () => 'x', unload: async () => undefined },
     findBinary: async () => null,
     probe
   })
@@ -97,25 +86,23 @@ function build(opts: Opts) {
   return { registry, cloud, probe }
 }
 
-/** Independent oracle: first opted-in AVAILABLE cloud -> Bloop (only if enabled) -> Ollama -> setup error. */
-function expected(o: { enabled: boolean; downloaded: boolean; ollama: OllamaState; avail?: CloudProviderId[]; autoCloud?: CloudProviderId[] }): string {
+/** Independent oracle: first opted-in AVAILABLE cloud -> setup error. Ollama never counts for Auto. */
+function expected(o: { ollama: OllamaState; avail?: CloudProviderId[]; autoCloud?: CloudProviderId[] }): string {
   const c = (o.autoCloud ?? []).find((id) => (o.avail ?? []).includes(id))
   if (c) return LABELS[c]
-  if (o.enabled && o.downloaded) return 'Bloop model (on-device)'
-  if (o.ollama === 'up-suggested') return 'Ollama · qwen3.5:0.8b'
-  if (o.ollama === 'up-small') return 'Ollama · phi:2b'
+  void o.ollama
   return 'ERROR'
 }
 
 describe("registry 'auto': local readiness x opted-in cloud", () => {
   const states: OllamaState[] = ['down', 'up-empty', 'up-small', 'up-suggested']
-  const localCases = [false, true].flatMap((enabled) => [false, true].flatMap((downloaded) => states.map((ollama) => ({ enabled, downloaded, ollama }))))
-  it('covers 16 local states and 326 opt-in lists', () => {
-    expect(localCases).toHaveLength(16)
+  const localCases = states.map((ollama) => ({ ollama }))
+  it('covers 4 local states and 326 opt-in lists', () => {
+    expect(localCases).toHaveLength(4)
     expect(ALL_LISTS).toHaveLength(326)
   })
 
-  // Exhaustive: 16 local states x 326 ordered opt-in lists x 32 available sets = 166,912 resolves.
+  // Exhaustive: 4 local states x 326 ordered opt-in lists x 32 available sets = 41,728 resolves.
   it('every combination matches the oracle; un-opted cloud is never chosen; nothing downloads', async () => {
     const availSets = subsetsOf(IDS)
     let n = 0
@@ -139,42 +126,41 @@ describe("registry 'auto': local readiness x opted-in cloud", () => {
         }
       }
     }
-    expect(n).toBe(16 * 326 * 32)
+    expect(n).toBe(4 * 326 * 32)
   }, 120_000)
 
   it('NO_AI_MESSAGE tells the user to turn on a model in Settings → AI', () => {
     expect(NO_AI_MESSAGE).toMatch(/^Turn on a model in Settings → AI/)
   })
 
+  it('Ollama running with a model and no opted-in cloud: Auto has nothing ready, and Ollama is not even probed', async () => {
+    for (const ollama of ['up-small', 'up-suggested'] as const) {
+      const { registry, probe } = build({ ollama, avail: [...IDS], autoCloud: [] })
+      expect(((await registry.resolve()) as Error).message).toBe(NO_AI_MESSAGE)
+      expect(probe.calls).toBe(0)
+      expect((await registry.status()).active).toBeNull()
+    }
+  })
+
   it('opted-in available cloud wins over a ready local model, and local is not even probed', async () => {
-    const { registry, probe } = build({ enabled: true, downloaded: true, ollama: 'up-suggested', avail: ['claude-cli'], autoCloud: ['claude-cli'] })
+    const { registry, probe } = build({ ollama: 'up-suggested', avail: ['claude-cli'], autoCloud: ['claude-cli'] })
     expect(((await registry.resolve()) as AiProvider).label).toBe('Claude CLI')
     expect(probe.calls).toBe(0)
   })
 
   it('un-opted cloud is never chosen even when it is the only thing available', async () => {
-    const { registry, cloud } = build({ enabled: false, downloaded: false, ollama: 'down', avail: [...IDS], autoCloud: [] })
+    const { registry, cloud } = build({ ollama: 'down', avail: [...IDS], autoCloud: [] })
     const r = await registry.resolve()
     expect((r as Error).message).toBe(NO_AI_MESSAGE)
     expect(cloud.calls.autoProvider).toEqual([])
     expect(cloud.calls.provider).toBe(0)
   })
 
-  it('un-opted cloud is skipped in favour of local', async () => {
-    const { registry } = build({ enabled: false, downloaded: false, ollama: 'up-small', avail: ['claude-cli', 'anthropic'], autoCloud: ['openrouter'] })
-    expect(((await registry.resolve()) as AiProvider).label).toBe('Ollama · phi:2b')
-  })
-
-  it('an unavailable opted-in cloud falls through to the next opted-in one, then to local', async () => {
-    let b = build({ enabled: false, downloaded: false, ollama: 'up-small', avail: ['codex-cli'], autoCloud: ['claude-cli', 'codex-cli'] })
+  it('an unavailable opted-in cloud falls through to the next opted-in one, then to nothing (not Ollama)', async () => {
+    let b = build({ ollama: 'up-small', avail: ['codex-cli'], autoCloud: ['claude-cli', 'codex-cli'] })
     expect(((await b.registry.resolve()) as AiProvider).label).toBe('Codex CLI')
-    b = build({ enabled: true, downloaded: true, ollama: 'up-small', avail: [], autoCloud: ['claude-cli', 'codex-cli'] })
-    expect(((await b.registry.resolve()) as AiProvider).label).toBe('Bloop model (on-device)')
-  })
-
-  it('the bundled/downloaded Bloop model never runs unless the user enabled it', async () => {
-    const { registry } = build({ enabled: false, downloaded: true, ollama: 'down' })
-    expect(await registry.resolve()).toBeInstanceOf(Error)
+    b = build({ ollama: 'up-small', avail: [], autoCloud: ['claude-cli', 'codex-cli'] })
+    expect(((await b.registry.resolve()) as Error).message).toBe(NO_AI_MESSAGE)
   })
 
   it('status().active mirrors resolve() (label and kind) for every local state x sampled opt-in lists', async () => {
@@ -189,26 +175,14 @@ describe("registry 'auto': local readiness x opted-in cloud", () => {
     }
   })
 
-  it('a throwing Ollama probe surfaces as an Error result (when no opted-in cloud is ready)', async () => {
-    const { registry } = build({ enabled: false, downloaded: false, ollama: 'up-small', probeThrows: true, autoCloud: ['claude-cli'], avail: [] })
-    const r = await registry.resolve()
-    expect(r).toBeInstanceOf(Error)
-    expect((r as Error).message).toBe('probe exploded')
-  })
-
-  it('local throws -> falls through to opted-in cloud is not needed (cloud goes first); cloud first still beats a throwing local', async () => {
-    const { registry } = build({ enabled: false, downloaded: false, ollama: 'up-small', probeThrows: true, autoCloud: ['claude-cli'], avail: ['claude-cli'] })
-    expect(((await registry.resolve()) as AiProvider).label).toBe('Claude CLI')
-  })
-
-  it('cloud throws -> falls through to local', async () => {
-    const b = build({ enabled: true, downloaded: true, ollama: 'down', autoCloud: ['claude-cli'], avail: ['claude-cli'] })
+  it('cloud throws with Ollama ready -> that error, not Ollama', async () => {
+    const b = build({ ollama: 'up-suggested', autoCloud: ['claude-cli'], avail: ['claude-cli'] })
     b.cloud.failAuto(new Error('cloud exploded'))
-    expect(((await b.registry.resolve()) as AiProvider).label).toBe('Bloop model (on-device)')
+    expect(((await b.registry.resolve()) as Error).message).toBe('cloud exploded')
   })
 
   it('cloud throws and nothing local is ready -> that error, not a crash', async () => {
-    const b = build({ enabled: false, downloaded: false, ollama: 'down', autoCloud: ['claude-cli'], avail: ['claude-cli'] })
+    const b = build({ ollama: 'down', autoCloud: ['claude-cli'], avail: ['claude-cli'] })
     b.cloud.failAuto(new Error('cloud exploded'))
     expect(((await b.registry.resolve()) as Error).message).toBe('cloud exploded')
   })
@@ -217,8 +191,6 @@ describe("registry 'auto': local readiness x opted-in cloud", () => {
     const local = createLocalModule({
       getSettings: () => DEFAULT_AI_SETTINGS,
       onChange: () => undefined,
-      bloop: { isDownloaded: () => false, source: () => null, status: () => ({}) } as unknown as BloopManager,
-      runtime: { complete: vi.fn(), unload: vi.fn() } as never,
       findBinary: async () => null,
       probe: async () => ({ running: false, models: [] })
     })
@@ -230,48 +202,39 @@ describe("registry 'auto': local readiness x opted-in cloud", () => {
 
 describe('explicit choices ignore the auto order', () => {
   it('local/ollama choice with Ollama down is an error even if cloud is available (no silent fallback)', async () => {
-    const { registry, cloud } = build({ enabled: true, downloaded: true, ollama: 'down', avail: ['claude-cli'], autoCloud: ['claude-cli'], choice: { kind: 'local', runtime: 'ollama', model: 'qwen3.5:0.8b' } })
+    const { registry, cloud } = build({ ollama: 'down', avail: ['claude-cli'], autoCloud: ['claude-cli'], choice: { kind: 'local', runtime: 'ollama', model: 'qwen3.5:0.8b' } })
     const r = await registry.resolve()
     expect(r).toBeInstanceOf(Error)
     expect(cloud.calls.autoProvider).toEqual([])
   })
   it('local/ollama choice with a model that is not pulled reports model-not-found', async () => {
-    const { registry } = build({ enabled: false, downloaded: false, ollama: 'up-small', choice: { kind: 'local', runtime: 'ollama', model: 'missing:1b' } })
+    const { registry } = build({ ollama: 'up-small', choice: { kind: 'local', runtime: 'ollama', model: 'missing:1b' } })
     expect(((await registry.resolve()) as Error).message).toMatch(/model not found: missing:1b/)
   })
   it('local/ollama choice resolves the exact model even when auto would pick another', async () => {
-    const { registry } = build({ enabled: true, downloaded: true, ollama: 'up-small', choice: { kind: 'local', runtime: 'ollama', model: 'llama3:8b' } })
+    const { registry } = build({ ollama: 'up-small', choice: { kind: 'local', runtime: 'ollama', model: 'llama3:8b' } })
     expect(((await registry.resolve()) as AiProvider).label).toBe('Ollama · llama3:8b')
   })
-  it('bloop choice with the model on disk resolves it; unknown model id errors', async () => {
-    const ok = build({ enabled: true, downloaded: true, ollama: 'down', choice: { kind: 'local', runtime: 'bloop', model: 'bloop-qwen3.5-0.8b' } })
-    expect(((await ok.registry.resolve()) as AiProvider).label).toBe('Bloop model (on-device)')
-    const bad = build({ enabled: true, downloaded: true, ollama: 'down', choice: { kind: 'local', runtime: 'bloop', model: 'nope' } })
-    expect(((await bad.registry.resolve()) as Error).message).toMatch(/Unknown Bloop model/)
-  })
-  it('bloop choice without a file errors with a download hint', async () => {
-    const { registry } = build({ enabled: true, downloaded: false, ollama: 'down', avail: ['claude-cli'], autoCloud: ['claude-cli'], choice: { kind: 'local', runtime: 'bloop', model: 'bloop-qwen3.5-0.8b' } })
-    expect(((await registry.resolve()) as Error).message).toMatch(/Settings → AI/)
-  })
   it('explicit cloud choice goes to cloud.provider with the choice, not autoProvider', async () => {
-    const { registry, cloud } = build({ enabled: true, downloaded: true, ollama: 'up-small', choice: { kind: 'cloud', provider: 'anthropic', model: 'm' } })
+    const { registry, cloud } = build({ ollama: 'up-small', choice: { kind: 'cloud', provider: 'anthropic', model: 'm' } })
     await registry.resolve()
     expect(cloud.calls.provider).toBe(1)
     expect(cloud.calls.autoProvider).toEqual([])
   })
   it('resolve(choice) overrides the saved choice', async () => {
-    const { registry } = build({ enabled: false, downloaded: false, ollama: 'up-small', choice: { kind: 'cloud', provider: 'anthropic' } })
-    expect(((await registry.resolve({ kind: 'auto' })) as AiProvider).label).toBe('Ollama · phi:2b')
+    const { registry } = build({ ollama: 'up-small', choice: { kind: 'cloud', provider: 'anthropic' } })
+    expect(((await registry.resolve({ kind: 'local', runtime: 'ollama', model: 'phi:2b' })) as AiProvider).label).toBe('Ollama · phi:2b')
+    expect(await registry.resolve({ kind: 'auto' })).toBeInstanceOf(Error)
   })
   it('non-Error throws from a module are wrapped into Errors', async () => {
     const local = { status: vi.fn(), provider: vi.fn(async () => { throw 'plain string' }), autoProvider: vi.fn() }
-    const r = createRegistry({ local: local as never, cloud: null, getSettings: () => ({ ...DEFAULT_AI_SETTINGS, choice: { kind: 'local', runtime: 'bloop', model: 'x' } }) })
+    const r = createRegistry({ local: local as never, cloud: null, getSettings: () => ({ ...DEFAULT_AI_SETTINGS, choice: { kind: 'local', runtime: 'ollama', model: 'x' } }) })
     const res = await r.resolve()
     expect(res).toBeInstanceOf(Error)
     expect((res as Error).message).toBe('plain string')
   })
   it('status() still reports local when the cloud status call rejects', async () => {
-    const { registry, cloud } = build({ enabled: false, downloaded: false, ollama: 'up-small', })
+    const { registry, cloud } = build({ ollama: 'up-small', choice: { kind: 'local', runtime: 'ollama', model: 'phi:2b' } })
     cloud.status = async () => {
       throw new Error('cloud down')
     }

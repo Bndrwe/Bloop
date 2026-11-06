@@ -190,7 +190,7 @@ export function ChatView(): JSX.Element {
   const active = status?.active ?? null
   const noAi = status != null && active == null
 
-  // Share study stats: on by default for on-device models, off for cloud ones (the user can flip it).
+  // Share study stats: on by default for local (Ollama) models, off for cloud ones (the user can flip it).
   useEffect(() => {
     if (shareStats == null && status) setShareStats(status.active?.kind !== 'cloud')
   }, [status, shareStats])
@@ -356,7 +356,7 @@ export function ChatView(): JSX.Element {
         <div className="chat-scroll" ref={scroller}>
           {noAi && (
             <section className="card chat-setup">
-              <p>Bloop needs an AI to chat. Turn on the Bloop model, an Ollama model or a cloud provider.</p>
+              <p>Bloop needs an AI to chat. Pick an Ollama model or a cloud provider in Settings.</p>
               <button className="btn btn--small btn--primary" onClick={() => void window.studyPet.openSettings()}>
                 <Icon name="gear" size={13} />
                 Set up AI in Settings → AI

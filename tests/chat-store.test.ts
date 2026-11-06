@@ -13,7 +13,7 @@ let t: number
 const make = (o: { maxConversations?: number; maxMessages?: number } = {}): ChatStore =>
   new ChatStore(dir, { now: () => ++t, log: (m) => logs.push(m), ...o })
 const user = (content: string) => ({ role: 'user' as const, content, at: t })
-const bot = (content: string) => ({ role: 'assistant' as const, content, at: t, provider: 'Bloop model (on-device)' })
+const bot = (content: string) => ({ role: 'assistant' as const, content, at: t, provider: 'Ollama · qwen3.5:0.8b' })
 const readIndex = () => JSON.parse(readFileSync(join(dir, 'index.json'), 'utf8')) as { items: { id: string; title: string; count: number }[] }
 
 beforeEach(() => {

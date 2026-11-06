@@ -69,56 +69,49 @@ describe('IPC sender checks (check 1)', () => {
     expect(ai).toMatch(/normalizeOllamaUrl\(url\)/)
     expect(ai).toMatch(/key\.length > 4096/)
     expect(ai).not.toMatch(/aiSetSystemPrompt|aiCheck|aiTry|tryPrompt/)
+    expect(ai).not.toMatch(/showOpenDialog|aiDownload|aiImport/)
     expect(ai).toMatch(/model\.length <= 200/)
   })
 })
 
-describe('installer model download (check 6, static)', () => {
+describe('installers (check 6, static)', () => {
   const sh = read('scripts/install.sh')
   const ps = read('scripts/install.ps1')
-  const shDownload = sh.slice(sh.indexOf('download_model() {'), sh.indexOf('\n}\n', sh.indexOf('download_model() {')))
-  const psDownload = ps.slice(ps.indexOf('function Start-ModelDownload'), ps.indexOf('function Complete-ModelDownload'))
+  const uninstall = [read('scripts/uninstall.sh'), read('scripts/uninstall.ps1')]
+  const oldFile = 'bloop-qwen3.5-0.8b-q4_k_m.gguf'
 
-  it('the sha256 is checked before the file is moved into place (both installers)', () => {
-    const shSha = shDownload.indexOf('sha256_of "$part"')
-    const shMv = shDownload.indexOf('mv -f "$part" "$dest"')
-    expect(shSha).toBeGreaterThan(-1)
-    expect(shSha).toBeLessThan(shMv)
-    const ps1 = ps.indexOf('Get-FileSha256 $c.Part')
-    const mvPs = ps.indexOf('Move-Item -LiteralPath $c.Part -Destination $c.Dest')
-    expect(ps1).toBeGreaterThan(-1)
-    expect(ps1).toBeLessThan(mvPs)
+  it('the old on-device model file is cleaned up once, and only that file and its .part are deleted (both installers)', () => {
+    const start = sh.indexOf('remove_old_model_file() {')
+    const shFn = sh.slice(start, sh.indexOf('\n}\n', start))
+    expect(shFn).toContain('Library/Application Support/bloop/models')
+    expect(shFn).toContain('${XDG_CONFIG_HOME:-$HOME/.config}/bloop/models')
+    expect(shFn).toContain(`"$dir/${oldFile}" "$dir/${oldFile}.part"`)
+    expect(shFn).toContain('rmdir "$dir"')
+    expect(shFn).not.toMatch(/rm\s+-[a-zA-Z]*r/)
+    expect(shFn).toContain('Removed the old on-device model file (about 530 MB).')
+    const pStart = ps.indexOf('function Remove-OldModelFile')
+    const psFn = ps.slice(pStart, ps.indexOf('# ----', pStart))
+    expect(psFn).toContain("Join-Path $env:APPDATA 'bloop\\models'")
+    expect(psFn).toContain(`'${oldFile}', '${oldFile}.part'`)
+    expect(psFn).not.toMatch(/-Recurse/)
+    expect(psFn).toContain('Removed the old on-device model file (about 530 MB).')
   })
 
-  it('the sha256 is a 64-hex string and the file name cannot contain a path (both installers)', () => {
-    expect(shDownload).toMatch(/\^\[0-9a-fA-F\]\{64\}\$/)
-    expect(shDownload).toContain('"$file" == */*')
-    expect(psDownload).toMatch(/\[0-9a-f\]\{64\}/)
-    expect(psDownload).toMatch(/\[\\\\\/\]/)
-  })
-
-  // Found in review: neither installer checks that the model URL is https. Only the in-app download
-  // (bloop.ts) does. The URL normally comes from bloop.ts, but BLOOP_MODEL_URL_OVERRIDE (test-only)
-  // can replace it silently. The sha256 still gates the file, so this is defence in depth.
-  it('install.sh refuses a non-https model URL before it downloads anything', () => {
-    expect(shDownload).toMatch(/=~\s*\^https:\/\//)
-  })
-
-  it('install.ps1 refuses a non-https model URL before it downloads anything', () => {
-    expect(psDownload).toMatch(/-match\s+'\^https:\/\/'|-notmatch\s+'\^https:\/\/'/)
-  })
-
-  it('the test-only override variables are documented as test-only in both installers and model-info', () => {
-    for (const src of [sh, ps, read('scripts/model-info.mjs')]) {
-      expect(src).toMatch(/TEST ONLY/)
-      expect(src).toContain('BLOOP_MODEL_URL_OVERRIDE')
+  it('the installers download nothing model related; the old flags are accepted silently and undocumented', () => {
+    for (const src of [sh, ps, ...uninstall]) {
+      expect(src).not.toMatch(/model-info|huggingface|download_model|ModelDownload|sha256_of|BLOOP_TEST_MODE|_OVERRIDE/i)
     }
+    expect(sh).toContain('--no-model|--model-only) ;;')
+    const u = sh.indexOf('usage() {')
+    expect(sh.slice(u, sh.indexOf('\n}\n', u))).not.toMatch(/model/i)
+    expect(ps).toContain('[switch]$NoModel')
+    expect(ps).toContain('[switch]$ModelOnly')
+    expect(ps.slice(0, ps.indexOf('[CmdletBinding()]'))).not.toMatch(/NoModel|ModelOnly/)
   })
 
-  it('no eval, Invoke-Expression, or iex of anything in the installers or the model helper', () => {
+  it('no eval, Invoke-Expression, or iex of anything in the installers', () => {
     expect(sh).not.toMatch(/(^|[;&|(\s])eval\s/m)
     expect(ps).not.toMatch(/Invoke-Expression|\biex\b/)
-    expect(read('scripts/model-info.mjs')).not.toMatch(/\beval\(|new Function\(/)
   })
 
   it('no sudo is run by the installers (sudo only appears in printed hints)', () => {

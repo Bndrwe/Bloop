@@ -18,7 +18,7 @@ export interface ChatMessage {
   content: string
   /** epoch ms */
   at: number
-  /** Label of the AI that wrote an assistant message, e.g. "Bloop model (on-device)". */
+  /** Label of the AI that wrote an assistant message, e.g. "Ollama · qwen3.5:0.8b". */
   provider?: string
 }
 

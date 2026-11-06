@@ -1,10 +1,7 @@
-// Privacy / integrity: nothing is fetched without the user's say-so, downloads are pinned and
-// bounded, the Ollama URL is scheme-checked, API clients can't be redirected by env, and the
+// Privacy / integrity: nothing is fetched without the user's say-so, the Ollama URL is scheme-checked, API clients can't be redirected by env, and the
 // renderer CSP stays strict.
-import { mkdtempSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
-import { createHash } from 'node:crypto'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const state = vi.hoisted(() => ({ file: {} as Record<string, unknown> }))
@@ -26,7 +23,6 @@ vi.mock('electron-store', () => ({
   }
 }))
 
-import { BloopManager, findBundledModel, isSafeModelFileName, type BloopCatalogEntry } from '../src/main/ai/local/bloop'
 import { pullOllamaModel } from '../src/main/ai/local/ollama'
 import { normalizeOllamaUrl } from '../src/main/ai/settings'
 import { ANTHROPIC_BASE_URL, anthropicClientOptions, _resetOpenRouterCache } from '../src/main/ai/cloud/api'
@@ -34,77 +30,12 @@ import { cloudModule } from '../src/main/ai/cloud'
 import { saveApiKey } from '../src/main/ai/cloud/secrets'
 import * as detect from '../src/main/ai/cloud/cli-detect'
 
-const DATA = Buffer.from('GGUF' + 'y'.repeat(3000))
-const SHA = createHash('sha256').update(DATA).digest('hex')
-const catalog = (over: Partial<BloopCatalogEntry> = {}): BloopCatalogEntry => ({
-  id: 'bloop-qwen3.5-0.8b',
-  label: 'Bloop',
-  url: 'https://example.test/bloop.gguf',
-  sha256: SHA,
-  bytes: DATA.length,
-  file: 'bloop.gguf',
-  ...over
-})
-const stream = (buf: Buffer): ReadableStream<Uint8Array> =>
-  new ReadableStream({
-    start(c) {
-      for (let i = 0; i < buf.length; i += 700) c.enqueue(new Uint8Array(buf.subarray(i, i + 700)))
-      c.close()
-    }
-  })
-const fakeRes = (buf: Buffer, url = 'https://cdn.example.test/bloop.gguf') =>
-  ({ ok: true, status: 200, url, body: stream(buf), headers: new Headers() }) as unknown as Response
-
-let dir: string
 beforeEach(() => {
-  dir = mkdtempSync(join(tmpdir(), 'bloop-sec-'))
   state.file = {}
 })
 afterEach(() => {
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
-})
-
-describe('Bloop model download integrity', () => {
-  it('refuses a non-https URL or a missing / malformed sha256 without fetching', async () => {
-    for (const over of [{ url: 'http://example.test/x.gguf' }, { url: 'file:///etc/passwd' }, { sha256: '' }, { sha256: 'abc' }, { file: '../evil.gguf' }]) {
-      const f = vi.fn()
-      const m = new BloopManager({ modelsDir: () => dir, catalog: catalog(over), fetch: f as never, freeBytes: async () => 1e12 })
-      const r = await m.download(true)
-      expect(r.ok, JSON.stringify(over)).toBe(false)
-      expect(f).not.toHaveBeenCalled()
-    }
-  })
-  it('stops a response bigger than the pinned size and deletes the partial file', async () => {
-    const f = vi.fn(async () => fakeRes(Buffer.concat([DATA, Buffer.alloc(5000)])))
-    const m = new BloopManager({ modelsDir: () => dir, catalog: catalog(), fetch: f as never, freeBytes: async () => 1e12 })
-    const r = await m.download(true)
-    expect(r.ok).toBe(false)
-    expect(r.error).toMatch(/bigger/)
-    expect(existsSync(join(dir, 'bloop.gguf.part'))).toBe(false)
-    expect(existsSync(join(dir, 'bloop.gguf'))).toBe(false)
-  })
-  it('stops when a redirect lands on plain http', async () => {
-    const f = vi.fn(async () => fakeRes(DATA, 'http://mirror.example.test/bloop.gguf'))
-    const m = new BloopManager({ modelsDir: () => dir, catalog: catalog(), fetch: f as never, freeBytes: async () => 1e12 })
-    const r = await m.download(true)
-    expect(r.ok).toBe(false)
-    expect(r.error).toMatch(/non-https/)
-    expect(existsSync(join(dir, 'bloop.gguf'))).toBe(false)
-  })
-  it('writes .part, verifies, then renames', async () => {
-    const f = vi.fn(async () => fakeRes(DATA))
-    const m = new BloopManager({ modelsDir: () => dir, catalog: catalog(), fetch: f as never, freeBytes: async () => 1e12 })
-    expect(await m.download(true)).toEqual({ ok: true })
-    expect(readFileSync(join(dir, 'bloop.gguf')).equals(DATA)).toBe(true)
-    expect(existsSync(join(dir, 'bloop.gguf.part'))).toBe(false)
-  })
-  it('bundled metadata cannot point outside its folder', () => {
-    expect(isSafeModelFileName('bloop-qwen3.5-0.8b-Q4_K_M.gguf')).toBe(true)
-    for (const bad of ['..', '../x.gguf', '..\\x.gguf', '/etc/x.gguf', '.hidden.gguf', 'x.bin', 'a/b.gguf', 'a..b.gguf']) expect(isSafeModelFileName(bad), bad).toBe(false)
-    writeFileSync(join(dir, 'bloop-model.json'), JSON.stringify({ file: '..', bytes: 1, sha256: '' }))
-    expect(findBundledModel(dir)).toBeNull()
-  })
 })
 
 describe('Ollama', () => {

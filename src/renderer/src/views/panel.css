@@ -510,7 +510,7 @@
   width: 100%;
 }
 
-/* "via Bloop model (on-device)" next to the AI plan title. */
+/* "via Ollama · <model>" next to the AI plan title. */
 .plan-via {
   margin-left: auto;
   font-family: var(--mono);

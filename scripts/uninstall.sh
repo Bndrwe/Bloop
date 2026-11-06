@@ -2,7 +2,7 @@
 # Bloop: remove the app that scripts/install.sh installed (macOS and Linux).
 #
 #   ./scripts/uninstall.sh              remove the app, then ask about your data
-#   ./scripts/uninstall.sh --keep-data  remove the app, keep settings/history/model
+#   ./scripts/uninstall.sh --keep-data  remove the app, keep settings/history
 #   ./scripts/uninstall.sh --purge      remove the app and all data without asking
 set -euo pipefail
 
@@ -39,7 +39,7 @@ Remove Bloop (installed by scripts/install.sh) from this computer.
 
 Usage: ./scripts/uninstall.sh [--keep-data | --purge]
 
-  --keep-data   keep your settings, history, logs and downloaded AI model
+  --keep-data   keep your settings, history and logs
   --purge       also delete all of that, without asking
   -h, --help    show this help
 
@@ -71,7 +71,6 @@ uninstall_mac() {
     "$HOME/Library/Caches/$APP_ID.ShipIt"
     "$HOME/Library/HTTPStorages/$APP_ID"
   )
-  MODEL_DIR="$HOME/Library/Application Support/bloop/models"
 }
 
 # ------------------------------------------------------------------ Linux
@@ -111,7 +110,6 @@ uninstall_linux() {
 
   local cfg="${XDG_CONFIG_HOME:-$HOME/.config}"
   DATA_DIRS=("$cfg/bloop" "$cfg/Bloop")
-  MODEL_DIR="$cfg/bloop/models"
 }
 
 # ------------------------------------------------------------------ main
@@ -144,12 +142,6 @@ main() {
 
   printf '\nYour Bloop data (settings, session history, logs):\n'
   for d in "${existing[@]}"; do info "$d  ($(size_of "$d"))"; done
-  local has_model=0 g
-  for g in "$MODEL_DIR"/*.gguf; do [[ -e "$g" ]] && has_model=1; done
-  if (( has_model )); then
-    info "This includes the Bloop AI model in $MODEL_DIR ($(size_of "$MODEL_DIR")), which the installer downloaded."
-    info "Deleting your data deletes the model too (re-installing downloads it again, ~532 MB). --keep-data keeps it."
-  fi
 
   local wipe=0
   case "$mode" in

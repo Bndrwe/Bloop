@@ -1,3 +1,0 @@
-train: 240 examples (192 plan, 48 nudge)
-eval: 30 examples (24 plan, 6 nudge)
-train.jsonl sha256: 56346fe03f14b2e8579803d8b401f347ec4fbac391c663b931a16ddc4920fd13
