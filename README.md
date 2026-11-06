@@ -115,20 +115,20 @@ There are no prebuilt installers (`.dmg`, `.exe`, AppImage) yet. You can build t
 
 ## Screenshots
 
-![Focus loop: focused on Code (100) → drifted to YouTube (59, pet worried) → back on track (65)](docs/screenshots/demo-flow.png)
+![Focus loop: happy while focused on Code, worried the moment YouTube opens, cheering when you are back](docs/screenshots/demo-flow.png)
 
-*The core loop, captured from the running app: focus → drift → nudge → back on track.*
+*The core loop, captured from the running app: focus, drift, nudge, back on track.*
 
 | | |
 |:---:|:---:|
-| ![Pet moods](docs/screenshots/pet-moods.png) | ![Panel](docs/screenshots/panel.png) |
-| *Pet moods* | *Panel* |
-| ![Settings](docs/screenshots/settings.png) | ![First-run permissions](docs/screenshots/onboarding.png) |
-| *Settings* | *First-run permissions* |
+| ![Panel during a focus session](docs/screenshots/panel.png) | ![Panel in Watching mode on YouTube, with the pet worried](docs/screenshots/watching-youtube.png) |
+| *Panel during a focus session: score ring, timer, today's stats and the last 7 days* | *Watching mode, no session: YouTube is open, so the panel shows "distract" and the pet looks worried* |
+| ![Panel with deadlines and the AI study plan](docs/screenshots/panel-plan.png) | ![Pet moods](docs/screenshots/pet-moods.png) |
+| *Panel with Brightspace deadlines and an AI study plan from Ollama* | *Pet moods* |
 
 ![The pet cycling through every mood, on a white and a black background](docs/screenshots/pet-motion.gif)
 
-*Every mood, animated with anime.js, on a white and a black desktop. Panel opening, score count-up and the chrome following the pointer: [panel-motion.gif](docs/screenshots/panel-motion.gif) (hero close-up: [panel-hero.png](docs/screenshots/panel-hero.png)) (WebM versions next to them in `docs/screenshots/`).*
+*Every mood, animated with anime.js, on a white and a black desktop. Close-up of the score ring: [panel-hero.png](docs/screenshots/panel-hero.png).*
 
 **A day with Bloop** (stills from the ad: real Bloop UI on a simulated desktop)
 
@@ -145,24 +145,16 @@ There are no prebuilt installers (`.dmg`, `.exe`, AppImage) yet. You can build t
 
 ![Every pet mood](docs/demo/still-10.png)
 
-**The installed app, step by step** (packaged Linux build, first run)
-
-| | | |
-|:---:|:---:|:---:|
-| ![First launch](docs/screenshots/journey/01-first-launch.png) | ![Focused on code](docs/screenshots/journey/04-focus-code.png) | ![Worried on YouTube](docs/screenshots/journey/06-worried-bubble.png) |
-| *First launch* | *Focused* | *Drifted to YouTube* |
-| ![Panel while distracted](docs/screenshots/journey/07-panel-distracted.png) | ![Back on track](docs/screenshots/journey/08-back-happy.png) | ![Stats after stopping](docs/screenshots/journey/10-stopped-stats.png) |
-| *The panel shows what you're on* | *Back on track* | *Saved to today's stats* |
-
-All 24 steps are in [`docs/screenshots/journey/`](docs/screenshots/journey/).
-
-**Settings → AI**
+**Settings**
 
 | | |
 |:---:|:---:|
-| ![Auto order and Use in Auto switches](docs/screenshots/settings-ai-cloud-auto.png) |
-|:---:|
-| *Auto only uses cloud models you turn on* |
+| ![Settings, top](docs/screenshots/settings.png) | ![Settings, Nudges](docs/screenshots/settings-nudges.png) |
+| *Settings: AI, then the apps and sites that count as studying* | *Nudges: watch without a session, first reminder after 60 s, then every 120 s* |
+| ![Settings, AI, Auto](docs/screenshots/settings-ai-auto.png) | ![Settings, AI, Cloud](docs/screenshots/settings-ai-cloud.png) |
+| *AI, Auto: only uses cloud models you turn on* | *AI, Cloud: CLIs and API keys, each with its own Use in Auto switch* |
+| ![Settings, AI, Use Local, step 1 of 3](docs/screenshots/settings-ai-local-setup.png) | ![Settings, AI, Use Local, step 3 of 3](docs/screenshots/settings-ai-local-ollama.png) |
+| *Use Local, Ollama not found: the 3-step setup card at step 1* | *Use Local, Ollama running: step 3, pick a model* |
 
 ## AI study plan
 
@@ -244,7 +236,7 @@ Talk to Bloop about your studies: "Plan my evening", "I can't focus, help", "Qui
 - Conversations are saved on this computer only, in `userData/chats/` (one file per chat, at most 200 chats). Rename or delete them in the list (the trash button deletes one chat), or use **Delete all chats** (after a confirmation). **Settings → Reset data → Reset everything…** removes them too.
 - With a cloud provider, each message (and the recent conversation) is sent to that vendor, and the chat window says so under the message box. See [docs/PRIVACY.md](docs/PRIVACY.md#chat-with-bloop).
 
-![Chat with Bloop](docs/screenshots/chat.png)
+![Chat with Bloop, answering through an Ollama model](docs/screenshots/chat.png)
 
 ## Optional: Brightspace deadlines
 
@@ -272,11 +264,16 @@ The link contains a private token, so treat it like a password.
 
 | Connected | Not connected yet |
 |---|---|
-| ![Settings, Deadlines card, connected to Brightspace](docs/screenshots/settings-brightspace.png) | ![Settings, Deadlines card with the Log in to Brightspace button](docs/screenshots/settings-brightspace-login.png) |
+| ![Settings, Deadlines card, connected to Brightspace (example account)](docs/screenshots/settings-brightspace.png) | ![Settings, Deadlines card with the Log in to Brightspace button](docs/screenshots/settings-brightspace-login.png) |
 
 ## Permissions (macOS only)
 
 On first run on macOS, Bloop checks its permissions and shows a short guide with buttons that open the right System Settings pane. Afterwards everything lives in **Settings → Permissions**: live status for each permission, **Open Screen Recording settings**, **Ask for browser access**, **Check again**, **Reset permissions…**, **Relaunch Bloop** and **Run setup again** (the welcome guide). While a permission is missing, the menu bar menu also has **Permissions…**. Windows and Linux don't need any of these.
+
+| | |
+|:---:|:---:|
+| ![First-run permissions guide](docs/screenshots/onboarding.png) | ![Settings, Permissions on macOS](docs/screenshots/settings-permissions.png) |
+| *First-run guide* | *Settings → Permissions: status, shortcuts and Reset permissions…* |
 
 | Permission | Why | Without it |
 |---|---|---|
