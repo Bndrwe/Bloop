@@ -188,11 +188,11 @@ describe('SessionEngine with content judging (always-on watching)', () => {
     expect(engine.getStatus().current).toMatchObject({ category: 'distract', content: { verdict: 'unsure' } })
   })
 
-  it('an unsure page on a site in no list stays neutral', () => {
+  it('an unsure page with no AI to ask counts as distracting', () => {
     const { svc } = service()
     const { engine, run } = harness((r) => svc.judge(r))
     run({ app: 'Google Chrome', url: 'https://vimeo.com/123', title: 'Untitled 4 on Vimeo' }, 2)
-    expect(engine.getStatus().current).toMatchObject({ category: 'neutral', content: { verdict: 'unsure' } })
+    expect(engine.getStatus().current).toMatchObject({ category: 'distract', content: { verdict: 'unsure' } })
   })
 
   it('an override turns gameplay into study', () => {

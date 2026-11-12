@@ -2,7 +2,7 @@
 // clock and persistence are injected (tests/contentAi.test.ts).
 //
 // - Option A (default): only when the user picked an Ollama model (choice local). Nothing leaves the computer.
-// - Option B (opt-in, Settings.cloudJudge, off by default): the cloud provider Auto / a cloud pick uses.
+// - The cloud provider Auto / a cloud pick uses (Settings.cloudJudge, on by default).
 // The request carries ONLY the site, the page title and the course names: never the URL, page text,
 // app names or anything else (buildJudgePrompt).
 // At most one call in flight, at most one call every ~10 s, answers cached per page (LRU 500,
@@ -71,7 +71,7 @@ export function parseJudgeReply(text: string): AiAnswer | null {
 
 /**
  * Which provider may judge pages: an Ollama model the user picked (Option A), or, only with
- * Settings.cloudJudge on, the cloud provider currently in use (Option B). Otherwise none.
+ * Settings.cloudJudge on (the default), the cloud provider currently in use. Otherwise none.
  */
 export async function pickJudgeProvider(opts: {
   choice: AiChoice

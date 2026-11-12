@@ -562,7 +562,8 @@ export class SessionEngine extends EventEmitter {
       }
     }
     if (!content) return { category: base, content: null }
-    const category = content.verdict === 'study' ? 'focus' : content.verdict === 'not-study' ? 'distract' : base
+    // Unsure (no AI answer yet, or no AI at all) counts as distracting: better a nudge than a free pass.
+    const category = content.verdict === 'study' ? 'focus' : 'distract'
     return { category, content }
   }
 

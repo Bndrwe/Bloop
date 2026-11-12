@@ -69,7 +69,7 @@ export interface Settings {
   contentDomains: string[]
   /** macOS: also read the page's headings and description from Chrome/Safari (needs "Allow JavaScript from Apple Events"). */
   readPageText: boolean
-  /** Option B: let the cloud AI (Auto / a cloud pick) judge unclear pages. Sends only titles, site and course names. */
+  /** The cloud AI in use (Auto / a cloud pick) judges unclear pages; on by default. Sends only titles, site and course names. */
   cloudJudge: boolean
   /** Seconds continuously on a distraction before the pet speaks up (0 = right away). It looks worried at once. */
   nudgeAfterSec: number

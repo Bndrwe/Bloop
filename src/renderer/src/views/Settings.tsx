@@ -294,9 +294,9 @@ function PageJudging({ settings, update }: { settings: Settings; update: (p: Par
       )}
       <label className="row-toggle">
         <span className="row-toggle-text">
-          <span>Let my cloud AI judge unclear pages (sends page titles to {cloudLabel})</span>
+          <span>Cloud AI judges unclear pages ({cloudLabel})</span>
           <span className="faint field-help">
-            Sends only the page title, the site name and your course names. Never the link or page text. Off by default.
+            When a page could be study or not, Bloop asks the AI you set up. It sends only the page title, the site name and your course names, never the link or page text. With no AI, unclear pages count as distracting.
           </span>
         </span>
         <span className="toggle">

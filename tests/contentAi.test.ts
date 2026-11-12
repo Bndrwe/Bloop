@@ -50,8 +50,8 @@ describe('buildJudgePrompt / parseJudgeReply', () => {
 })
 
 describe('pickJudgeProvider (Option A / Option B)', () => {
-  it('Option B is off by default', () => {
-    expect(DEFAULT_SETTINGS.cloudJudge).toBe(false)
+  it('cloud judging is on by default; page text reading is off', () => {
+    expect(DEFAULT_SETTINGS.cloudJudge).toBe(true)
     expect(DEFAULT_SETTINGS.readPageText).toBe(false)
   })
   it('Auto with a cloud provider and cloudJudge off: no provider, nothing resolved or sent', async () => {

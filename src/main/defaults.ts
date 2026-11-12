@@ -57,7 +57,7 @@ export const DEFAULT_SETTINGS: Settings = {
   // is what they count as until the page is judged (or when it can't be).
   contentDomains: ['youtube.com', 'reddit.com', 'medium.com', 'quora.com', 'vimeo.com'],
   readPageText: false,
-  cloudJudge: false,
+  cloudJudge: true,
   nudgeAfterSec: 0,
   notifyAfterSec: 60,
   nudgeCooldownSec: 120,
@@ -161,7 +161,7 @@ export function mergeSettings(stored: Partial<Settings> | undefined | null): Set
 }
 
 /** Bump when a default changes in a way saved settings should follow (see migrateSettings). */
-export const SETTINGS_VERSION = 3
+export const SETTINGS_VERSION = 4
 
 /**
  * One-time upgrade of saved settings. Settings files store every value, so a value equal to an
@@ -179,7 +179,9 @@ export function migrateSettings(stored: Partial<Settings> | undefined | null, fr
   }
   // v3: the first reminder (bubble + notification) comes after 1 min, then every
   // nudgeCooldownSec ("Remind again every", default 120 s, unchanged).
-  if (Number(next.notifyAfterSec) === 120) next.notifyAfterSec = 60
+  if (fromVersion < 3 && Number(next.notifyAfterSec) === 120) next.notifyAfterSec = 60
+  // v4: a cloud AI the user set up judges unclear pages automatically (was opt-in).
+  if (fromVersion < 4) next.cloudJudge = true
   return next
 }
 

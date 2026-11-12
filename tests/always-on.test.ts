@@ -463,6 +463,11 @@ describe('YouTube is distracting by default', () => {
 })
 
 describe('settings migrations (v2, v3) and defaults', () => {
+  it('v4: cloud judging of unclear pages turns on for existing users', () => {
+    expect(mergeSettings(migrateSettings({ ...DEFAULT_SETTINGS, cloudJudge: false }, 3)).cloudJudge).toBe(true)
+    expect(mergeSettings(migrateSettings({ ...DEFAULT_SETTINGS, cloudJudge: false }, 4)).cloudJudge).toBe(false)
+  })
+
   it('moves the old defaults to the new ones and keeps custom values', () => {
     const old = { ...DEFAULT_SETTINGS, nudgeAfterSec: 60, notifyAfterSec: 180, nudgeCooldownSec: 120, sampleIntervalSec: 5 }
     expect(mergeSettings(migrateSettings(old, 0))).toMatchObject({ nudgeAfterSec: 0, notifyAfterSec: 60, nudgeCooldownSec: 120, sampleIntervalSec: 2 })
