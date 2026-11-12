@@ -8,7 +8,7 @@ _Your little study pet._
 
 A small, cute desktop pet that lives in the top-right corner of your screen, watches whether you're focused, keeps a live **focus score**, and gently nudges you when you drift off task.
 
-Built as the MVP for a university AI class project. Everything runs locally: your activity data never leaves your machine. The one optional exception is the AI study plan: with Ollama it also stays on your computer, and with a cloud provider it sends your upcoming deadlines and focus stats to that provider, only when you click the button.
+Built as the MVP for a university AI class project. Tracking runs on your computer: what you're working on never leaves it. AI is optional and runs on whichever AI you choose: a cloud AI you already use (Claude, Codex, Gemini, or an API key) or Ollama on your own computer. Without any AI, the focus score, reminders and Brightspace deadlines all still work; only the AI extras are off (see [What needs AI](#what-needs-ai)).
 
 ## Download
 
@@ -83,7 +83,7 @@ git clone https://github.com/Bndrwe/Bloop.git && cd Bloop && ./scripts/install.s
 - **Mac:** Bloop has no Dock icon. Look for it in the **menu bar** (top right); the pet sits in the top-right corner of your screen. The first launch walks you through **Screen Recording** and **Automation**; after allowing Screen Recording, click **Relaunch Bloop**. You can come back to this any time in **Settings → Permissions** (or the menu bar's **Permissions…** item, shown while something isn't allowed).
 - **Windows:** Bloop is in the Start menu and in the system tray by the clock (it may be under the **^** overflow; drag it out to pin it).
 - **Linux:** open Bloop from your app menu or run `bloop`.
-- Click the pet to open the panel and press **Start**. For AI study plans, open **Settings → AI** and pick where the AI runs: **Use Local** (Ollama) or **Cloud** (see [AI study plan](#ai-study-plan)).
+- Click the pet to open the panel and press **Start**. AI is optional: to turn on the study plan, chat and smarter page judging, open **Settings → AI** and pick a cloud AI you already use or Ollama (see [What needs AI](#what-needs-ai)).
 
 Already have the repo? From its folder, run `npm run install-app` (macOS/Linux) or `npm run install-app:win` (Windows).
 
@@ -114,7 +114,7 @@ There are no prebuilt installers (`.dmg`, `.exe`, AppImage) yet. You can build t
 Bloop is a focus app with three core areas (see [docs/PRODUCT.md](docs/PRODUCT.md)):
 
 1. **A live focus score** that judges what's actually on screen. A lecture on YouTube counts as study, gameplay doesn't. See [Depends on what's open](#depends-on-whats-open).
-2. **Brightspace deadlines and an AI weekly study plan**: log in to Brightspace (or paste the iCal link) to see what's due, then get a week of study blocks from Ollama on your computer or a cloud AI you already use.
+2. **Brightspace deadlines and an AI weekly study plan**: log in to Brightspace (or paste the iCal link) to see what's due, then get a week of study blocks from whichever AI you use.
 3. **Reminders when you're not focused**: the pet reacts right away, then a bubble and a notification after 1 min and every 2 min after that.
 
 Chat with Bloop is an extra. The details:
@@ -144,7 +144,7 @@ Chat with Bloop is an extra. The details:
 | ![Panel during a focus session](docs/screenshots/panel.png) | ![Panel in Watching mode on YouTube, with the pet worried](docs/screenshots/watching-youtube.png) |
 | *Panel during a focus session: score ring, timer, today's stats and the last 7 days* | *Watching mode, no session: YouTube is open, so the panel shows "distract" and the pet looks worried* |
 | ![Panel with deadlines and the AI study plan](docs/screenshots/panel-plan.png) | ![Pet moods](docs/screenshots/pet-moods.png) |
-| *Panel with Brightspace deadlines and an AI study plan from Ollama* | *Pet moods* |
+| *Panel with Brightspace deadlines and an AI study plan* | *Pet moods* |
 
 ![The pet cycling through every mood, on a white and a black background](docs/screenshots/pet-motion.gif)
 
@@ -178,11 +178,27 @@ Chat with Bloop is an extra. The details:
 
 ## AI study plan
 
-The panel's **AI study plan** card writes a week of study blocks from your deadlines and focus history. Pick where the AI runs in **Settings → AI**:
+The panel's **AI study plan** card writes a week of study blocks from your deadlines and focus history.
+
+### What needs AI
+
+Bloop works with any AI you set up, cloud or local, and none is required.
+
+| Feature | Without AI | With an AI (cloud or Ollama) |
+|---|---|---|
+| Focus score, pet, reminders, notifications | Works | Works |
+| Brightspace and calendar deadlines, exam reminders | Works | Works |
+| Judging "could be study or not" pages (a YouTube lecture vs. gameplay) | Local rules only; unclear pages count as distracting | The AI decides unclear pages |
+| AI weekly study plan | Off | Works |
+| Chat with Bloop | Off | Works |
+
+### Choosing an AI
+
+Pick it in **Settings → AI**:
 
 - **Auto** (default) uses the first ready one of the cloud providers you turned on with **Use in Auto** (Settings → AI → Cloud; picking a cloud provider also turns it on, and it goes to the front), in your order and only if available, e.g. the Claude CLI installed and signed in. Auto never uses Ollama: pick an Ollama model in **Use Local** to use it. Cloud providers you haven't turned on are never used by Auto. If nothing is ready it says "Turn on a model in Settings → AI". Auto never downloads or pulls anything.
-- **Use Local** runs on your computer with [Ollama](#use-local-ollama) (see the setup steps below).
 - **Cloud** uses a CLI or API key you already have (see [Cloud AI](#cloud-ai)).
+- **Use Local** runs on your own computer with [Ollama](#use-local-ollama), if you'd rather nothing leave it. Ollama is optional; you only need it for this.
 
 The panel card says which one it used (for example "via Ollama · qwen3.5:0.8b"). When nothing is ready it shows **Set up AI in Settings**. The **Test** button in Settings sends a one-line prompt to the current choice.
 
