@@ -10,11 +10,12 @@ Everything runs on your computer. Your activity data is never uploaded.
 
 ## 1. Before you start
 
-You need three things. The installer checks them and tells you exactly what to do if one is missing.
+You need two things. The installer checks them and tells you exactly what to do if one is missing.
 
-1. **Access to the Bloop repository on GitHub.** It's private. Ask the Bloop team to invite your GitHub account, then accept the invite (GitHub emails you). If GitHub shows "404 Not Found" for <https://github.com/Bndrwe/StudyPet>, you aren't signed in or haven't been invited yet.
-2. **git and Node.js 20 or newer.** npm comes with Node.js.
-3. **About 2 GB of free disk space** for the build tools and the build. Most of it is the `node_modules` folder inside the `StudyPet` folder.
+**Just want the app?** Download a ready-made installer from the [Releases page](https://github.com/Bndrwe/StudyPet/releases/latest) instead (see [section 9](#9-ready-made-installers)). This guide is for building Bloop yourself.
+
+1. **git and Node.js 20 or newer.** npm comes with Node.js.
+2. **About 2 GB of free disk space** for the build tools and the build. Most of it is the `node_modules` folder inside the `StudyPet` folder.
 
 Bloop runs on macOS 12 (Monterey) or newer, Windows 10/11 and 64-bit Linux. The installer builds for your computer's chip automatically (Apple Silicon or Intel on a Mac; x64 or ARM on Windows and Linux).
 
@@ -23,7 +24,6 @@ Bloop runs on macOS 12 (Monterey) or newer, Windows 10/11 and 64-bit Linux. The 
 **macOS**
 - git: run `xcode-select --install` in Terminal (or it comes with Homebrew).
 - Node.js: `brew install node@20` with [Homebrew](https://brew.sh), or the LTS installer from <https://nodejs.org>. If you have Homebrew, the Bloop installer offers to run `brew install node@20` for you.
-- GitHub CLI (recommended for signing in): `brew install gh`, then `gh auth login` and follow the prompts (choose GitHub.com, HTTPS, and "Login with a web browser").
 
 **Windows**
 - git: `winget install Git.Git`, or the installer from <https://git-scm.com/download/win>. It includes Git Credential Manager, which signs you in to GitHub through your browser the first time you clone.
@@ -33,7 +33,6 @@ Bloop runs on macOS 12 (Monterey) or newer, Windows 10/11 and 64-bit Linux. The 
 **Linux**
 - git: `sudo apt install git` (Fedora: `sudo dnf install git`).
 - Node.js 20+: the easiest way without sudo is [nvm](https://github.com/nvm-sh/nvm): install it, open a new terminal, then `nvm install 20`. Distro packages work too if they are version 20 or newer (`node -v` to check).
-- GitHub CLI (recommended): see <https://github.com/cli/cli#linux--bsd>, then `gh auth login`.
 
 ---
 
@@ -43,7 +42,7 @@ Open a terminal (macOS: **Terminal**; Windows: **PowerShell**; Linux: your termi
 
 **macOS** (GitHub CLI)
 ```bash
-gh repo clone Bndrwe/StudyPet && cd StudyPet && ./scripts/install.sh
+git clone https://github.com/Bndrwe/StudyPet.git && cd StudyPet && ./scripts/install.sh
 ```
 
 **Windows** (PowerShell, Git for Windows)
@@ -53,7 +52,7 @@ git clone https://github.com/Bndrwe/StudyPet.git; cd StudyPet; powershell -Execu
 
 **Linux** (GitHub CLI)
 ```bash
-gh repo clone Bndrwe/StudyPet && cd StudyPet && ./scripts/install.sh
+git clone https://github.com/Bndrwe/StudyPet.git && cd StudyPet && ./scripts/install.sh
 ```
 
 **No GitHub CLI?** Plain git works on macOS and Linux too, as long as git can sign in to GitHub (Git Credential Manager, a [personal access token](https://github.com/settings/tokens) pasted as the password, or an SSH key with `git@github.com:Bndrwe/StudyPet.git`):
@@ -259,7 +258,6 @@ The uninstaller removes the app, its shortcuts and menu entries, and launch-at-l
 ## 8. Troubleshooting
 
 **The install command fails before building.**
-- "Repository not found" / "404" / a password prompt that rejects your password: you aren't signed in to GitHub with an account that has access. Run `gh auth login` (or, with plain git, use a personal access token as the password), and check you accepted the repo invite.
 - "Node.js 20 or newer" / "too old": install the current LTS Node.js (section 1), open a **new** terminal, and run the command again.
 - Windows: "running scripts is disabled on this system": use the full `powershell -ExecutionPolicy Bypass -File scripts\install.ps1` command, which allows the installer for that one run only.
 
@@ -320,11 +318,9 @@ Add `BLOOP_TRACE=1` before the command (PowerShell: `$env:BLOOP_TRACE=1` first) 
 
 ---
 
-## 9. Ready-made installers (not published yet)
+## 9. Ready-made installers
 
-There are no downloadable installers (`.dmg`, `.exe`, AppImage or `.deb`) yet, because the repo is private. Use the install command in [section 2](#2-install) instead.
-
-`.github/workflows/release.yml` can build them and publish them as a GitHub Release when GitHub Actions minutes are available. Developers can also build them on their own machine with `npm run build:mac` / `build:win` / `build:linux`. Files built elsewhere are unsigned, so the first launch shows a warning once:
+Download the `.dmg` (Mac), `.exe` (Windows), AppImage or `.deb` (Linux) from the [Releases page](https://github.com/Bndrwe/StudyPet/releases/latest). `.github/workflows/release.yml` builds and smoke-tests them on real Mac, Windows and Linux machines. They are unsigned, so the first launch shows a warning once:
 
 - **macOS:** open the `.dmg`, drag **Bloop** into **Applications**, then **right-click Bloop → Open → Open** (or run `xattr -cr /Applications/Bloop.app`).
 - **Windows:** SmartScreen says "Windows protected your PC". Click **More info → Run anyway**.

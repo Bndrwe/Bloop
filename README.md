@@ -10,13 +10,35 @@ A small, cute desktop pet that lives in the top-right corner of your screen, wat
 
 Built as the MVP for a university AI class project. Everything runs locally: your activity data never leaves your machine. The one optional exception is the AI study plan: with Ollama it also stays on your computer, and with a cloud provider it sends your upcoming deadlines and focus stats to that provider, only when you click the button.
 
-## Install
+## Download
 
-Bloop installs with one command that builds the app on your own computer from this repo and then installs it like a normal app (in Applications, the Start menu or your app menu). There are no downloadable installers at the moment, so this is the way to get it.
+**[Download the latest Bloop](https://github.com/Bndrwe/StudyPet/releases/latest)** and pick the file for your computer:
+
+| Your computer | File |
+|---|---|
+| Mac with Apple Silicon (M1 to M5, 2020 and newer) | `Bloop-…-mac-arm64.dmg` |
+| Mac with an Intel processor | `Bloop-…-mac-x64.dmg` |
+| Windows 10/11, installer (recommended) | `Bloop-Setup-…-win-x64.exe` |
+| Windows 10/11, portable (no install) | `Bloop-…-win-x64-portable.exe` |
+| Linux (any x86_64 distro) | `Bloop-…-linux-x86_64.AppImage` |
+| Debian / Ubuntu | `bloop_…_amd64.deb` |
+
+Not sure which Mac you have? Apple menu → **About This Mac**: "Chip: Apple M…" means Apple Silicon.
+
+**First launch.** The apps aren't code-signed (that costs money), so your computer warns you once:
+
+- **macOS:** open the `.dmg` and drag **Bloop** into **Applications**. Then **right-click Bloop → Open → Open**. If macOS says the app "is damaged", run `xattr -cr /Applications/Bloop.app` in Terminal and open it again. Bloop then walks you through **Screen Recording** and **Automation** (see [After installing](#after-installing)).
+- **Windows:** SmartScreen says "Windows protected your PC". Click **More info → Run anyway**.
+- **Linux:** `chmod +x Bloop-*.AppImage` and run it (add `--no-sandbox` if it closes straight away on Ubuntu 24.04+), or `sudo apt install ./bloop_*_amd64.deb`. Focus tracking needs `x11-utils` and an X11 session.
+
+**Update:** download the new version and install it over the old one. Your settings and history are kept.
+
+## Build it yourself (optional)
+
+You can also build Bloop from the code with one command, which installs it like a normal app. This is handy for developers or if you want the very latest changes.
 
 **Before you start**
 
-- **Access to this repo.** It's private: your GitHub account needs to be invited (ask the Bloop team), and you sign in once on your computer (the GitHub CLI or Git asks you to).
 - **git and Node.js 20 or newer** (npm comes with Node). The installer checks for both and tells you how to get whatever is missing. On a Mac it offers `brew install node@20`; on Windows it offers `winget install`. It always asks first.
 - **About 2 GB of free disk space** while it builds. The first install takes about 3–6 minutes; later updates are quicker.
 
@@ -25,17 +47,13 @@ Bloop installs with one command that builds the app on your own computer from th
 Open **Terminal** (⌘ Space, type "Terminal"). One-time setup, if you don't have them yet ([Homebrew](https://brew.sh) first):
 
 ```bash
-brew install gh node@20
+brew install node@20
 ```
 
-```bash
-gh auth login
-```
-
-(choose GitHub.com → HTTPS → Login with a web browser). Then install Bloop:
+Then build and install Bloop:
 
 ```bash
-gh repo clone Bndrwe/StudyPet && cd StudyPet && ./scripts/install.sh
+git clone https://github.com/Bndrwe/StudyPet.git && cd StudyPet && ./scripts/install.sh
 ```
 
 ### Windows: PowerShell
@@ -46,7 +64,7 @@ One-time setup, if you don't have them yet (then close and reopen PowerShell):
 winget install Git.Git OpenJS.NodeJS.LTS
 ```
 
-Then install Bloop (Git opens a browser window to sign in to GitHub the first time):
+Then build and install Bloop:
 
 ```powershell
 git clone https://github.com/Bndrwe/StudyPet.git; cd StudyPet; powershell -ExecutionPolicy Bypass -File scripts\install.ps1
@@ -54,13 +72,7 @@ git clone https://github.com/Bndrwe/StudyPet.git; cd StudyPet; powershell -Execu
 
 ### Linux: terminal
 
-One-time setup: install the [GitHub CLI](https://cli.github.com), git and Node.js 20+ from your distro or [nvm](https://github.com/nvm-sh/nvm), plus `x11-utils` for focus tracking, then run `gh auth login`. Then:
-
-```bash
-gh repo clone Bndrwe/StudyPet && cd StudyPet && ./scripts/install.sh
-```
-
-**Other ways to get the code.** Plain git works on every system if you are signed in to GitHub (Git Credential Manager, a personal access token as the password, or SSH with `git@github.com:Bndrwe/StudyPet.git`):
+One-time setup: install git and Node.js 20+ from your distro or [nvm](https://github.com/nvm-sh/nvm), plus `x11-utils` for focus tracking. Then:
 
 ```bash
 git clone https://github.com/Bndrwe/StudyPet.git && cd StudyPet && ./scripts/install.sh
@@ -421,9 +433,9 @@ On Windows the pet sits at the top-right of the work area, above the taskbar, an
 
 ### Releases
 
-There are no published downloads yet. The repo is private, so people install with the [install scripts](#install).
+Downloads are published on the [Releases page](https://github.com/Bndrwe/StudyPet/releases).
 
-`.github/workflows/release.yml` can build installers for every platform (macOS arm64, macOS Intel, Windows x64, Linux x64) on its own native runner, launch each built app as a smoke test, and publish them with `SHA256SUMS.txt` as a GitHub Release. Run it from the Actions tab (**Release → Run workflow**, which releases `v<package.json version>`) or push a tag like `v1.0.1`. Bump `version` in `package.json` first. It needs GitHub Actions minutes, which a private repo gets only in a limited amount.
+`.github/workflows/release.yml` can build installers for every platform (macOS arm64, macOS Intel, Windows x64, Linux x64) on its own native runner, launch each built app as a smoke test, and publish them with `SHA256SUMS.txt` as a GitHub Release. Run it from the Actions tab (**Release → Run workflow**, which releases `v<package.json version>`) or push a tag like `v1.0.1`. Bump `version` in `package.json` first.
 
 To make an installer on your own machine, run `npm run build:mac` / `build:win` / `build:linux`. Those files are unsigned, so the first launch shows a warning (see [Building on macOS](#building-on-macos) and [Building on Windows](#building-on-windows)).
 
