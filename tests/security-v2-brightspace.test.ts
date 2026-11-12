@@ -3,7 +3,6 @@
 // brightspace.ts is pure; brightspaceApp.ts imports electron, so its wiring is checked statically.
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { pathToFileURL } from 'node:url'
 import { describe, expect, it, vi } from 'vitest'
 import {
   BRIGHTSPACE_PARTITION,
@@ -59,7 +58,8 @@ describe('login navigation policy (check 3)', () => {
   )
 
   it('Bloop windows only allow our own renderer, never https', () => {
-    const renderer = pathToFileURL(rendererOrigins.rendererIndex).href
+    // A literal file URL: pathToFileURL() would add the test machine's drive letter on Windows.
+    const renderer = 'file:///opt/bloop/out/renderer/index.html'
     expect(navigationDecision(renderer, 'bloop', { origins: rendererOrigins })).toBe('allow')
     expect(navigationDecision(ORIGIN + '/d2l/home', 'bloop', { origins: rendererOrigins })).toBe('deny')
     expect(navigationDecision('file:///etc/passwd', 'bloop', { origins: rendererOrigins })).toBe('deny')

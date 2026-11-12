@@ -23,7 +23,8 @@ afterEach(() => {
   while (dirs.length) rmSync(dirs.pop() as string, { recursive: true, force: true })
 })
 
-describe('setLinuxAutostart', () => {
+// Linux-only feature with Linux paths (XDG_CONFIG_HOME, ~/.config); not meaningful on a Windows host.
+describe.skipIf(process.platform === 'win32')('setLinuxAutostart', () => {
   it('uses the install script launcher when the AppImage was installed by scripts/install.sh', () => {
     const home = mkdtempSync(join(tmpdir(), 'bloop-home-'))
     const appimage = join(home, '.local', 'opt', 'bloop', 'Bloop.AppImage')
