@@ -23,18 +23,18 @@ There are no downloadable installers yet, because the repo is private. Instead, 
 **macOS and Linux** (in Terminal):
 
 ```bash
-gh repo clone Bndrwe/StudyPet && cd StudyPet && ./scripts/install.sh
+git clone https://github.com/Bndrwe/Bloop.git && cd Bloop && ./scripts/install.sh
 ```
 
 **Windows** (in PowerShell):
 
 ```powershell
-git clone https://github.com/Bndrwe/StudyPet.git; cd StudyPet; powershell -ExecutionPolicy Bypass -File scripts\install.ps1
+git clone https://github.com/Bndrwe/Bloop.git; cd Bloop; powershell -ExecutionPolicy Bypass -File scripts\install.ps1
 ```
 
 No GitHub CLI? Plain `git clone` works too. See [INSTALL.md](INSTALL.md) for the full steps, the permissions Bloop asks for on a Mac, and troubleshooting.
 
-To update, run the same install command again from the `StudyPet` folder. Your settings and history are kept.
+To update, run the same install command again from the `Bloop` folder (`StudyPet` if you cloned it before the rename). Your settings and history are kept.
 
 Because you build Bloop on your own computer, macOS and Windows don't show their "unidentified developer" warnings for it.
 

@@ -24,7 +24,7 @@ describe('inferDomainFromTitle', () => {
     ['Essay draft - Google Docs - Google Chrome', 'docs.google.com'],
     ['Budget - Google Sheets - Microsoft Edge', 'docs.google.com'],
     ['Thesis - Overleaf, Online LaTeX Editor - Google Chrome', 'overleaf.com'],
-    ['Bndrwe/StudyPet: A pet - GitHub - Google Chrome', 'github.com'],
+    ['Bndrwe/Bloop: A pet - GitHub - Google Chrome', 'github.com'],
     ['Course Home - CS 101 - Brightspace - Google Chrome', 'brightspace.com'],
     ['ChatGPT - Google Chrome', 'chatgpt.com'],
     ['New chat - Claude - Google Chrome', 'claude.ai'],

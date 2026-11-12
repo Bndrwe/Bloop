@@ -19,7 +19,7 @@ Please give us a reasonable amount of time to fix the problem before you disclos
 
 ## Supported versions
 
-Security fixes go into the latest code on the main branch. Please update first (re-run the install command from the `StudyPet` folder, which pulls and rebuilds) before you report an issue.
+Security fixes go into the latest code on the main branch. Please update first (re-run the install command from the `Bloop` folder (`StudyPet` if you cloned it before the rename), which pulls and rebuilds) before you report an issue.
 
 ## Scope
 

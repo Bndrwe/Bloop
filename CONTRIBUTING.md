@@ -7,8 +7,8 @@ Thanks for helping make Bloop better. This guide covers how to set up the code, 
 You need **Node.js 20** and npm.
 
 ```bash
-git clone https://github.com/Bndrwe/StudyPet.git
-cd StudyPet
+git clone https://github.com/Bndrwe/Bloop.git
+cd Bloop
 npm ci
 ```
 

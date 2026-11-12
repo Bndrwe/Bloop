@@ -12,10 +12,10 @@ Everything runs on your computer. Your activity data is never uploaded.
 
 You need two things. The installer checks them and tells you exactly what to do if one is missing.
 
-**Just want the app?** Download a ready-made installer from the [Releases page](https://github.com/Bndrwe/StudyPet/releases/latest) instead (see [section 9](#9-ready-made-installers)). This guide is for building Bloop yourself.
+**Just want the app?** Download a ready-made installer from the [Releases page](https://github.com/Bndrwe/Bloop/releases/latest) instead (see [section 9](#9-ready-made-installers)). This guide is for building Bloop yourself.
 
 1. **git and Node.js 20 or newer.** npm comes with Node.js.
-2. **About 2 GB of free disk space** for the build tools and the build. Most of it is the `node_modules` folder inside the `StudyPet` folder.
+2. **About 2 GB of free disk space** for the build tools and the build. Most of it is the `node_modules` folder inside the `Bloop` folder (`StudyPet` if you cloned it before the rename).
 
 Bloop runs on macOS 12 (Monterey) or newer, Windows 10/11 and 64-bit Linux. The installer builds for your computer's chip automatically (Apple Silicon or Intel on a Mac; x64 or ARM on Windows and Linux).
 
@@ -42,25 +42,25 @@ Open a terminal (macOS: **Terminal**; Windows: **PowerShell**; Linux: your termi
 
 **macOS** (GitHub CLI)
 ```bash
-git clone https://github.com/Bndrwe/StudyPet.git && cd StudyPet && ./scripts/install.sh
+git clone https://github.com/Bndrwe/Bloop.git && cd Bloop && ./scripts/install.sh
 ```
 
 **Windows** (PowerShell, Git for Windows)
 ```powershell
-git clone https://github.com/Bndrwe/StudyPet.git; cd StudyPet; powershell -ExecutionPolicy Bypass -File scripts\install.ps1
+git clone https://github.com/Bndrwe/Bloop.git; cd Bloop; powershell -ExecutionPolicy Bypass -File scripts\install.ps1
 ```
 
 **Linux** (GitHub CLI)
 ```bash
-git clone https://github.com/Bndrwe/StudyPet.git && cd StudyPet && ./scripts/install.sh
+git clone https://github.com/Bndrwe/Bloop.git && cd Bloop && ./scripts/install.sh
 ```
 
-**No GitHub CLI?** Plain git works on macOS and Linux too, as long as git can sign in to GitHub (Git Credential Manager, a [personal access token](https://github.com/settings/tokens) pasted as the password, or an SSH key with `git@github.com:Bndrwe/StudyPet.git`):
+**No GitHub CLI?** Plain git works on macOS and Linux too, as long as git can sign in to GitHub (Git Credential Manager, a [personal access token](https://github.com/settings/tokens) pasted as the password, or an SSH key with `git@github.com:Bndrwe/Bloop.git`):
 ```bash
-git clone https://github.com/Bndrwe/StudyPet.git && cd StudyPet && ./scripts/install.sh
+git clone https://github.com/Bndrwe/Bloop.git && cd Bloop && ./scripts/install.sh
 ```
 
-**Already cloned the repo?** From the `StudyPet` folder run `npm run install-app` (macOS/Linux) or `npm run install-app:win` (Windows).
+**Already cloned the repo?** From the `Bloop` folder (`StudyPet` if you cloned it before the rename) run `npm run install-app` (macOS/Linux) or `npm run install-app:win` (Windows).
 
 ### What happens
 
@@ -137,7 +137,7 @@ Later, everything is in **Settings → Permissions** (the menu bar menu shows **
 2. Turn on **Bloop** there.
 3. Click **Relaunch Bloop**. Then, with your browser open, click **Ask for browser access**.
 
-Terminal alternative: run `npm run perms` in the `StudyPet` folder. It clears the same entries and opens each settings pane in turn.
+Terminal alternative: run `npm run perms` in the `Bloop` folder (`StudyPet` if you cloned it before the rename). It clears the same entries and opens each settings pane in turn.
 
 ### Notifications
 
@@ -227,7 +227,7 @@ The **Test** button in Settings sends a one-line prompt to check your choice wor
 
 ### Update
 
-There is no automatic updater. To update, open a terminal in the `StudyPet` folder and run the installer again:
+There is no automatic updater. To update, open a terminal in the `Bloop` folder (`StudyPet` if you cloned it before the rename) and run the installer again:
 
 - macOS / Linux: `./scripts/install.sh`
 - Windows: `powershell -ExecutionPolicy Bypass -File scripts\install.ps1`
@@ -248,8 +248,8 @@ To clear your history and reset settings without uninstalling, use **Settings �
 
 ### Uninstall
 
-- **macOS / Linux:** in the `StudyPet` folder, run `./scripts/uninstall.sh` (or `npm run uninstall-app`). On Linux the uninstaller is also copied to `~/.local/opt/bloop/uninstall.sh`, so it works even if you deleted the source folder. On macOS without the source folder: quit Bloop and drag it from Applications to the Trash.
-- **Windows:** **Settings → Apps → Installed apps → Bloop → Uninstall**, or `powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1` in the `StudyPet` folder.
+- **macOS / Linux:** in the `Bloop` folder (`StudyPet` if you cloned it before the rename), run `./scripts/uninstall.sh` (or `npm run uninstall-app`). On Linux the uninstaller is also copied to `~/.local/opt/bloop/uninstall.sh`, so it works even if you deleted the source folder. On macOS without the source folder: quit Bloop and drag it from Applications to the Trash.
+- **Windows:** **Settings → Apps → Installed apps → Bloop → Uninstall**, or `powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1` in the `Bloop` folder (`StudyPet` if you cloned it before the rename).
 
 The uninstaller removes the app, its shortcuts and menu entries, and launch-at-login, then **asks** before deleting your data folder Add `--keep-data` / `-KeepData` to keep it without asking, or `--purge` / `-Purge` to delete it without asking. Finally, delete the `StudyPet` source folder to free the disk space the build tools used.
 
@@ -292,7 +292,7 @@ Or just run the installer on this Mac.
 **Permissions still say "not granted" on macOS.**
 - Did you click **Relaunch Bloop** after turning on Screen Recording? macOS only reads that permission when the app starts.
 - Make sure the switch is on next to **Bloop** (not an old or duplicate entry) in **Privacy & Security → Screen Recording** and **Automation**.
-- After an update, the old grant can stop matching. In Bloop, open **Settings → Permissions → Reset permissions…**, turn Bloop on again in Screen Recording and click **Relaunch Bloop**. Or run `npm run perms` in the `StudyPet` folder, or remove the Bloop entry with the **−** button, quit Bloop, open it again and grant the permission again.
+- After an update, the old grant can stop matching. In Bloop, open **Settings → Permissions → Reset permissions…**, turn Bloop on again in Screen Recording and click **Relaunch Bloop**. Or run `npm run perms` in the `Bloop` folder (`StudyPet` if you cloned it before the rename), or remove the Bloop entry with the **−** button, quit Bloop, open it again and grant the permission again.
 - If you run Bloop from source with `npm run dev`, the permission belongs to your terminal app (Terminal, iTerm or VS Code), not Bloop. Turn that one on. Developers can run `npm run perms -- --dev`.
 - Automation only says "granted" once a supported browser is open when you click **Ask for browser access**.
 
@@ -320,7 +320,7 @@ Add `BLOOP_TRACE=1` before the command (PowerShell: `$env:BLOOP_TRACE=1` first) 
 
 ## 9. Ready-made installers
 
-Download the `.dmg` (Mac), `.exe` (Windows), AppImage or `.deb` (Linux) from the [Releases page](https://github.com/Bndrwe/StudyPet/releases/latest). `.github/workflows/release.yml` builds and smoke-tests them on real Mac, Windows and Linux machines. They are unsigned, so the first launch shows a warning once:
+Download the `.dmg` (Mac), `.exe` (Windows), AppImage or `.deb` (Linux) from the [Releases page](https://github.com/Bndrwe/Bloop/releases/latest). `.github/workflows/release.yml` builds and smoke-tests them on real Mac, Windows and Linux machines. They are unsigned, so the first launch shows a warning once:
 
 - **macOS:** open the `.dmg`, drag **Bloop** into **Applications**, then **right-click Bloop → Open → Open** (or run `xattr -cr /Applications/Bloop.app`).
 - **Windows:** SmartScreen says "Windows protected your PC". Click **More info → Run anyway**.

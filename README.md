@@ -12,7 +12,7 @@ Built as the MVP for a university AI class project. Everything runs locally: you
 
 ## Download
 
-**[Download the latest Bloop](https://github.com/Bndrwe/StudyPet/releases/latest)** and pick the file for your computer:
+**[Download the latest Bloop](https://github.com/Bndrwe/Bloop/releases/latest)** and pick the file for your computer:
 
 | Your computer | File |
 |---|---|
@@ -53,7 +53,7 @@ brew install node@20
 Then build and install Bloop:
 
 ```bash
-git clone https://github.com/Bndrwe/StudyPet.git && cd StudyPet && ./scripts/install.sh
+git clone https://github.com/Bndrwe/Bloop.git && cd Bloop && ./scripts/install.sh
 ```
 
 ### Windows: PowerShell
@@ -67,7 +67,7 @@ winget install Git.Git OpenJS.NodeJS.LTS
 Then build and install Bloop:
 
 ```powershell
-git clone https://github.com/Bndrwe/StudyPet.git; cd StudyPet; powershell -ExecutionPolicy Bypass -File scripts\install.ps1
+git clone https://github.com/Bndrwe/Bloop.git; cd Bloop; powershell -ExecutionPolicy Bypass -File scripts\install.ps1
 ```
 
 ### Linux: terminal
@@ -75,7 +75,7 @@ git clone https://github.com/Bndrwe/StudyPet.git; cd StudyPet; powershell -Execu
 One-time setup: install git and Node.js 20+ from your distro or [nvm](https://github.com/nvm-sh/nvm), plus `x11-utils` for focus tracking. Then:
 
 ```bash
-git clone https://github.com/Bndrwe/StudyPet.git && cd StudyPet && ./scripts/install.sh
+git clone https://github.com/Bndrwe/Bloop.git && cd Bloop && ./scripts/install.sh
 ```
 
 ### After installing
@@ -99,7 +99,7 @@ The tray / menu bar icon has **Open logs folder**. Because you built the app you
 
 Options: `--no-launch`, `--fast` (skip the type check), `--clean` (delete `node_modules`, `out` and `dist` first; fixes most odd build errors), `--no-pull`, `--keep-build`. On Windows: `-NoLaunch`, `-Fast`, `-Clean`, `-NoPull`, `-KeepBuild`, `-NoDesktopShortcut`. With npm, pass them after `--`, e.g. `npm run install-app -- --fast`.
 
-**Update.** Run the same install command again from the `StudyPet` folder (`./scripts/install.sh`, or `scripts\install.ps1` on Windows). It pulls the latest code, rebuilds, and replaces the app. Your settings and history are kept. On macOS each rebuild is a new unsigned app as far as macOS is concerned, so it may ask for Screen Recording and Automation again; if a permission says "not granted" after an update, open **Settings → Permissions**, click **Reset permissions…**, turn Bloop on again and click **Relaunch Bloop** (or run `npm run perms` in a terminal). **This update changes Bloop's app ID to `io.github.bndrwe.bloop`, so after it macOS asks for Screen Recording and Automation again once.**
+**Update.** Run the same install command again from the `Bloop` folder (`StudyPet` if you cloned it before the rename) (`./scripts/install.sh`, or `scripts\install.ps1` on Windows). It pulls the latest code, rebuilds, and replaces the app. Your settings and history are kept. On macOS each rebuild is a new unsigned app as far as macOS is concerned, so it may ask for Screen Recording and Automation again; if a permission says "not granted" after an update, open **Settings → Permissions**, click **Reset permissions…**, turn Bloop on again and click **Relaunch Bloop** (or run `npm run perms` in a terminal). **This update changes Bloop's app ID to `io.github.bndrwe.bloop`, so after it macOS asks for Screen Recording and Automation again once.**
 
 **Uninstall.** `./scripts/uninstall.sh` (or `npm run uninstall-app`) on macOS and Linux; on Windows, Settings → Apps → Installed apps → Bloop → Uninstall, or `powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1`. It removes the app and its shortcuts, then asks before deleting your data; `--keep-data` (`-KeepData` on Windows) keeps it.
 
@@ -395,8 +395,8 @@ You only need this to work on Bloop's code. To use the app, see [Install](#insta
 Requirements: macOS 12+, Windows 10/11 or Linux (x86_64 or arm64; focus tracking needs X11 and `x11-utils`), git and Node.js 20+. `npm run dev` is for working on the code; to use Bloop day to day, install it with `npm run install-app` (see [Install](#install)).
 
 ```bash
-git clone https://github.com/Bndrwe/StudyPet.git
-cd StudyPet
+git clone https://github.com/Bndrwe/Bloop.git
+cd Bloop
 npm install
 npm run dev      # launch in development mode
 ```
@@ -433,7 +433,7 @@ On Windows the pet sits at the top-right of the work area, above the taskbar, an
 
 ### Releases
 
-Downloads are published on the [Releases page](https://github.com/Bndrwe/StudyPet/releases).
+Downloads are published on the [Releases page](https://github.com/Bndrwe/Bloop/releases).
 
 `.github/workflows/release.yml` can build installers for every platform (macOS arm64, macOS Intel, Windows x64, Linux x64) on its own native runner, launch each built app as a smoke test, and publish them with `SHA256SUMS.txt` as a GitHub Release. Run it from the Actions tab (**Release → Run workflow**, which releases `v<package.json version>`) or push a tag like `v1.0.1`. Bump `version` in `package.json` first.
 
