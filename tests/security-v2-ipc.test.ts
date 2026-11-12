@@ -26,7 +26,7 @@ describe('IPC sender checks (check 1)', () => {
   })
 
   it('exactly three files register ipcMain.handle, and each has ONE registration inside its guarded wrapper', () => {
-    const files = mainFiles.filter((f) => /ipcMain\.handle\(/.test(readFileSync(f, 'utf8'))).map((f) => f.slice(ROOT.length + 1)).sort()
+    const files = mainFiles.filter((f) => /ipcMain\.handle\(/.test(readFileSync(f, 'utf8'))).map((f) => f.slice(ROOT.length + 1).replace(/\\/g, '/')).sort()
     expect(files).toEqual(['src/main/ai/ipc.ts', 'src/main/chat.ts', 'src/main/index.ts'])
     for (const f of files) {
       const count = (read(f).match(/ipcMain\.handle\(/g) ?? []).length

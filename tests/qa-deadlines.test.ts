@@ -191,7 +191,7 @@ describe('parseDeadlines', () => {
       const r = parse(weekly, NOW)
       expect(r.length).toBeGreaterThan(0)
       expect(r[0].start).toBeGreaterThanOrEqual(NOW)
-    })
+    }, 30_000) // 5,000 weekly repeats: under 1 s locally, slower on shared CI machines
     it('a recurring event whose DTSTART is in the future is listed once (master occurrence only)', () => {
       const b = cal(ev('UID:rec', 'DTSTART:20990105T100000Z', 'RRULE:FREQ=WEEKLY;COUNT=10', 'SUMMARY:Weekly quiz'))
       expect(parse(b, NOW, 10)).toHaveLength(1)
