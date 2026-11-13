@@ -28,6 +28,7 @@
 
 <p align="center">
   <b>Free and open source · macOS, Windows, Linux</b><br>
+  <a href="https://bndrwe.github.io/Bloop/"><b>Website</b></a> ·
   <a href="docs/demo/bloop-ad.mp4"><b>Watch the ad</b></a> ·
   <a href="#download">Which file do I need?</a> ·
   <a href="#first-launch">First time opening it?</a> ·
