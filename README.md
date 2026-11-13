@@ -1,29 +1,98 @@
-# Bloop 🌱
+<p align="center">
+  <img src="docs/readme/bloop-island.gif" width="960" alt="Bloop napping under a swaying blossom tree on a floating island, petals drifting and birds flying past">
+</p>
 
-_Your little study pet._
+<h1 align="center">bloop</h1>
 
-![Bloop in 15 seconds: nudge, chat, AI settings, hide the pet](docs/demo/bloop-ad.gif)
+<p align="center"><sub>A STUDY PET FOR YOUR DESKTOP</sub></p>
 
-**Watch the ad:** [16:9](docs/demo/bloop-ad.mp4) · [vertical 9:16](docs/demo/bloop-ad-vertical.mp4) (49 s, music) · **With voice-over:** [16:9](docs/demo/bloop-ad-vo.mp4) · [vertical 9:16](docs/demo/bloop-ad-vo-vertical.mp4) · **Demo walkthrough:** [every feature, 16:9](docs/demo/bloop-demo.mp4) (78 s). UI demo with simulated activity. More stills in [`docs/demo/`](docs/demo/).
+<h3 align="center">your little study <em>pet.</em></h3>
+
+<p align="center">
+  Bloop lives in the corner of your screen, keeps a live focus score,<br>
+  and gives you a gentle nudge when you drift off task.
+</p>
+
+<p align="center">
+  <a href="https://github.com/Bndrwe/Bloop/releases/download/v1.0.0/Bloop-1.0.0-mac-arm64.dmg"><img alt="Download for Mac (Apple Silicon)" src="https://img.shields.io/badge/Mac-Apple%20Silicon-6b2d5c?style=for-the-badge&logo=apple&logoColor=white&labelColor=3d1838"></a>
+  <a href="https://github.com/Bndrwe/Bloop/releases/download/v1.0.0/Bloop-Setup-1.0.0-win-x64.exe"><img alt="Download for Windows (installer)" src="https://img.shields.io/badge/Windows-Installer-6b2d5c?style=for-the-badge&logo=windows&logoColor=white&labelColor=3d1838"></a>
+  <a href="https://github.com/Bndrwe/Bloop/releases/download/v1.0.0/Bloop-1.0.0-linux-x86_64.AppImage"><img alt="Download for Linux (AppImage)" src="https://img.shields.io/badge/Linux-AppImage-6b2d5c?style=for-the-badge&logo=linux&logoColor=white&labelColor=3d1838"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/Bndrwe/Bloop/releases/download/v1.0.0/Bloop-1.0.0-mac-x64.dmg"><img alt="Download for Intel Mac" src="https://img.shields.io/badge/Mac-Intel-f6b7c6?style=for-the-badge&logo=apple&logoColor=white&labelColor=6b2d5c"></a>
+  <a href="https://github.com/Bndrwe/Bloop/releases/download/v1.0.0/Bloop-1.0.0-win-x64-portable.exe"><img alt="Download for Windows (portable)" src="https://img.shields.io/badge/Windows-Portable-f6b7c6?style=for-the-badge&logo=windows&logoColor=white&labelColor=6b2d5c"></a>
+  <a href="https://github.com/Bndrwe/Bloop/releases/download/v1.0.0/bloop_1.0.0_amd64.deb"><img alt="Download for Debian and Ubuntu (.deb)" src="https://img.shields.io/badge/Linux-.deb-f6b7c6?style=for-the-badge&logo=linux&logoColor=white&labelColor=6b2d5c"></a>
+  <a href="https://github.com/Bndrwe/Bloop/releases/latest"><img alt="All releases" src="https://img.shields.io/badge/All-releases-f6b7c6?style=for-the-badge&logo=github&logoColor=white&labelColor=6b2d5c"></a>
+</p>
+
+<p align="center">
+  <b>Free and open source · macOS, Windows, Linux</b><br>
+  <a href="docs/demo/bloop-ad.mp4"><b>Watch the ad</b></a> ·
+  <a href="#download">Which file do I need?</a> ·
+  <a href="#first-launch">First time opening it?</a> ·
+  <a href="#using-bloop">Using Bloop</a>
+</p>
+
+<br>
 
 A small, cute desktop pet that lives in the top-right corner of your screen, watches whether you're focused, keeps a live **focus score**, and gently nudges you when you drift off task.
 
 Built as the MVP for a university AI class project. Tracking runs on your computer: what you're working on never leaves it. AI is optional and runs on whichever AI you choose: a cloud AI you already use (Claude, Codex, Gemini, or an API key) or Ollama on your own computer. Without any AI, the focus score, reminders and Brightspace deadlines all still work; only the AI extras are off (see [What needs AI](#what-needs-ai)).
 
+**Watch the ad:** [16:9](docs/demo/bloop-ad.mp4) · [vertical 9:16](docs/demo/bloop-ad-vertical.mp4) (49 s, music) · **With voice-over:** [16:9](docs/demo/bloop-ad-vo.mp4) · [vertical 9:16](docs/demo/bloop-ad-vo-vertical.mp4) · **Demo walkthrough:** [every feature, 16:9](docs/demo/bloop-demo.mp4) (78 s). UI demo with simulated activity. More stills in [`docs/demo/`](docs/demo/).
+
+---
+
+<div align="center">
+
+<sub>HOW IT WORKS</sub>
+
+## Bloop keeps *one eye* open.
+
+</div>
+
+| | |
+|:---:|---|
+| **1** | **Press Start.** A Pomodoro session, or let it watch without one. |
+| **2** | **It sees what's in front.** The app and the site, every 2 seconds. |
+| **3** | **It nudges when you drift.** A worried face first, then a reminder. |
+
+---
+
+<div align="center">
+
+<img src="docs/readme/download-night.png" width="720" alt="The floating island at night, with Bloop waving">
+
+<sub>GRAB IT FREE</sub>
+
 ## Download
 
-**[Download the latest Bloop](https://github.com/Bndrwe/Bloop/releases/latest)** and pick the file for your computer:
+</div>
 
-| Your computer | File |
-|---|---|
-| Mac with Apple Silicon (M1 to M5, 2020 and newer) | `Bloop-…-mac-arm64.dmg` |
-| Mac with an Intel processor | `Bloop-…-mac-x64.dmg` |
-| Windows 10/11, installer (recommended) | `Bloop-Setup-…-win-x64.exe` |
-| Windows 10/11, portable (no install) | `Bloop-…-win-x64-portable.exe` |
-| Linux (any x86_64 distro) | `Bloop-…-linux-x86_64.AppImage` |
-| Debian / Ubuntu | `bloop_…_amd64.deb` |
+**[Download the latest Bloop](https://github.com/Bndrwe/Bloop/releases/latest)** and pick the file for your computer (version 1.0.0 links go straight to the file):
+
+| Your computer | File | Direct link (v1.0.0) |
+|---|---|---|
+| Mac with Apple Silicon (M1 to M5, 2020 and newer) | `Bloop-…-mac-arm64.dmg` | [Bloop-1.0.0-mac-arm64.dmg](https://github.com/Bndrwe/Bloop/releases/download/v1.0.0/Bloop-1.0.0-mac-arm64.dmg) |
+| Mac with an Intel processor | `Bloop-…-mac-x64.dmg` | [Bloop-1.0.0-mac-x64.dmg](https://github.com/Bndrwe/Bloop/releases/download/v1.0.0/Bloop-1.0.0-mac-x64.dmg) |
+| Windows 10/11, installer (recommended) | `Bloop-Setup-…-win-x64.exe` | [Bloop-Setup-1.0.0-win-x64.exe](https://github.com/Bndrwe/Bloop/releases/download/v1.0.0/Bloop-Setup-1.0.0-win-x64.exe) |
+| Windows 10/11, portable (no install) | `Bloop-…-win-x64-portable.exe` | [Bloop-1.0.0-win-x64-portable.exe](https://github.com/Bndrwe/Bloop/releases/download/v1.0.0/Bloop-1.0.0-win-x64-portable.exe) |
+| Linux (any x86_64 distro) | `Bloop-…-linux-x86_64.AppImage` | [Bloop-1.0.0-linux-x86_64.AppImage](https://github.com/Bndrwe/Bloop/releases/download/v1.0.0/Bloop-1.0.0-linux-x86_64.AppImage) |
+| Debian / Ubuntu | `bloop_…_amd64.deb` | [bloop_1.0.0_amd64.deb](https://github.com/Bndrwe/Bloop/releases/download/v1.0.0/bloop_1.0.0_amd64.deb) |
 
 Not sure which Mac you have? Apple menu → **About This Mac**: "Chip: Apple M…" means Apple Silicon.
+
+### Requirements
+
+- **macOS** 12 or newer, on Apple Silicon or Intel.
+- **Windows** 10 or 11, 64-bit. Windows needs no special permissions.
+- **Linux** x86_64 for the downloads (the AppImage runs on any distro; the `.deb` is for Debian and Ubuntu). Focus tracking needs an **X11 session** and `x11-utils`; it doesn't work on Wayland yet.
+- **AI is optional.** Nothing else to install unless you want the AI extras (see [What needs AI](#what-needs-ai)).
+
+<a name="first-launch"></a>
+
+### Opening Bloop the *first* time
 
 **First launch.** The apps aren't code-signed (that costs money), so your computer warns you once:
 
@@ -33,83 +102,28 @@ Not sure which Mac you have? Apple menu → **About This Mac**: "Chip: Apple M�
 
 **Update:** download the new version and install it over the old one. Your settings and history are kept.
 
-## Build it yourself (optional)
-
-You can also build Bloop from the code with one command, which installs it like a normal app. This is handy for developers or if you want the very latest changes.
-
-**Before you start**
-
-- **git and Node.js 20 or newer** (npm comes with Node). The installer checks for both and tells you how to get whatever is missing. On a Mac it offers `brew install node@20`; on Windows it offers `winget install`. It always asks first.
-- **About 2 GB of free disk space** while it builds. The first install takes about 3–6 minutes; later updates are quicker.
-
-### macOS: Terminal
-
-Open **Terminal** (⌘ Space, type "Terminal"). One-time setup, if you don't have them yet ([Homebrew](https://brew.sh) first):
-
-```bash
-brew install node@20
-```
-
-Then build and install Bloop:
-
-```bash
-git clone https://github.com/Bndrwe/Bloop.git && cd Bloop && ./scripts/install.sh
-```
-
-### Windows: PowerShell
-
-One-time setup, if you don't have them yet (then close and reopen PowerShell):
-
-```powershell
-winget install Git.Git OpenJS.NodeJS.LTS
-```
-
-Then build and install Bloop:
-
-```powershell
-git clone https://github.com/Bndrwe/Bloop.git; cd Bloop; powershell -ExecutionPolicy Bypass -File scripts\install.ps1
-```
-
-### Linux: terminal
-
-One-time setup: install git and Node.js 20+ from your distro or [nvm](https://github.com/nvm-sh/nvm), plus `x11-utils` for focus tracking. Then:
-
-```bash
-git clone https://github.com/Bndrwe/Bloop.git && cd Bloop && ./scripts/install.sh
-```
-
-### After installing
-
-- **Mac:** Bloop has no Dock icon. Look for it in the **menu bar** (top right); the pet sits in the top-right corner of your screen. The first launch walks you through **Screen Recording** and **Automation**; after allowing Screen Recording, click **Relaunch Bloop**. You can come back to this any time in **Settings → Permissions** (or the menu bar's **Permissions…** item, shown while something isn't allowed).
-- **Windows:** Bloop is in the Start menu and in the system tray by the clock (it may be under the **^** overflow; drag it out to pin it).
-- **Linux:** open Bloop from your app menu or run `bloop`.
-- Click the pet to open the panel and press **Start**. AI is optional: to turn on the study plan, chat and smarter page judging, open **Settings → AI** and pick a cloud AI you already use or Ollama (see [What needs AI](#what-needs-ai)).
-
-Already have the repo? From its folder, run `npm run install-app` (macOS/Linux) or `npm run install-app:win` (Windows).
-
-**What the installer does.** It checks git and Node, pulls the latest code, runs `npm ci`, type-checks, bundles the app and packages it with electron-builder for your CPU (Apple Silicon or Intel, x64 or arm64). Then it installs the app, quitting a running Bloop first, and starts it:
-
-| | App | Your data | Logs |
-|---|---|---|---|
-| macOS | `/Applications/Bloop.app` (or `~/Applications` if `/Applications` isn't writable) | `~/Library/Application Support/bloop` | `~/Library/Logs/bloop/main.log` |
-| Windows | `%LOCALAPPDATA%\Programs\Bloop`, plus Start menu and Desktop shortcuts, listed in Settings → Apps | `%APPDATA%\bloop` | `%APPDATA%\bloop\logs\main.log` |
-| Linux | `~/.local/opt/bloop/Bloop.AppImage`, the `bloop` command in `~/.local/bin` and an app-menu entry | `~/.config/bloop` | `~/.config/bloop/logs/main.log` |
-
-The tray / menu bar icon has **Open logs folder**. Because you built the app yourself, macOS Gatekeeper and Windows SmartScreen don't block it (Windows Defender may scan it on first start). On Linux, focus tracking needs `xprop` (`sudo apt install x11-utils`) and an X11 session; the installer tells you if anything is missing.
-
-Options: `--no-launch`, `--fast` (skip the type check), `--clean` (delete `node_modules`, `out` and `dist` first; fixes most odd build errors), `--no-pull`, `--keep-build`. On Windows: `-NoLaunch`, `-Fast`, `-Clean`, `-NoPull`, `-KeepBuild`, `-NoDesktopShortcut`. With npm, pass them after `--`, e.g. `npm run install-app -- --fast`.
-
-**Update.** Run the same install command again from the `Bloop` folder (`StudyPet` if you cloned it before the rename) (`./scripts/install.sh`, or `scripts\install.ps1` on Windows). It pulls the latest code, rebuilds, and replaces the app. Your settings and history are kept. On macOS each rebuild is a new unsigned app as far as macOS is concerned, so it may ask for Screen Recording and Automation again; if a permission says "not granted" after an update, open **Settings → Permissions**, click **Reset permissions…**, turn Bloop on again and click **Relaunch Bloop** (or run `npm run perms` in a terminal). **This update changes Bloop's app ID to `io.github.bndrwe.bloop`, so after it macOS asks for Screen Recording and Automation again once.**
-
-**Uninstall.** `./scripts/uninstall.sh` (or `npm run uninstall-app`) on macOS and Linux; on Windows, Settings → Apps → Installed apps → Bloop → Uninstall, or `powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1`. It removes the app and its shortcuts, then asks before deleting your data; `--keep-data` (`-KeepData` on Windows) keeps it.
-
 Step-by-step help, permissions and troubleshooting: [docs/INSTALL.md](docs/INSTALL.md).
-
-There are no prebuilt installers (`.dmg`, `.exe`, AppImage) yet. You can build them yourself with `npm run build:mac` / `build:win` / `build:linux` (see [Releases](#releases)).
 
 ---
 
-## What it does
+## Using Bloop
+
+A quick tour, from opening it to uninstalling. Every setting mentioned here lives in **Settings** (click the pet, then the settings button, or pick **Settings…** from the tray or menu bar icon).
+
+1. **Open it.** On a **Mac**, Bloop has no Dock icon: look for it in the **menu bar** (top right). On **Windows**, it's in the Start menu and in the system tray by the clock (maybe under the **^** overflow; drag it out to pin it). On **Linux**, open it from your app menu or run `bloop`. The pet sits in the top-right corner of your screen; drag it anywhere and it remembers the spot. Hover it to see your score and session timer.
+2. **Start a focus session.** Click the pet to open the panel and press **Start** (or pick **Start session** from the tray / menu bar icon). A session is a Pomodoro: 25 min focus, 5 min break by default. The pet sleeps during breaks and wakes you when it's time to work. You don't have to start one: with **Watch without a session** (on by default) Bloop reacts to distractions anyway and shows a live score. That time is never saved as a session or counted in your stats.
+3. **Read the score.** Every day starts at **100**. The score drops while you drift and climbs back when you return, and recent minutes count more than old ones. **70+** reads *on track*, **40 to 69** *wobbly*, **under 40** *drifting*. Bloop judges what's actually on screen: a lecture on YouTube counts as study, gameplay doesn't (see [How scoring works](#how-scoring-works)). Pick which apps and sites count as study or distraction in **Settings → Websites** and the app lists.
+4. **Drift, and get a gentle psst.** Open a distracting app or site and the pet looks worried right away. After **1 min** you get a speech bubble and a system notification, then another **every 2 min** (at 3, 5, 7 min…). The pet turns sad after 5 min and cheers when you're back, which restarts the cycle. Change the timings in **Settings → Nudges**.
+5. **Hide the pet** with **⌘⇧B** on a Mac or **Ctrl+Shift+B** on Windows and Linux. Bloop keeps tracking while hidden and pops up for a few seconds when it nudges you. The same shortcut brings it back.
+6. **Add your deadlines.** In **Settings → Deadlines**, log in to Brightspace or paste your calendar (iCal) link. Your next 5 deadlines show in the panel, with reminders 3 days and 1 day before each exam. See [Brightspace deadlines](#optional-brightspace-deadlines).
+7. **Set up an AI (optional)** for the weekly study plan, Chat with Bloop and smarter page judging. Open **Settings → AI** and pick **Cloud** (a Claude, Codex or Gemini CLI you're signed in to, or an Anthropic or OpenRouter API key) or **Use Local** with [Ollama](#use-local-ollama). Then press **Generate plan** on the panel's study plan card, or open **Chat with Bloop**. See [AI study plan](#ai-study-plan).
+8. **Allow permissions (macOS only).** On first launch Bloop asks for **Screen Recording** (to read window titles) and **Automation** (to read your browser's tab URL). After allowing Screen Recording, click **Relaunch Bloop**. Come back any time via **Settings → Permissions**. See [Permissions](#permissions-macos-only).
+9. **Update.** Download the new version and install it over the old one. Your settings and history are kept.
+10. **Uninstall.** **Mac:** quit Bloop and drag it from Applications to the Trash. **Windows:** Settings → Apps → Installed apps → Bloop → Uninstall. **Linux:** delete the AppImage, or `sudo apt remove bloop` for the `.deb`. Built it yourself? Use the uninstall script (see [Build it yourself](#build-it-yourself-optional)). To clear your history and settings without uninstalling, use **Settings → Reset data → Reset everything…**
+
+---
+
+## Features
 
 Bloop is a focus app with three core areas (see [docs/PRODUCT.md](docs/PRODUCT.md)):
 
@@ -117,7 +131,57 @@ Bloop is a focus app with three core areas (see [docs/PRODUCT.md](docs/PRODUCT.m
 2. **Brightspace deadlines and an AI weekly study plan**: log in to Brightspace (or paste the iCal link) to see what's due, then get a week of study blocks from whichever AI you use.
 3. **Reminders when you're not focused**: the pet reacts right away, then a bubble and a notification after 1 min and every 2 min after that.
 
-Chat with Bloop is an extra. The details:
+Chat with Bloop is an extra.
+
+<div align="center">
+
+<sub><code>01</code> LIVE FOCUS SCORE</sub>
+
+### a score that *notices.*
+
+<img src="docs/readme/focus-score.png" width="760" alt="Bloop smiling next to a focus score card reading 100, Focused, in front: a lecture on YouTube">
+
+</div>
+
+Every day starts at 100. The score drops while you drift and climbs back when you return. Bloop judges what's actually on screen: a lecture on YouTube counts as study, gameplay doesn't. See [Depends on what's open](#depends-on-whats-open).
+
+<div align="center">
+
+<sub><code>02</code> DEADLINES AND PLAN</sub>
+
+### what's due, and a *plan* for it.
+
+<img src="docs/readme/deadlines-plan.png" width="760" alt="A Brightspace due-next card, a November calendar and a this-week study plan floating around the island">
+
+</div>
+
+Log in to Brightspace, or paste your calendar link, to see what's due next. Then Bloop builds a week of study blocks around it with the AI you already use.
+
+- Upcoming deadlines right in the panel
+- A weekly plan you can ask Bloop about
+
+<div align="center">
+
+<sub><code>03</code> REMINDERS WHEN YOU DRIFT</sub>
+
+### a gentle *psst* when you wander.
+
+<img src="docs/readme/reminder-psst.png" width="760" alt="Bloop looking worried, with a speech bubble: psst… is this homework?">
+
+</div>
+
+| When | What happens |
+|---|---|
+| **right away** | Open a distracting site and Bloop looks worried and says something kind. |
+| **1 min** | A speech bubble and a macOS or Windows notification. |
+| **every 2 min** | Another reminder at 3, 5, 7 minutes, until you're back. |
+| **back on track** | Bloop cheers, and the cycle starts over. |
+
+<p align="center">
+  <img src="docs/readme/back-on-track.png" width="760" alt="Bloop cheering with a speech bubble: yay, back on track!">
+</p>
+
+### Everything it does
 
 - **Pet overlay**: a frameless, transparent, always-on-top window (~180×180) in the top-right of your screen, above the taskbar on Windows. Drag it anywhere and it remembers where you left it. Hover to see your score and session timer. Click it to open a compact panel; right-click it for **Hide pet / Open panel / Settings… / Quit Bloop**.
 - **Hide the pet**: press **Ctrl+Shift+B** (**⌘⇧B** on a Mac) anywhere, use the eye button in the panel header, the tray's **Hide pet**, the pet's right-click menu, or **Settings → Show the pet on screen**. The same shortcut, or the tray's **Show pet**, brings it back. While it's hidden Bloop keeps tracking, running sessions and sending notifications, and a nudge pops the pet up for about 8 seconds (turn off **Pop up for nudges while hidden** for notifications only). The panel still opens from the tray, next to the tray icon or in the top-right corner. Opening Bloop again (from the app menu, Start menu or `bloop`) always brings the pet back.
@@ -145,6 +209,13 @@ Chat with Bloop is an extra. The details:
 | *Panel during a focus session: score ring, timer, today's stats and the last 7 days* | *Watching mode, no session: YouTube is open, so the panel shows "distract" and the pet looks worried* |
 | ![Panel with deadlines and the AI study plan](docs/screenshots/panel-plan.png) | ![Pet moods](docs/screenshots/pet-moods.png) |
 | *Panel with Brightspace deadlines and an AI study plan* | *Pet moods* |
+
+<details>
+<summary><b>More screenshots</b>: the ad, every mood animated, a day with Bloop, and Settings</summary>
+
+<br>
+
+![Bloop in 15 seconds: nudge, chat, AI settings, hide the pet](docs/demo/bloop-ad.gif)
 
 ![The pet cycling through every mood, on a white and a black background](docs/screenshots/pet-motion.gif)
 
@@ -176,6 +247,22 @@ Chat with Bloop is an extra. The details:
 | ![Settings, AI, Use Local, step 1 of 3](docs/screenshots/settings-ai-local-setup.png) | ![Settings, AI, Use Local, step 3 of 3](docs/screenshots/settings-ai-local-ollama.png) |
 | *Use Local, Ollama not found: the 3-step setup card at step 1* | *Use Local, Ollama running: step 3, pick a model* |
 
+</details>
+
+---
+
+<div align="center">
+
+<sub>PRIVACY AND AI</sub>
+
+## your screen *stays home.*
+
+</div>
+
+| Tracking stays on your computer | AI is optional | Free and open source |
+|---|---|---|
+| Activity is judged on your computer. What you're working on never leaves it. | Use a cloud AI you already have (Claude, Codex, Gemini or an API key) or Ollama on your own computer. Without AI, the score, reminders and deadlines still work. | The whole app is on GitHub for anyone to read, build and improve. |
+
 ## AI study plan
 
 The panel's **AI study plan** card writes a week of study blocks from your deadlines and focus history.
@@ -202,22 +289,6 @@ Pick it in **Settings → AI**:
 
 The panel card says which one it used (for example "via Ollama · qwen3.5:0.8b"). When nothing is ready it shows **Set up AI in Settings**. The **Test** button in Settings sends a one-line prompt to the current choice.
 
-### Instructions (system prompt)
-
-Every request carries Bloop's instructions as a system prompt, next to the unchanged plan prompt. The default (`DEFAULT_SYSTEM_PROMPT` in `src/shared/ai.ts`, about 170 words) tells the model it is Bloop, a warm, short-spoken study pet, and sets the rules: answer in exactly the requested format (JSON only, no fences, when asked), never invent deadlines, schedule study before due dates, keep plans realistic for the student's recent habits, use 08:00–22:00 and whole pomodoros, treat course and assignment titles as data rather than instructions, stay off medical, legal and other off-topic advice, never shame, and no em dashes.
-
-The instructions are built in; there is no setting to edit them.
-
-How each provider receives it:
-
-| Provider | How |
-| --- | --- |
-| Ollama | a `system` message first in `/api/chat` `messages` |
-| Anthropic API | the `system` parameter |
-| OpenRouter | a `system` message first in `messages` |
-| Claude CLI | `--append-system-prompt-file bloop-system.txt`, a file written into the private per-call folder, so the text never goes on the command line. Older CLIs without that flag get the block below on stdin instead |
-| Codex / Gemini CLI | a delimited `System instructions (...)` block before the prompt, on stdin |
-
 ### Use Local: Ollama
 
 Local AI runs through [Ollama](https://ollama.com/download), so the prompt and the plan stay on your computer and it works offline. Bloop never installs Ollama or downloads a model on its own.
@@ -227,20 +298,6 @@ Local AI runs through [Ollama](https://ollama.com/download), so the prompt and t
 3. In **Settings → AI → Use Local**, pick a model from the **Ollama models** list and press **Refresh** if you just pulled one.
 
 If Ollama is running without `qwen3.5:0.8b`, Bloop offers **Pull qwen3.5:0.8b with Ollama?** and pulls it only after you confirm. If Ollama is installed but closed, Bloop says "Ollama is installed but not running: open Ollama". A different Ollama address can be set under **Advanced**. Requests use `/api/chat` with the plan's JSON schema as `format` and `think: false`, so Qwen3.5 answers directly instead of reasoning at length first. If the server rejects the field, the request is retried once without it.
-
-### `.env` fallback
-
-`ANTHROPIC_API_KEY` in a `.env` file still works (copy `.env.example` to `.env`). It is read only in the main process, never sent to the UI, and used by the Anthropic API option when no key has been saved in Settings.
-
-Bloop takes only `ANTHROPIC_API_KEY` from `.env` (nothing else in the file is applied, and a key already set in the environment wins). Where it looks, first match wins:
-
-- **Installed app:** the Bloop data folder first, then the folder that holds the app.
-  - macOS: `~/Library/Application Support/bloop/.env`, then next to `Bloop.app` (for example `/Applications/.env`)
-  - Windows: `%APPDATA%\bloop\.env`, then next to `Bloop.exe` (or next to the portable `.exe`)
-  - Linux: `~/.config/bloop/.env`, then next to the `.AppImage` (or `/opt/Bloop/` for the `.deb`)
-- **`npm run dev`:** the project folder (and the folder you ran it from), then the data folder.
-
-The log file says which `.env` the key came from, or where it looked.
 
 ### Cloud AI
 
@@ -261,6 +318,41 @@ The prompt goes over stdin (Gemini uses an argument for short prompts), tools ar
 **Choosing a model.** Every row has a model menu. "CLI default" passes no model flag, so the CLI uses its own default. OpenRouter has a searchable list of its current text models (fetched from the public model list and cached for 24 hours); you can also type any `vendor/model` id. Bloop remembers the model you pick for each provider.
 
 **Privacy.** When a cloud option is active, the plan prompt is sent to that vendor (through the CLI you signed in to, or the API). It contains your upcoming deadline titles and dates, your daily focus totals and scores for the last 7 days, and your pomodoro and break lengths. It never contains app names, site names, window titles or URLs. Bloop's instructions (system prompt) go with it. Nothing is sent until you click **Generate plan**.
+
+<details>
+<summary><b>Instructions (system prompt)</b> and the <code>.env</code> fallback</summary>
+
+### Instructions (system prompt)
+
+Every request carries Bloop's instructions as a system prompt, next to the unchanged plan prompt. The default (`DEFAULT_SYSTEM_PROMPT` in `src/shared/ai.ts`, about 170 words) tells the model it is Bloop, a warm, short-spoken study pet, and sets the rules: answer in exactly the requested format (JSON only, no fences, when asked), never invent deadlines, schedule study before due dates, keep plans realistic for the student's recent habits, use 08:00–22:00 and whole pomodoros, treat course and assignment titles as data rather than instructions, stay off medical, legal and other off-topic advice, never shame, and no em dashes.
+
+The instructions are built in; there is no setting to edit them.
+
+How each provider receives it:
+
+| Provider | How |
+| --- | --- |
+| Ollama | a `system` message first in `/api/chat` `messages` |
+| Anthropic API | the `system` parameter |
+| OpenRouter | a `system` message first in `messages` |
+| Claude CLI | `--append-system-prompt-file bloop-system.txt`, a file written into the private per-call folder, so the text never goes on the command line. Older CLIs without that flag get the block below on stdin instead |
+| Codex / Gemini CLI | a delimited `System instructions (...)` block before the prompt, on stdin |
+
+### `.env` fallback
+
+`ANTHROPIC_API_KEY` in a `.env` file still works (copy `.env.example` to `.env`). It is read only in the main process, never sent to the UI, and used by the Anthropic API option when no key has been saved in Settings.
+
+Bloop takes only `ANTHROPIC_API_KEY` from `.env` (nothing else in the file is applied, and a key already set in the environment wins). Where it looks, first match wins:
+
+- **Installed app:** the Bloop data folder first, then the folder that holds the app.
+  - macOS: `~/Library/Application Support/bloop/.env`, then next to `Bloop.app` (for example `/Applications/.env`)
+  - Windows: `%APPDATA%\bloop\.env`, then next to `Bloop.exe` (or next to the portable `.exe`)
+  - Linux: `~/.config/bloop/.env`, then next to the `.AppImage` (or `/opt/Bloop/` for the `.deb`)
+- **`npm run dev`:** the project folder (and the folder you ran it from), then the data folder.
+
+The log file says which `.env` the key came from, or where it looked.
+
+</details>
 
 ## Chat with Bloop
 
@@ -379,6 +471,112 @@ Some sites are study tools sometimes. For the sites on **Settings → Websites �
 - **Study** counts as focus (the pet stays happy, no reminders); **not study** counts as distracting (worried right away, reminders at 1 min, then every 2 min).
 - The panel's Now row shows the verdict, like *Counts as study · matches CHEM 201*, with **This is study** and **Not study** to correct it. Corrections are remembered per page (link and title) and win over everything. Clear them in **Settings → Websites → Remembered pages**.
 
+## Privacy
+
+All tracking data (samples, sessions, settings) is stored as JSON in the app's user-data folder via `electron-store`. Nothing is uploaded. If you log in to Brightspace, Bloop talks only to your school's Brightspace, keeps the login cookies in a separate browser profile in the same folder (never your password), and **Log out** deletes them. The AI study plan, Chat with Bloop and **Cloud AI judges unclear pages** (on when a cloud AI is set up) are the only features that can send your data anywhere: with Ollama it stays on your computer, and with a cloud option it goes to that provider only when you click **Generate plan**, send a chat message, or when an unclear page is in front (its title, the site and your course names only). Chats are stored only on this computer in `userData/chats/`. Ollama model pulls happen only after you confirm them.
+
+More detail: [docs/PRIVACY.md](docs/PRIVACY.md).
+
+---
+
+<a name="install"></a>
+
+## Build it yourself (optional)
+
+You can also build Bloop from the code with one command, which installs it like a normal app. This is handy for developers or if you want the very latest changes.
+
+**Before you start**
+
+- **git and Node.js 20 or newer** (npm comes with Node). The installer checks for both and tells you how to get whatever is missing. On a Mac it offers `brew install node@20`; on Windows it offers `winget install`. It always asks first.
+- **About 2 GB of free disk space** while it builds. The first install takes about 3–6 minutes; later updates are quicker.
+
+### macOS: Terminal
+
+Open **Terminal** (⌘ Space, type "Terminal"). One-time setup, if you don't have them yet ([Homebrew](https://brew.sh) first):
+
+```bash
+brew install node@20
+```
+
+Then build and install Bloop:
+
+```bash
+git clone https://github.com/Bndrwe/Bloop.git && cd Bloop && ./scripts/install.sh
+```
+
+### Windows: PowerShell
+
+One-time setup, if you don't have them yet (then close and reopen PowerShell):
+
+```powershell
+winget install Git.Git OpenJS.NodeJS.LTS
+```
+
+Then build and install Bloop:
+
+```powershell
+git clone https://github.com/Bndrwe/Bloop.git; cd Bloop; powershell -ExecutionPolicy Bypass -File scripts\install.ps1
+```
+
+### Linux: terminal
+
+One-time setup: install git and Node.js 20+ from your distro or [nvm](https://github.com/nvm-sh/nvm), plus `x11-utils` for focus tracking. Then:
+
+```bash
+git clone https://github.com/Bndrwe/Bloop.git && cd Bloop && ./scripts/install.sh
+```
+
+### After installing
+
+- **Mac:** Bloop has no Dock icon. Look for it in the **menu bar** (top right); the pet sits in the top-right corner of your screen. The first launch walks you through **Screen Recording** and **Automation**; after allowing Screen Recording, click **Relaunch Bloop**. You can come back to this any time in **Settings → Permissions** (or the menu bar's **Permissions…** item, shown while something isn't allowed).
+- **Windows:** Bloop is in the Start menu and in the system tray by the clock (it may be under the **^** overflow; drag it out to pin it).
+- **Linux:** open Bloop from your app menu or run `bloop`.
+- Click the pet to open the panel and press **Start**. AI is optional: to turn on the study plan, chat and smarter page judging, open **Settings → AI** and pick a cloud AI you already use or Ollama (see [What needs AI](#what-needs-ai)).
+
+Already have the repo? From its folder, run `npm run install-app` (macOS/Linux) or `npm run install-app:win` (Windows).
+
+**Update.** Run the same install command again from the `Bloop` folder (`StudyPet` if you cloned it before the rename) (`./scripts/install.sh`, or `scripts\install.ps1` on Windows). It pulls the latest code, rebuilds, and replaces the app. Your settings and history are kept. On macOS each rebuild is a new unsigned app as far as macOS is concerned, so it may ask for Screen Recording and Automation again; if a permission says "not granted" after an update, open **Settings → Permissions**, click **Reset permissions…**, turn Bloop on again and click **Relaunch Bloop** (or run `npm run perms` in a terminal). **This update changes Bloop's app ID to `io.github.bndrwe.bloop`, so after it macOS asks for Screen Recording and Automation again once.**
+
+**Uninstall.** `./scripts/uninstall.sh` (or `npm run uninstall-app`) on macOS and Linux; on Windows, Settings → Apps → Installed apps → Bloop → Uninstall, or `powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1`. It removes the app and its shortcuts, then asks before deleting your data; `--keep-data` (`-KeepData` on Windows) keeps it.
+
+<details>
+<summary><b>What the installer does</b>: where the app, your data and logs go, and installer options</summary>
+
+<br>
+
+**What the installer does.** It checks git and Node, pulls the latest code, runs `npm ci`, type-checks, bundles the app and packages it with electron-builder for your CPU (Apple Silicon or Intel, x64 or arm64). Then it installs the app, quitting a running Bloop first, and starts it:
+
+| | App | Your data | Logs |
+|---|---|---|---|
+| macOS | `/Applications/Bloop.app` (or `~/Applications` if `/Applications` isn't writable) | `~/Library/Application Support/bloop` | `~/Library/Logs/bloop/main.log` |
+| Windows | `%LOCALAPPDATA%\Programs\Bloop`, plus Start menu and Desktop shortcuts, listed in Settings → Apps | `%APPDATA%\bloop` | `%APPDATA%\bloop\logs\main.log` |
+| Linux | `~/.local/opt/bloop/Bloop.AppImage`, the `bloop` command in `~/.local/bin` and an app-menu entry | `~/.config/bloop` | `~/.config/bloop/logs/main.log` |
+
+The tray / menu bar icon has **Open logs folder**. Because you built the app yourself, macOS Gatekeeper and Windows SmartScreen don't block it (Windows Defender may scan it on first start). On Linux, focus tracking needs `xprop` (`sudo apt install x11-utils`) and an X11 session; the installer tells you if anything is missing.
+
+Options: `--no-launch`, `--fast` (skip the type check), `--clean` (delete `node_modules`, `out` and `dist` first; fixes most odd build errors), `--no-pull`, `--keep-build`. On Windows: `-NoLaunch`, `-Fast`, `-Clean`, `-NoPull`, `-KeepBuild`, `-NoDesktopShortcut`. With npm, pass them after `--`, e.g. `npm run install-app -- --fast`.
+
+There are no prebuilt installers (`.dmg`, `.exe`, AppImage) yet. You can build them yourself with `npm run build:mac` / `build:win` / `build:linux` (see [Releases](#releases)).
+
+</details>
+
+Step-by-step help, permissions and troubleshooting: [docs/INSTALL.md](docs/INSTALL.md).
+
+## Contributing and license
+
+Bug reports and pull requests are welcome. [CONTRIBUTING.md](CONTRIBUTING.md) covers setup, the checks to run and what we expect in a change; [SECURITY.md](SECURITY.md) says how to report a security problem; [CHANGELOG.md](CHANGELOG.md) lists what changed. Found a problem? [Open an issue](https://github.com/Bndrwe/Bloop/issues/new).
+
+Bloop is free and open source under the [MIT License](LICENSE).
+
+---
+
+## Documentation
+
+The reference details: how Bloop is designed, how to work on the code, and what's next.
+
+<details>
+<summary><b>Design</b>: the black-and-white system, the chrome hero and the background smoke</summary>
+
 ## Design
 
 Bloop is strictly black and white. The canvas is pure black (`#000`), the ink is pure white (`#fff`), and a few neutral greys handle secondary text and hairlines. There are no gradients, glows, frosted glass or textures, with two exceptions: the chrome hero and the background smoke, both described below. Cards are flat black (92% opaque at low smoke intensity down to 72% at high, so the smoke shows through more as you turn it up) with a 1px grey hairline. Primary buttons are solid white with black text; secondary buttons are black with a white hairline. The only ornament is a fine grey zigzag rule. All colours are CSS custom properties on `:root` in `src/renderer/src/styles/base.css` (`--ink`, `--paper`, `--g1` … `--g5`).
@@ -403,6 +601,11 @@ The pet is black-and-white line art: a white body with a crisp black ink outline
 - **Components**: Tailwind CSS v4 (utilities and theme only, no preflight) with a shadcn-style layout: `@/` points at `src/renderer/src`, `cn()` lives in `@/lib/utils`, and components live in `src/renderer/src/components/ui`. Add more with `npx shadcn add <name>`. Tailwind only scans `components/`; the views keep their hand-written, namespaced CSS.
 - **Typography**: Geist, Geist Mono and Instrument Serif. The fonts are bundled locally through `@fontsource`, so the app makes no network font requests.
 - **Animation**: all motion runs on [anime.js](https://animejs.com) v4: the pet's mood choreography, the speech-bubble pop-in, the score ring and stat count-ups, chart bars growing in, staggered entrances for panels and settings chips, toasts, and the loading pulse. CSS transitions are only used for hover and focus feedback. With *reduce motion* turned on, everything settles into still poses or short fades.
+
+</details>
+
+<details>
+<summary><b>Develop (for developers only)</b>: scripts, building on each platform, releases</summary>
 
 ## Develop (for developers only)
 
@@ -455,6 +658,11 @@ Downloads are published on the [Releases page](https://github.com/Bndrwe/Bloop/r
 
 To make an installer on your own machine, run `npm run build:mac` / `build:win` / `build:linux`. Those files are unsigned, so the first launch shows a warning (see [Building on macOS](#building-on-macos) and [Building on Windows](#building-on-windows)).
 
+</details>
+
+<details>
+<summary><b>Project structure</b> and custom pet art</summary>
+
 ## Project structure
 
 ```
@@ -480,12 +688,22 @@ tests/          vitest unit tests (scoring, sessions, AI, security, platform hel
 
 The pet is drawn by one component that takes a `mood` prop. Skins live in `src/renderer/src/pet/skins/`. To add one, write a React component with the `PetSkin` signature (SVG, CSS or images) and register it in `skins/index.ts`.
 
+</details>
+
+<details>
+<summary><b>Demo / testing tips</b>: tests, faster timings, logs, a fake active window</summary>
+
 ## Demo / testing tips
 
 - **Unit tests**: `npm test` runs the whole vitest suite in `tests/`: classifier, focus score, sessions, reminders, deadlines, AI providers, privacy/security guards and the Linux/Windows helpers.
 - **Faster timings**: set `BLOOP_FAST=1` to shorten Pomodoro and nudge timings. This is handy for demos.
 - **Logs**: the installed app writes everything it prints (the `[bloop] ...` lines, errors and crashes) to `main.log`. Open it from the tray with **Open logs folder** (or **About Bloop**, which also shows the version). It lives in `~/Library/Logs/bloop/` on macOS, `%APPDATA%\bloop\logs\` on Windows and `~/.config/bloop/logs/` on Linux, and is rotated at 2 MB. It doesn't record which apps or sites you used unless you start Bloop with `BLOOP_TRACE=1`, and **Settings → Reset data → Reset everything…** empties it.
 - **Fake active window**: set `BLOOP_FAKE_ACTIVE=/path/to/file.json` and the tracker reads `{"app": "...", "url": "..."}` from that file instead of asking the OS. Edit the file while the app runs to simulate switching between apps and sites. This is useful for demos and automated testing.
+
+</details>
+
+<details>
+<summary><b>Roadmap</b>: what's next</summary>
 
 ## Roadmap
 
@@ -496,6 +714,11 @@ The pet is drawn by one component that takes a `mood` prop. Skins live in `src/r
 - **Linux on Wayland**: focus tracking works on X11 today; Wayland hides other apps' windows
 - Richer weekly insights
 
-## Privacy
+</details>
 
-All tracking data (samples, sessions, settings) is stored as JSON in the app's user-data folder via `electron-store`. Nothing is uploaded. If you log in to Brightspace, Bloop talks only to your school's Brightspace, keeps the login cookies in a separate browser profile in the same folder (never your password), and **Log out** deletes them. The AI study plan, Chat with Bloop and **Cloud AI judges unclear pages** (on when a cloud AI is set up) are the only features that can send your data anywhere: with Ollama it stays on your computer, and with a cloud option it goes to that provider only when you click **Generate plan**, send a chat message, or when an unclear page is in front (its title, the site and your course names only). Chats are stored only on this computer in `userData/chats/`. Ollama model pulls happen only after you confirm them.
+<br>
+
+<p align="center">
+  <b>bloop</b> · a little study pet · free and open source<br>
+  <a href="#download">Download</a> · <a href="https://github.com/Bndrwe/Bloop/releases/latest">Releases</a> · <a href="#first-launch">Install help</a> · <a href="https://github.com/Bndrwe/Bloop/issues/new">Report a problem</a>
+</p>
