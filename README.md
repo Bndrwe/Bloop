@@ -556,7 +556,7 @@ The tray / menu bar icon has **Open logs folder**. Because you built the app you
 
 Options: `--no-launch`, `--fast` (skip the type check), `--clean` (delete `node_modules`, `out` and `dist` first; fixes most odd build errors), `--no-pull`, `--keep-build`. On Windows: `-NoLaunch`, `-Fast`, `-Clean`, `-NoPull`, `-KeepBuild`, `-NoDesktopShortcut`. With npm, pass them after `--`, e.g. `npm run install-app -- --fast`.
 
-There are no prebuilt installers (`.dmg`, `.exe`, AppImage) yet. You can build them yourself with `npm run build:mac` / `build:win` / `build:linux` (see [Releases](#releases)).
+Ready-made installers (`.dmg`, `.exe`, AppImage, `.deb`) are on the [Releases page](https://github.com/Bndrwe/Bloop/releases/latest). To build them yourself, run `npm run build:mac` / `build:win` / `build:linux` (see [Releases](#releases)).
 
 </details>
 
