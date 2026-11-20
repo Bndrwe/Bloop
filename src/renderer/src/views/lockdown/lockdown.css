@@ -21,6 +21,11 @@
   border-color: var(--g5);
   color: var(--ink);
 }
+.lock-now {
+  margin-left: 5px;
+  font-size: 10px;
+  opacity: 0.6;
+}
 .lock-field {
   display: flex;
   flex-direction: column;

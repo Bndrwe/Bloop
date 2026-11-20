@@ -58,7 +58,10 @@ export function LockdownCard({ status }: { status: LockdownStatus | null }): JSX
   }
 
   const typed = text.trim()
-  const choice: LockTargetInput | null = typed ? { value: typed } : picked
+  // Default: whatever was in front before you opened the panel (the newest quick pick).
+  const current = recents[0] ?? null
+  const chosen = picked ?? current
+  const choice: LockTargetInput | null = typed ? { value: typed } : chosen
   const customMin = custom.trim() ? Number(custom) : null
   const length = customMin ?? minutes
   const lengthOk = Number.isInteger(length) && length >= 1 && length <= LOCKDOWN_MAX_MINUTES
@@ -93,8 +96,8 @@ export function LockdownCard({ status }: { status: LockdownStatus | null }): JSX
             <button
               key={key(r)}
               type="button"
-              className={`btn btn--tiny${!typed && picked && key(picked) === key(r) ? ' btn--on' : ''}`}
-              aria-pressed={!typed && !!picked && key(picked) === key(r)}
+              className={`btn btn--tiny${!typed && chosen && key(chosen) === key(r) ? ' btn--on' : ''}`}
+              aria-pressed={!typed && !!chosen && key(chosen) === key(r)}
               onClick={() => {
                 setPicked(r)
                 setText('')
@@ -102,6 +105,7 @@ export function LockdownCard({ status }: { status: LockdownStatus | null }): JSX
               title={r.kind === 'site' ? 'Website' : 'App'}
             >
               {r.value}
+              {r === current && <span className="lock-now">now</span>}
             </button>
           ))}
         </div>
@@ -111,7 +115,7 @@ export function LockdownCard({ status }: { status: LockdownStatus | null }): JSX
         <input
           id={inputId}
           className="lock-input"
-          placeholder="e.g. Notion, docs.google.com"
+          placeholder="An app name or a website address"
           value={text}
           maxLength={200}
           onChange={(e) => setText(e.target.value)}
