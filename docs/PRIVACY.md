@@ -24,6 +24,8 @@ The tray's **Open logs folder** item and the **About** dialog show the exact pat
 | AI answers for unclear pages | `userData/content-judge.json` | Only when an AI judges pages (see "Judging what's on the page" below): a hashed key of the site and title, the yes/no answer and its short reason, at most 500, each dropped after 30 days |
 | Log | `logs/main.log` (+ `main.old.log`, up to 2 MB each) | App events, errors and notification titles. Activity samples (app name and website domain) are written only when Bloop is started with `BLOOP_TRACE=1`. Notification text is not logged |
 
+**Lockdown** stores nothing: the app or site you lock to, the timer and the quick picks (the last 8 apps and sites that were in front) live in memory only and are gone when Bloop quits. During a lockdown Bloop checks the front app every second; the log records only that a lockdown started (app or site, and its length) and ended, never which one.
+
 Activity tracking (front app, browser tab URL on macOS, window title on Windows) is read from the OS every 2 seconds, classified on the spot, and kept only as the per-session summary above. Full URLs and window titles are not stored in `bloop.json`, except for pages you mark yourself (Remembered pages). The log records content verdicts and their reasons ("study, matches CHEM 201"), never the page title or URL.
 
 ## Judging what's on the page

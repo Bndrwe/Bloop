@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { BrowserWindow, Menu, Notification, app, dialog, globalShortcut, ipcMain, shell, type IpcMainInvokeEvent } from 'electron'
 import { IPC } from '@shared/ipc'
 import { APP_ID } from '@shared/appId'
-import type { AppStatus, BrightspaceStatus, Settings } from '@shared/types'
+import type { AppStatus, BrightspaceStatus, LockdownStatus, Settings } from '@shared/types'
 import { getDeadlines, refreshDeadlines } from './deadlines'
 import {
   getBrightspaceStatus,
@@ -33,7 +33,9 @@ import {
 import { ReminderScheduler } from './reminders'
 import { SessionEngine, type NotifyOptions } from './session'
 import * as store from './store'
-import { readPageText, sampleActiveWindow } from './tracker'
+import { readPageText, sampleActiveWindow, type RawActive } from './tracker'
+import { clampMinutes, Lockdown, matchesTarget, parseTarget, RecentTargets } from './lockdown'
+import { activateTarget } from './lockdownApp'
 import { AiJudge, pickJudgeProvider } from './contentAi'
 import { ContentService } from './contentService'
 import { EMPTY_CONTEXT, type JudgeContext } from './contentJudge'
@@ -189,18 +191,70 @@ const content = new ContentService({
   log
 })
 
+// ------------------------------------------------------------------ sampling (shared)
+
+// Bloop's own windows in front (panel, settings, chat, lockdown cover) are not a new activity. In
+// dev the front app is "Electron".
+const selfNames = app.isPackaged ? ['Bloop', app.getName()] : ['Bloop', app.getName(), 'Electron']
+const recentTargets = new RecentTargets(selfNames)
+
+// The engine and a running lockdown both sample every second: share one read of the front window
+// (each read can run AppleScript) instead of doing it twice.
+let lastSample: { at: number; raw: RawActive | null } | null = null
+let sampleInFlight: Promise<RawActive | null> | null = null
+function sharedSample(): Promise<RawActive | null> {
+  if (lastSample && Date.now() - lastSample.at < 800) return Promise.resolve(lastSample.raw)
+  if (!sampleInFlight) {
+    sampleInFlight = sampleActiveWindow()
+      .then((raw) => {
+        lastSample = { at: Date.now(), raw }
+        recentTargets.observe(raw)
+        return raw
+      })
+      .finally(() => {
+        sampleInFlight = null
+      })
+  }
+  return sampleInFlight
+}
+
+// ------------------------------------------------------------------ lockdown
+
+const lockdown = new Lockdown({
+  sample: sharedSample,
+  setCovered: (covered) => windows.setLockCover(covered),
+  activate: (target) => activateTarget(target, log),
+  notify: (title, body) => notify(title, body),
+  selfNames,
+  log
+})
+
+function broadcastLockdown(status: LockdownStatus): void {
+  for (const w of windows.allWindows()) {
+    if (!w.webContents.isDestroyed()) w.webContents.send(IPC.lockdownPush, status)
+  }
+}
+let lastLockActive = false
+lockdown.on('status', (s: LockdownStatus) => {
+  broadcastLockdown(s)
+  if (lastLockActive && !s.active) windows.destroyLockCover()
+  lastLockActive = s.active
+})
+
 // ------------------------------------------------------------------ engine
 
 const engine = new SessionEngine({
   judge: (raw) => content.judge(raw),
+  forceFocus: (raw) => {
+    const t = lockdown.activeTarget()
+    return !!t && matchesTarget(raw, t) === true
+  },
   getSettings: () => store.getSettings(),
-  sample: () => sampleActiveWindow(),
+  sample: sharedSample,
   notify,
   saveSession: (rec) => store.addSession(rec),
   fast: FAST,
-  // Bloop's own windows in front (panel, settings, chat) are not a new activity. In dev the
-  // front app is "Electron".
-  selfNames: app.isPackaged ? ['Bloop', app.getName()] : ['Bloop', app.getName(), 'Electron']
+  selfNames
 })
 
 // ------------------------------------------------------------------ pet visibility (hide / show)
@@ -480,6 +534,25 @@ function registerIpc(): void {
   })
   h(IPC.brightspaceLogout, () => logoutBrightspace())
   h(IPC.brightspaceRefresh, () => refreshBrightspace())
+  h(IPC.lockdownGet, () => lockdown.status())
+  h(IPC.lockdownTargets, () => recentTargets.list())
+  h(IPC.lockdownStart, (_e, input, minutes) => {
+    const m = clampMinutes(minutes)
+    if (m === null) return { ok: false, error: 'Pick a length between 1 minute and 4 hours.' }
+    const parsed = parseTarget(input, selfNames)
+    if (!parsed.ok) return parsed
+    const target = parsed.value
+    // Only trust an app location Bloop saw itself (never a path sent by a window).
+    if (target.kind === 'app') {
+      delete target.appPath
+      const seen = recentTargets.list().find((r) => r.kind === 'app' && r.value.toLowerCase() === target.app.toLowerCase())
+      if (seen?.appPath) target.appPath = seen.appPath
+    }
+    windows.closePanel()
+    return { ok: true, value: lockdown.start(target, m) }
+  })
+  h(IPC.lockdownStop, () => lockdown.stop('ended'))
+  h(IPC.lockdownGoBack, () => lockdown.goBack())
   h(IPC.getPlan, () => store.getStudyPlan())
   h(IPC.generatePlan, async () => {
     const dl = getDeadlines()
@@ -524,6 +597,8 @@ app.on('before-quit', () => {
   log('quitting')
   try {
     if (engine.isRunning()) engine.stop() // save the in-progress session
+    lockdown.dispose() // quitting always ends a lockdown
+    windows.destroyLockCover()
     reminders.stop()
     stopBrightspace()
     pet.dispose()

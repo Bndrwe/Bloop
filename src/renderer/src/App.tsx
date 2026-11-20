@@ -4,15 +4,16 @@ import { Panel } from './views/Panel'
 import { SettingsView } from './views/Settings'
 import { Onboarding } from './views/Onboarding'
 import { ChatView } from './views/Chat'
+import { LockdownCover } from './views/lockdown/LockdownCover'
 import { ShaderSmoke } from '@/components/ui/shader-smoke'
 import { useWindowAwake } from './hooks/useWindowAwake'
 import { useSettings } from './hooks/useSettings'
 import { parseSection } from './lib/route'
 import { backgroundTokens, DEFAULT_BACKGROUND_INTENSITY, DEFAULT_BACKGROUND_SPEED } from '@shared/background'
 
-export type Route = 'pet' | 'panel' | 'settings' | 'onboarding' | 'chat'
+export type Route = 'pet' | 'panel' | 'settings' | 'onboarding' | 'chat' | 'lockdown'
 
-const ROUTES: readonly Route[] = ['pet', 'panel', 'settings', 'onboarding', 'chat']
+const ROUTES: readonly Route[] = ['pet', 'panel', 'settings', 'onboarding', 'chat', 'lockdown']
 
 /** Accepts "#/panel", "/panel", "panel" etc. */
 export function parseRoute(raw: string): Route {
@@ -81,6 +82,14 @@ export function App(): JSX.Element {
   }, [route])
 
   if (route === 'pet') return <PetView />
+  if (route === 'lockdown') {
+    return (
+      <>
+        <Backdrop route={route} />
+        <LockdownCover secondary={parseSection(location.hash) === 'secondary'} />
+      </>
+    )
+  }
   return (
     <>
       <Backdrop route={route} />

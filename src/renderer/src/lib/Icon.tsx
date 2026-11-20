@@ -18,9 +18,16 @@ export type IconName =
   | 'folder'
   | 'eye'
   | 'eye-off'
+  | 'lock'
 
 const PATHS: Record<IconName, JSX.Element> = {
   close: <path d="M4 4l8 8M12 4l-8 8" />,
+  lock: (
+    <g>
+      <rect x="3.2" y="7" width="9.6" height="7" rx="1.6" />
+      <path d="M5.4 7V5a2.6 2.6 0 0 1 5.2 0v2" />
+    </g>
+  ),
   // Settings cog: 8 square-ish teeth (outer r 6.9, root r 5.1) around a centre hole. A slightly
   // lighter stroke keeps the gaps between teeth open at 13-16 px.
   gear: (

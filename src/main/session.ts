@@ -82,6 +82,8 @@ export interface SessionDeps {
    * as focus, not study as distracting, unsure keeps the list category. Must not block.
    */
   judge?: (raw: RawActive) => ContentJudgement | null
+  /** During a lockdown the app or site you locked to counts as focus, whatever the lists say. */
+  forceFocus?: (raw: RawActive) => boolean
 }
 
 export const NUDGE_LINES = [
@@ -134,7 +136,11 @@ export function isSiteHidden(raw: RawActive | null): boolean {
 }
 
 export class SessionEngine extends EventEmitter {
-  private readonly d: Required<Omit<SessionDeps, 'log' | 'judge'>> & { log: (m: string) => void; judge?: SessionDeps['judge'] }
+  private readonly d: Required<Omit<SessionDeps, 'log' | 'judge' | 'forceFocus'>> & {
+    log: (m: string) => void
+    judge?: SessionDeps['judge']
+    forceFocus?: SessionDeps['forceFocus']
+  }
 
   private phase: SessionPhase = 'idle'
   private pausedPhase: 'focus' | 'break' | null = null
@@ -552,6 +558,7 @@ export class SessionEngine extends EventEmitter {
 
   /** The lists' category, adjusted by the page's content on "depends on what's open" sites. */
   private categorize(raw: RawActive, settings: Settings): { category: ActiveSample['category']; content: ContentJudgement | null } {
+    if (this.d.forceFocus?.(raw)) return { category: 'focus', content: null }
     const base = classify(raw, settings)
     let content: ContentJudgement | null = null
     if (this.d.judge) {

@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import { IPC } from '../shared/ipc'
-import type { AppStatus, BrightspaceStatus, Settings, StudyPetApi } from '../shared/types'
+import type { AppStatus, BrightspaceStatus, LockdownStatus, Settings, StudyPetApi } from '../shared/types'
 import type { AiApi, AiStatus } from '../shared/ai'
 import { CHAT_INPUT_MAX, CHAT_TITLE_MAX, type ChatApi, type ChatThinking } from '../shared/chat'
 
@@ -120,6 +120,27 @@ const api: StudyPetApi = {
   markCurrentPage: (study) => inv(IPC.contentMark, study === true),
   getRememberedPages: () => inv(IPC.contentList),
   forgetRememberedPages: (id) => inv(IPC.contentForget, typeof id === 'string' ? str(id, 128) : undefined),
+  getLockdown: () => inv(IPC.lockdownGet),
+  onLockdown: (cb) => {
+    const l = (_e: IpcRendererEvent, s: LockdownStatus): void => cb(s)
+    ipcRenderer.on(IPC.lockdownPush, l)
+    return () => ipcRenderer.removeListener(IPC.lockdownPush, l)
+  },
+  getLockTargets: () => inv(IPC.lockdownTargets),
+  startLockdown: (target, minutes) =>
+    inv(
+      IPC.lockdownStart,
+      target && typeof target === 'object'
+        ? {
+            kind: target.kind === 'app' || target.kind === 'site' ? target.kind : undefined,
+            value: str(target.value, 200),
+            appPath: typeof target.appPath === 'string' ? str(target.appPath, 1024) : undefined
+          }
+        : null,
+      Number(minutes)
+    ),
+  stopLockdown: () => inv(IPC.lockdownStop),
+  lockdownGoBack: () => inv(IPC.lockdownGoBack),
   openExternal: (url) => inv(IPC.openExternal, str(url, 2048)),
   ai,
   chat

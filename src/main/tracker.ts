@@ -10,6 +10,8 @@ export interface RawActive {
   app: string
   title: string
   url?: string
+  /** The app's location (macOS .app bundle, Windows .exe), to bring it back to the front in a lockdown. */
+  appPath?: string
 }
 
 const isMac = process.platform === 'darwin'
@@ -132,6 +134,13 @@ function macActiveWindow(screenRecording: boolean): Promise<NativeWindow | null>
   })
 }
 
+/** The .app bundle on macOS ("/Applications/X.app"), else the executable path; undefined if unknown. */
+export function appLocation(path: string | undefined): string | undefined {
+  if (!path) return undefined
+  const m = /^(.*?\.app)(\/|$)/.exec(path)
+  return m ? m[1] : path
+}
+
 /**
  * Sample the frontmost window. Returns null if it can't be determined (e.g. no window server
  * on Linux). If BLOOP_FAKE_ACTIVE points at a JSON file `{app, url?, title?}`, that is used instead.
@@ -163,6 +172,8 @@ export async function sampleActiveWindow(): Promise<RawActive | null> {
     }
     const { app, title } = isMac ? { app: w.owner?.name ?? '', title: w.title ?? '' } : normalizeOwner(w.owner, w.title ?? '')
     const res: RawActive = { app, title }
+    const appPath = appLocation(w.owner?.path)
+    if (appPath) res.appPath = appPath
     const native = 'url' in w && typeof w.url === 'string' ? w.url : undefined
     res.url = native ?? (await getBrowserUrl(app))
     if (process.env['BLOOP_TRACE'] === '1') {

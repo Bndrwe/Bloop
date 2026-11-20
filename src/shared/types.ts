@@ -249,6 +249,30 @@ export interface StudyPlan {
   blocks: PlanBlock[]
 }
 
+/** Lockdown: one app or one website you're locked to (src/main/lockdown.ts). */
+export type LockTarget =
+  | { kind: 'app'; app: string; label: string; /** where the app lives, to bring it back to the front */ appPath?: string }
+  | { kind: 'site'; domain: string; label: string }
+
+/** What the panel sends to start a lockdown, and the quick picks it shows (recently in front). */
+export interface LockTargetInput {
+  /** Omit to guess: something like "docs.google.com" is a site, anything else an app name. */
+  kind?: 'app' | 'site'
+  value: string
+  appPath?: string
+}
+
+export interface LockdownStatus {
+  active: boolean
+  /** The full-screen lockdown screen is up (something other than the target is in front). */
+  covered: boolean
+  target?: LockTarget
+  startedAt?: number
+  /** epoch ms the lockdown ends */
+  endsAt?: number
+  remainingSec?: number
+}
+
 export type Result<T> = { ok: true; value: T } | { ok: false; error: string }
 
 /** The API exposed on `window.studyPet` by the preload script. */
@@ -334,6 +358,18 @@ export interface StudyPetApi {
   getRememberedPages(): Promise<ContentOverrideInfo[]>
   /** Forget one remembered page, or all of them when id is omitted. */
   forgetRememberedPages(id?: string): Promise<ContentOverrideInfo[]>
+
+  // Lockdown: stay on one app or website
+  getLockdown(): Promise<LockdownStatus>
+  /** Fires in every window when a lockdown starts, ticks, covers / uncovers or ends. */
+  onLockdown(cb: (status: LockdownStatus) => void): () => void
+  /** Apps and sites that were recently in front, as quick picks. */
+  getLockTargets(): Promise<LockTargetInput[]>
+  startLockdown(target: LockTargetInput, minutes: number): Promise<Result<LockdownStatus>>
+  /** End early (the UI asks for a 10 second hold first). */
+  stopLockdown(): Promise<LockdownStatus>
+  /** "Take me back": bring the target to the front. */
+  lockdownGoBack(): Promise<void>
 
   /** Open an https link in the system browser (help/install/key pages). */
   openExternal(url: string): Promise<void>

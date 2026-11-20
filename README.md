@@ -116,11 +116,12 @@ A quick tour, from opening it to uninstalling. Every setting mentioned here live
 3. **Read the score.** Every day starts at **100**. The score drops while you drift and climbs back when you return, and recent minutes count more than old ones. **70+** reads *on track*, **40 to 69** *wobbly*, **under 40** *drifting*. Bloop judges what's actually on screen: a lecture on YouTube counts as study, gameplay doesn't (see [How scoring works](#how-scoring-works)). Pick which apps and sites count as study or distraction in **Settings → Websites** and the app lists.
 4. **Drift, and get a gentle psst.** Open a distracting app or site and the pet looks worried right away. After **1 min** you get a speech bubble and a system notification, then another **every 2 min** (at 3, 5, 7 min…). The pet turns sad after 5 min and cheers when you're back, which restarts the cycle. Change the timings in **Settings → Nudges**.
 5. **Hide the pet** with **⌘⇧B** on a Mac or **Ctrl+Shift+B** on Windows and Linux. Bloop keeps tracking while hidden and pops up for a few seconds when it nudges you. The same shortcut brings it back.
-6. **Add your deadlines.** In **Settings → Deadlines**, log in to Brightspace or paste your calendar (iCal) link. Your next 5 deadlines show in the panel, with reminders 3 days and 1 day before each exam. See [Brightspace deadlines](#optional-brightspace-deadlines).
-7. **Set up an AI (optional)** for the weekly study plan, Chat with Bloop and smarter page judging. Open **Settings → AI** and pick **Cloud** (a Claude, Codex or Gemini CLI you're signed in to, or an Anthropic or OpenRouter API key) or **Use Local** with [Ollama](#use-local-ollama). Then press **Generate plan** on the panel's study plan card, or open **Chat with Bloop**. See [AI study plan](#ai-study-plan).
-8. **Allow permissions (macOS only).** On first launch Bloop asks for **Screen Recording** (to read window titles) and **Automation** (to read your browser's tab URL). After allowing Screen Recording, click **Relaunch Bloop**. Come back any time via **Settings → Permissions**. See [Permissions](#permissions-macos-only).
-9. **Update.** Download the new version and install it over the old one. Your settings and history are kept.
-10. **Uninstall.** **Mac:** quit Bloop and drag it from Applications to the Trash. **Windows:** Settings → Apps → Installed apps → Bloop → Uninstall. **Linux:** delete the AppImage, or `sudo apt remove bloop` for the `.deb`. Built it yourself? Use the uninstall script (see [Build it yourself](#build-it-yourself-optional)). To clear your history and settings without uninstalling, use **Settings → Reset data → Reset everything…**
+6. **Lock yourself in (optional).** In the panel's **Lockdown** card, pick an app or website (recently open ones show as quick picks, or type one like `docs.google.com`), pick **25**, **50** or **90 min** (or type a length), and press **Lock to …**. Switch to anything else and after 2 seconds a full-screen Bloop screen covers it; **Take me back** returns you. To stop early, press and hold **Hold to end lockdown** for 10 seconds. See [Lockdown](#lockdown).
+7. **Add your deadlines.** In **Settings → Deadlines**, log in to Brightspace or paste your calendar (iCal) link. Your next 5 deadlines show in the panel, with reminders 3 days and 1 day before each exam. See [Brightspace deadlines](#optional-brightspace-deadlines).
+8. **Set up an AI (optional)** for the weekly study plan, Chat with Bloop and smarter page judging. Open **Settings → AI** and pick **Cloud** (a Claude, Codex or Gemini CLI you're signed in to, or an Anthropic or OpenRouter API key) or **Use Local** with [Ollama](#use-local-ollama). Then press **Generate plan** on the panel's study plan card, or open **Chat with Bloop**. See [AI study plan](#ai-study-plan).
+9. **Allow permissions (macOS only).** On first launch Bloop asks for **Screen Recording** (to read window titles) and **Automation** (to read your browser's tab URL). After allowing Screen Recording, click **Relaunch Bloop**. Come back any time via **Settings → Permissions**. See [Permissions](#permissions-macos-only).
+10. **Update.** Download the new version and install it over the old one. Your settings and history are kept.
+11. **Uninstall.** **Mac:** quit Bloop and drag it from Applications to the Trash. **Windows:** Settings → Apps → Installed apps → Bloop → Uninstall. **Linux:** delete the AppImage, or `sudo apt remove bloop` for the `.deb`. Built it yourself? Use the uninstall script (see [Build it yourself](#build-it-yourself-optional)). To clear your history and settings without uninstalling, use **Settings → Reset data → Reset everything…**
 
 ---
 
@@ -191,6 +192,7 @@ Log in to Brightspace, or paste your calendar link, to see what's due next. Then
 - **Always on**: with **Settings → Watch without a session** (on by default), Bloop reacts to distractions even when no session is running. The panel says *Watching for distractions* and the pet's hover badge shows a live score. This time is never saved as a session or counted in your stats, and like everything else it never leaves your computer. The score starts fresh each day and after 30 minutes away. Starting a session switches to the session's own score.
 - **Nudges**: the moment you open a distracting app or site the pet looks worried and says something encouraging. If you stay, it reminds you with a speech bubble and a system notification after 1 min, then every 2 min (at 3, 5, 7 min...). The pet turns sad after 5 min, and it cheers when you come back, which also restarts the cycle. Switching to Bloop's own panel or settings doesn't count as getting back to work, and that time isn't scored. Change the timings in **Settings → Nudges** (*First reminder after*, *Remind again every*).
 - **Can't see the site?** If a browser is in front but Bloop can read neither its URL nor its title, the panel says so and links to **Settings → Permissions**.
+- **Lockdown**: lock yourself to one app or website for 1 to 240 minutes. Anything else in front gets covered by a full-screen Bloop screen on every display. See [Lockdown](#lockdown).
 - **Pomodoro sessions**: 25 min focus / 5 min break by default (configurable). The pet sleeps during breaks and wakes you up when it's time to work.
 - **Study reminders**: recurring study blocks (days of the week + time). The pet waves and a notification offers to start a session.
 - **History**: every session is saved with its start/end, duration, final score, top focus apps and top distractions. The panel shows today's average and a 7-day mini chart.
@@ -366,6 +368,22 @@ Talk to Bloop about your studies: "Plan my evening", "I can't focus, help", "Qui
 - With a cloud provider, each message (and the recent conversation) is sent to that vendor, and the chat window says so under the message box. See [docs/PRIVACY.md](docs/PRIVACY.md#chat-with-bloop).
 
 ![Chat with Bloop, answering through an Ollama model](docs/screenshots/chat.png)
+
+## Lockdown
+
+Stay on one app or website until the timer runs out.
+
+1. Open the panel and find the **Lockdown** card.
+2. Pick what to stay on: a quick pick (apps and sites that were recently in front), or type an app name (`Notion`) or a website (`docs.google.com`). A website also allows its subdomains; a browser name (`Google Chrome`) allows any site in it.
+3. Pick a length (**25**, **50** or **90 min**, or type 1 to 240 minutes) and press **Lock to …**. Bloop brings your pick to the front.
+4. If anything else stays in front for 2 seconds, a full-screen Bloop screen covers every display. **Take me back** (or Enter) brings your pick back; the cover lifts as soon as it's in front.
+5. When time's up the lockdown ends by itself and you get a notification.
+
+**Ending early:** press and hold **Hold to end lockdown** for 10 seconds, on the cover or in the panel. Quitting Bloop always ends a lockdown too, and a lockdown never comes back after a restart. Your lock screen and screen saver are never covered.
+
+While you're locked in, your pick counts as **focus** in the score, even if it's on your distraction list (for example a YouTube lecture you locked to).
+
+**How it tells what's in front:** the same way as the focus score. On a Mac, websites need the **Automation** permission (to read the tab's address). Without it, and on Windows and Linux, Bloop goes by the browser's window title, so a site whose title doesn't name it may get covered. Lock to the browser itself in that case. **Take me back** uses `open` on a Mac, PowerShell on Windows, and `wmctrl` on Linux (if installed); a website opens in your default browser.
 
 ## Optional: Brightspace deadlines
 
@@ -674,7 +692,8 @@ src/
   shared/       types.ts (shared contract) and ipc.ts (channel names)
   preload/      typed contextBridge API exposed as window.studyPet
   main/         Electron main process: tracking, classification, scoring,
-                sessions/nudges, storage, reminders, deadlines (iCal and
+                sessions/nudges, lockdown (lockdown.ts, lockdownApp.ts),
+                storage, reminders, deadlines (iCal and
                 Brightspace login: brightspace.ts, brightspaceApp.ts), AI plan,
                 windows and tray
   renderer/     React UI: pet overlay, panel, settings, onboarding

@@ -54,6 +54,13 @@ export const IPC = {
   brightspaceLogout: 'brightspace:logout',
   brightspaceRefresh: 'brightspace:refresh',
 
+  lockdownGet: 'lockdown:get',
+  lockdownPush: 'lockdown:push',
+  lockdownTargets: 'lockdown:targets',
+  lockdownStart: 'lockdown:start',
+  lockdownStop: 'lockdown:stop',
+  lockdownGoBack: 'lockdown:go-back',
+
   // AI (window.studyPet.ai) — handlers live in src/main/ai/ipc.ts
   aiGetStatus: 'ai:get-status',
   aiStatusPush: 'ai:status',

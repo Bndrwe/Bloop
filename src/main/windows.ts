@@ -68,7 +68,82 @@ function loadRoute(win: BrowserWindow, route: string): void {
 }
 
 export function allWindows(): BrowserWindow[] {
-  return [petWin, panelWin, settingsWin, onboardingWin].filter((w): w is BrowserWindow => !!w && !w.isDestroyed())
+  return [petWin, panelWin, settingsWin, onboardingWin, ...coverWins].filter((w): w is BrowserWindow => !!w && !w.isDestroyed())
+}
+
+// ------------------------------------------------------------------ lockdown cover
+
+/** One full-screen cover per display while a lockdown is broken (see lockdown.ts). */
+let coverWins: BrowserWindow[] = []
+
+/** Is this one of the lockdown cover windows? */
+export function isCoverWindow(win: BrowserWindow | null): boolean {
+  return !!win && coverWins.includes(win)
+}
+
+function createCoverWindow(bounds: Rectangle, primary: boolean): BrowserWindow {
+  const win = new BrowserWindow({
+    ...bounds,
+    frame: false,
+    resizable: false,
+    movable: false,
+    maximizable: false,
+    minimizable: false,
+    fullscreenable: false,
+    skipTaskbar: true,
+    alwaysOnTop: true,
+    hasShadow: false,
+    show: false,
+    title: 'Bloop',
+    backgroundColor: '#0d0a12',
+    webPreferences: webPreferences()
+  })
+  // Above everything, including full-screen apps and other Spaces.
+  win.setAlwaysOnTop(true, 'screen-saver')
+  try {
+    win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
+  } catch {
+    /* not supported on this platform */
+  }
+  win.on('closed', () => {
+    coverWins = coverWins.filter((w) => w !== win)
+  })
+  loadRoute(win, primary ? 'lockdown' : 'lockdown/secondary')
+  return win
+}
+
+/** Show (covering every display) or hide the lockdown cover. */
+export function setLockCover(covered: boolean): void {
+  coverWins = coverWins.filter((w) => !w.isDestroyed())
+  if (!covered) {
+    for (const w of coverWins) w.hide()
+    return
+  }
+  const displays = screen.getAllDisplays()
+  const primaryId = screen.getPrimaryDisplay().id
+  // rebuild when the displays changed (count); otherwise reuse the loaded windows
+  if (coverWins.length !== displays.length) {
+    for (const w of coverWins) w.destroy()
+    coverWins = displays.map((d) => createCoverWindow(d.bounds, d.id === primaryId))
+  }
+  coverWins.forEach((w, i) => {
+    const d = displays[i]
+    if (d) w.setBounds(d.bounds)
+    const show = (): void => {
+      if (w.isDestroyed()) return
+      w.show()
+      if (d?.id === primaryId) w.focus()
+    }
+    if (w.webContents.isLoading()) w.once('ready-to-show', show)
+    else show()
+  })
+  if (panelWin && !panelWin.isDestroyed()) panelWin.hide()
+}
+
+/** Lockdown over: close the covers so they don't sit in memory. */
+export function destroyLockCover(): void {
+  for (const w of coverWins) if (!w.isDestroyed()) w.destroy()
+  coverWins = []
 }
 
 export function getPetWindow(): BrowserWindow | null {

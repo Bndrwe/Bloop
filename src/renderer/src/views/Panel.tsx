@@ -10,6 +10,8 @@ import { ChatGlyph } from './Chat'
 import { Pet } from '../pet/Pet'
 import { Icon } from '../lib/Icon'
 import { PetToggleButton } from './PetToggleButton'
+import { LockdownCard } from './lockdown/LockdownCard'
+import { useLockdown } from '../hooks/useLockdown'
 import { ShaderMetal } from '@/components/ui/shader-metal'
 import { prefersReducedMotion, useBreathe, useCountUp, useEntrance, usePopIn, useReveal, useStaggerIn } from '../lib/motion'
 import {
@@ -584,6 +586,7 @@ const PHASE_TAG: Record<string, string> = {
 export function Panel(): JSX.Element {
   const { status, remaining } = useStatus()
   const settings = useSettings()
+  const lockdown = useLockdown()
   const [stats, setStats] = useState<Stats | null>(null)
   const [statsError, setStatsError] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -722,6 +725,10 @@ export function Panel(): JSX.Element {
       )}
       <div className="enter">
         <ReminderState status={status} settings={settings} />
+      </div>
+
+      <div className="enter">
+        <LockdownCard status={lockdown} />
       </div>
 
       <hr className="zigzag enter" />
