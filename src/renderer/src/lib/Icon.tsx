@@ -19,9 +19,17 @@ export type IconName =
   | 'eye'
   | 'eye-off'
   | 'lock'
+  | 'chevron-right'
+  | 'chevron-left'
+  | 'list'
+  | 'shield'
 
 const PATHS: Record<IconName, JSX.Element> = {
   close: <path d="M4 4l8 8M12 4l-8 8" />,
+  'chevron-right': <path d="M6 3.5L10.5 8 6 12.5" />,
+  'chevron-left': <path d="M10 3.5L5.5 8l4.5 4.5" />,
+  list: <path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.1M2.5 8h.1M2.5 12h.1" />,
+  shield: <path d="M8 1.8l5.2 2v4c0 3.1-2.2 5.3-5.2 6.4-3-1.1-5.2-3.3-5.2-6.4v-4z" />,
   lock: (
     <g>
       <rect x="3.2" y="7" width="9.6" height="7" rx="1.6" />

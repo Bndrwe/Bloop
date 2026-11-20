@@ -25,17 +25,18 @@ describe('IPC sender checks (check 1)', () => {
     expect(offenders).toEqual([])
   })
 
-  it('exactly three files register ipcMain.handle, and each has ONE registration inside its guarded wrapper', () => {
+  it('exactly four files register ipcMain.handle, and each has ONE registration inside its guarded wrapper', () => {
     const files = mainFiles.filter((f) => /ipcMain\.handle\(/.test(readFileSync(f, 'utf8'))).map((f) => f.slice(ROOT.length + 1).replace(/\\/g, '/')).sort()
-    expect(files).toEqual(['src/main/ai/ipc.ts', 'src/main/chat.ts', 'src/main/index.ts'])
+    expect(files).toEqual(['src/main/ai/ipc.ts', 'src/main/chat.ts', 'src/main/index.ts', 'src/main/planner/app.ts'])
     for (const f of files) {
       const count = (read(f).match(/ipcMain\.handle\(/g) ?? []).length
       expect(count, f).toBe(1)
     }
   })
 
-  it('the three wrappers run the sender guard before the handler body', () => {
+  it('the four wrappers run the sender guard before the handler body', () => {
     const index = read('src/main/index.ts')
+    const planner = read('src/main/planner/app.ts')
     const ai = read('src/main/ai/ipc.ts')
     const chat = read('src/main/chat.ts')
     const chatApp = read('src/main/chatApp.ts')
@@ -47,6 +48,7 @@ describe('IPC sender checks (check 1)', () => {
       expect(g).toBeGreaterThan(h)
     }
     before(index, 'guardSender(ch, e, origins)')
+    before(planner, 'guardSender(ch, e, origins)')
     before(ai, 'guardSender(ch, e, origins)')
     before(chat, 'deps.guard(ch, e)')
     expect(chatApp).toContain('guardSender(ch, e as unknown as Parameters<typeof guardSender>[1], origins)')

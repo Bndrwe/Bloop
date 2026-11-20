@@ -11,6 +11,8 @@ import { Pet } from '../pet/Pet'
 import { Icon } from '../lib/Icon'
 import { PetToggleButton } from './PetToggleButton'
 import { LockdownCard } from './lockdown/LockdownCard'
+import { PlannerCard } from './planner/PlannerCard'
+import { BlockerCard } from './planner/BlockerCard'
 import { useLockdown } from '../hooks/useLockdown'
 import { ShaderMetal } from '@/components/ui/shader-metal'
 import { prefersReducedMotion, useBreathe, useCountUp, useEntrance, usePopIn, useReveal, useStaggerIn } from '../lib/motion'
@@ -725,6 +727,14 @@ export function Panel(): JSX.Element {
       )}
       <div className="enter">
         <ReminderState status={status} settings={settings} />
+      </div>
+
+      <div className="enter">
+        <PlannerCard />
+      </div>
+
+      <div className="enter">
+        <BlockerCard />
       </div>
 
       <div className="enter">

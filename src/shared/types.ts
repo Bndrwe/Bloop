@@ -2,6 +2,7 @@
 // Keep this file free of runtime imports from electron/node so both sides can use it.
 import type { AiApi } from './ai'
 import type { ChatApi } from './chat'
+import type { BlockerApi, GoogleApi, PlannerApi } from './planner'
 
 export type Category = 'focus' | 'distract' | 'neutral'
 
@@ -378,4 +379,10 @@ export interface StudyPetApi {
   ai: AiApi
   /** Chat with Bloop: conversations stored in userData/chats. See src/shared/chat.ts. */
   chat: ChatApi
+  /** Projects, tasks and their study blocks. See src/shared/planner.ts. */
+  planner: PlannerApi
+  /** Website blocker (macOS /etc/hosts). */
+  blocker: BlockerApi
+  /** Google Gmail + Calendar (mock for now). */
+  google: GoogleApi
 }

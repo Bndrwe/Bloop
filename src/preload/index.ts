@@ -3,6 +3,7 @@ import { IPC } from '../shared/ipc'
 import type { AppStatus, BrightspaceStatus, LockdownStatus, Settings, StudyPetApi } from '../shared/types'
 import type { AiApi, AiStatus } from '../shared/ai'
 import { CHAT_INPUT_MAX, CHAT_TITLE_MAX, type ChatApi, type ChatThinking } from '../shared/chat'
+import { BLOCKER_SITES_MAX, PLANNER_TITLE_MAX, type BlockerApi, type GoogleApi, type PlannerApi } from '../shared/planner'
 
 // The renderer only gets these named functions, never ipcRenderer itself or a generic invoke.
 // Arguments are coerced to their declared types here as a first filter; main still validates every
@@ -43,6 +44,36 @@ const chat: ChatApi = {
     ipcRenderer.on(IPC.chatThinking, l)
     return () => ipcRenderer.removeListener(IPC.chatThinking, l)
   }
+}
+
+/** Subscribe to a main -> renderer push; returns the unsubscribe function. */
+function onPush<T>(channel: string, cb: (v: T) => void): () => void {
+  const l = (_e: IpcRendererEvent, v: T): void => cb(v)
+  ipcRenderer.on(channel, l)
+  return () => ipcRenderer.removeListener(channel, l)
+}
+
+const planner: PlannerApi = {
+  get: () => inv(IPC.plannerGet),
+  onChange: (cb) => onPush(IPC.plannerPush, cb),
+  add: (title, due) => inv(IPC.plannerAdd, str(title, PLANNER_TITLE_MAX * 2), Number(due)),
+  remove: (id) => inv(IPC.plannerRemove, str(id, 64)),
+  setStepDone: (taskId, stepId, done) => inv(IPC.plannerStepDone, str(taskId, 64), str(stepId, 64), done === true),
+  setWindow: (w) => inv(IPC.plannerSetWindow, { start: str(w?.start, 5), end: str(w?.end, 5) }),
+  sync: () => inv(IPC.plannerSync)
+}
+
+const blocker: BlockerApi = {
+  get: () => inv(IPC.blockerGet),
+  onChange: (cb) => onPush(IPC.blockerPush, cb),
+  setSites: (sites) => inv(IPC.blockerSetSites, Array.isArray(sites) ? sites.slice(0, BLOCKER_SITES_MAX * 2).map((s) => str(s, 300)) : []),
+  setManual: (on) => inv(IPC.blockerSetManual, on === true)
+}
+
+const google: GoogleApi = {
+  get: () => inv(IPC.googleGet),
+  connect: (service) => inv(IPC.googleConnect, str(service, 20)),
+  disconnect: (service) => inv(IPC.googleDisconnect, str(service, 20))
 }
 
 const api: StudyPetApi = {
@@ -143,7 +174,10 @@ const api: StudyPetApi = {
   lockdownGoBack: () => inv(IPC.lockdownGoBack),
   openExternal: (url) => inv(IPC.openExternal, str(url, 2048)),
   ai,
-  chat
+  chat,
+  planner,
+  blocker,
+  google
 }
 
 contextBridge.exposeInMainWorld('studyPet', api)

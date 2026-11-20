@@ -61,6 +61,22 @@ export const IPC = {
   lockdownStop: 'lockdown:stop',
   lockdownGoBack: 'lockdown:go-back',
 
+  // Study planner, website blocker, Google (mock) — handlers live in src/main/planner/app.ts
+  plannerGet: 'planner:get',
+  plannerPush: 'planner:push',
+  plannerAdd: 'planner:add',
+  plannerRemove: 'planner:remove',
+  plannerStepDone: 'planner:step-done',
+  plannerSetWindow: 'planner:set-window',
+  plannerSync: 'planner:sync',
+  blockerGet: 'blocker:get',
+  blockerPush: 'blocker:push',
+  blockerSetSites: 'blocker:set-sites',
+  blockerSetManual: 'blocker:set-manual',
+  googleGet: 'google:get',
+  googleConnect: 'google:connect',
+  googleDisconnect: 'google:disconnect',
+
   // AI (window.studyPet.ai) — handlers live in src/main/ai/ipc.ts
   aiGetStatus: 'ai:get-status',
   aiStatusPush: 'ai:status',

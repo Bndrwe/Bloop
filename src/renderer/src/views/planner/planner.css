@@ -1,0 +1,348 @@
+/* Projects & tasks and the website blocker: panel cards. Monochrome like the rest of Bloop:
+   state is fill vs outline vs dashes, never colour. */
+
+.pl-card .section-title {
+  flex-wrap: wrap;
+}
+.pl-busy {
+  font-size: 11.5px;
+  font-weight: 400;
+}
+.pl-add-btn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pl-add {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  margin-bottom: var(--s3);
+  padding-bottom: var(--s3);
+  border-bottom: 1px solid var(--hairline);
+}
+.pl-add input[type='datetime-local'] {
+  color-scheme: dark;
+}
+
+.pl-group {
+  margin: var(--s2) 0 var(--s1);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.pl-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.pl-list > li + li {
+  border-top: 1px solid var(--hairline);
+}
+
+.pl-title {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.pl-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+.pl-kind {
+  font-size: 10px;
+  padding: 0 6px;
+}
+
+/* A project row is one big button that opens its steps. */
+.pl-project {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s2) var(--s1);
+  margin: 0 calc(-1 * var(--s1));
+  background: none;
+  border: 0;
+  border-radius: var(--r-sm);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-sizing: content-box;
+}
+.pl-project:hover {
+  background: var(--g1);
+}
+.pl-project:focus-visible {
+  outline: 1px solid var(--paper);
+  outline-offset: -1px;
+}
+.pl-project > .icon {
+  flex: none;
+  color: var(--text-3);
+  transition: transform 160ms var(--ease-out);
+}
+.pl-project:hover > .icon {
+  transform: translateX(2px);
+  color: var(--paper);
+}
+.pl-row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pl-next {
+  font-size: 11.5px;
+  color: var(--text-2);
+}
+
+.pl-task {
+  padding: var(--s2) 0;
+}
+.pl-task-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-width: 0;
+}
+.pl-task-head .pl-title {
+  flex: 1;
+}
+.pl-remove {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  opacity: 0;
+  transition: opacity 120ms;
+}
+.pl-task:hover .pl-remove,
+.pl-remove:focus-visible {
+  opacity: 1;
+}
+
+/* Steps: checkbox, title + block, minutes. */
+.pl-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.pl-steps--inline {
+  margin-top: 4px;
+}
+.pl-step {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s2);
+  padding: 6px 0;
+  font-size: 12px;
+}
+.pl-steps:not(.pl-steps--inline) .pl-step + .pl-step {
+  border-top: 1px solid var(--hairline);
+}
+.pl-steps--inline .pl-step {
+  padding: 3px 0;
+}
+.pl-step-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.pl-steps--inline .pl-step-body {
+  flex-direction: row;
+  flex-wrap: wrap;
+  column-gap: var(--s2);
+  align-items: baseline;
+}
+.pl-step-when {
+  font-size: 11.5px;
+  color: var(--text-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.pl-step-min {
+  font-size: 11px;
+  padding-top: 1px;
+}
+.pl-step--done .pl-step-title {
+  text-decoration: line-through;
+  color: var(--text-3);
+}
+.pl-step--done .pl-step-when {
+  color: var(--text-3);
+}
+.pl-step--now .pl-step-title {
+  font-weight: 600;
+}
+.pl-now {
+  font-size: 10px;
+  padding: 0 6px;
+}
+.pl-nofit {
+  border-bottom: 1px dashed var(--g4);
+}
+
+.pl-check {
+  position: relative;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+}
+.pl-check input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.pl-check span {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 5px;
+  color: transparent;
+  transition:
+    background 120ms,
+    border-color 120ms;
+  pointer-events: none;
+}
+.pl-check input:hover + span {
+  border-color: var(--paper);
+}
+.pl-check input:focus-visible + span {
+  outline: 1px solid var(--paper);
+  outline-offset: 2px;
+}
+.pl-check input:checked + span {
+  background: var(--paper);
+  border-color: var(--paper);
+  color: var(--ink);
+}
+.pl-check input:disabled {
+  cursor: progress;
+}
+
+/* Project detail */
+.pl-detail-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s2);
+  margin-bottom: var(--s2);
+}
+.pl-detail-head .icon-btn {
+  flex: none;
+  width: 26px;
+  height: 26px;
+}
+.pl-detail-title {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11.5px;
+}
+.pl-detail-title h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.pl-bar {
+  display: block;
+  height: 2px;
+  margin: 0 0 var(--s3);
+  background: var(--hairline);
+  border-radius: 1px;
+  overflow: hidden;
+}
+.pl-bar span {
+  display: block;
+  height: 100%;
+  background: var(--paper);
+  transform-origin: left;
+  transition: transform 400ms var(--ease-out);
+}
+.pl-detail-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--s2);
+  margin-top: var(--s3);
+  font-size: 11.5px;
+}
+
+/* Website blocker */
+.bl-card--on {
+  border-color: var(--paper);
+}
+.bl-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  margin-bottom: var(--s2);
+}
+.bl-title {
+  margin: 0;
+}
+.bl-tag {
+  font-size: 10px;
+  padding: 0 6px;
+}
+.bl-line {
+  margin: 0 0 var(--s1);
+}
+.bl-edit {
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+/* Settings sections */
+.pls-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: var(--s2) 0 0;
+  font-size: 12px;
+}
+.pls-note--error {
+  color: var(--paper);
+}
+.pls-google-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.pls-google-tag {
+  margin-left: 6px;
+  font-size: 10px;
+  padding: 0 6px;
+  vertical-align: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pl-bar span,
+  .pl-project > .icon {
+    transition: none;
+  }
+}

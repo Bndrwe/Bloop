@@ -53,6 +53,7 @@ import {
 } from './petVisibility'
 import * as windows from './windows'
 import { chatStore, registerChat } from './chatApp'
+import { registerPlanner, type PlannerApp } from './planner/app'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const FAST = process.env['BLOOP_FAST'] === '1'
@@ -435,6 +436,7 @@ function registerIpc(): void {
     content.reset()
     aiJudge.clear()
     chatStore.clear()
+    plannerApp?.reset()
     clearLogs()
     applyLoginItem(store.getSettings())
     pet.apply() // showPet is back to its default (shown)
@@ -590,6 +592,9 @@ app.on('window-all-closed', () => {
 // Ctrl-C / kill in dev: quit cleanly so the running session gets saved.
 for (const sig of ['SIGINT', 'SIGTERM'] as const) process.on(sig, () => app.quit())
 
+/** Study planner, website blocker, Google (mock); set in startApp. */
+let plannerApp: PlannerApp | null = null
+
 let quitting = false
 app.on('before-quit', () => {
   if (quitting) return
@@ -598,6 +603,7 @@ app.on('before-quit', () => {
   try {
     if (engine.isRunning()) engine.stop() // save the in-progress session
     lockdown.dispose() // quitting always ends a lockdown
+    plannerApp?.dispose() // and lifts any website block
     windows.destroyLockCover()
     reminders.stop()
     stopBrightspace()
@@ -646,6 +652,7 @@ function startApp(): void {
   // webContents, including all of Bloop's windows, keeps the strict global guard.
   registerAiIpc(ipcMain, { allWindows: windows.allWindows, hardenSpecial: hardenBrightspaceContents })
   registerChat(ipcMain, { getStatus: () => engine.getStatus(), openChat: () => windows.openChat() })
+  plannerApp = registerPlanner(ipcMain, { allWindows: windows.allWindows, notify: (title, body) => notify(title, body), log })
   pet.apply() // before the pet window exists: a hidden pet stays hidden from the first frame
   windows.createPetWindow()
   windows.ensurePanelWindow()

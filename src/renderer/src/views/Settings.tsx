@@ -12,6 +12,7 @@ import { AiSection } from './ai/AiSection'
 import { BrightspaceSection } from './BrightspaceSection'
 import { PetVisibilityRows } from './PetVisibilityRows'
 import { PermissionsSection } from './PermissionsSection'
+import { PlannerSettings } from './planner/PlannerSettings'
 import { parseSection } from '../lib/route'
 import './settings.css'
 
@@ -760,12 +761,14 @@ export function SettingsView(): JSX.Element {
         </div>
       </section>
 
+      <PlannerSettings />
+
       <PermissionsSection />
 
       <section className="card danger-zone enter">
         <div>
           <h2>Reset data</h2>
-          <p className="muted">Deletes session history, chats, API keys and logs, logs you out of Brightspace and restores defaults.</p>
+          <p className="muted">Deletes session history, chats, API keys and logs, logs you out of Brightspace, clears planned tasks and blocked sites, and restores defaults.</p>
         </div>
         <button className="btn btn--danger" onClick={() => setResetOpen(true)}>
           Reset everything…
