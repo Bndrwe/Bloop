@@ -1,6 +1,6 @@
 {
   "name": "bloop",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A cute desktop study companion that tracks your focus and nudges you back on task.",
   "main": "./out/main/index.js",
   "type": "module",
