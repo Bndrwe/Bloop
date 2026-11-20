@@ -49,7 +49,7 @@ describe('renderHosts', () => {
   })
 })
 
-describe('helper script (run with sh on a temp hosts file)', () => {
+describe.skipIf(process.platform === 'win32')('helper script (run with sh on a temp hosts file)', () => {
   const dir = mkdtempSync(join(tmpdir(), 'bloop-blocker-'))
   const script = join(dir, 'helper.sh')
   const hosts = join(dir, 'hosts')
